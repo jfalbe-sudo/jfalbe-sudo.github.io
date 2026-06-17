@@ -44,7 +44,10 @@ main{flex:1;overflow-y:auto;padding:14px 14px 40px;display:flex;flex-direction:c
 .live-project{font-size:17px;font-weight:700;margin-top:6px}
 .live-sub{font-size:12px;color:var(--slate);margin-top:2px}
 .live-time{font-size:44px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:12px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.entry{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--ink3);border-radius:var(--r2);margin-bottom:6px}
+
+/* ENTRIES */
+.entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;overflow:hidden}
+.entry-main-row{display:flex;align-items:center;gap:11px;padding:11px 13px}
 .entry-time-col{text-align:right;flex-shrink:0}
 .entry-time{font-size:11px;color:var(--slate);font-family:var(--mono);line-height:1.8}
 .entry-divider{width:1px;height:28px;background:rgba(255,255,255,.08);flex-shrink:0}
@@ -52,8 +55,22 @@ main{flex:1;overflow-y:auto;padding:14px 14px 40px;display:flex;flex-direction:c
 .entry-on{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .entry-cat{font-size:11px;color:var(--slate);margin-top:1px}
 .entry-dur{font-size:14px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
-.entry-del{background:none;border:none;color:rgba(255,92,92,.4);font-size:16px;cursor:pointer;flex-shrink:0;padding:2px 4px}
-.entry-del:active{color:var(--red)}
+.entry-actions{display:flex;border-top:1px solid rgba(255,255,255,.06)}
+.entry-btn{flex:1;background:none;border:none;color:var(--slate);font-size:12px;font-weight:700;padding:9px;cursor:pointer;font-family:var(--font);transition:color .15s,background .15s}
+.entry-btn:active{background:rgba(255,255,255,.05)}
+.entry-btn.edit{color:var(--gold)}
+.entry-btn.del{color:var(--red)}
+.entry-btn-sep{width:1px;background:rgba(255,255,255,.06)}
+
+/* EDIT PANEL */
+.edit-panel{background:var(--ink4);padding:12px 13px;border-top:1px solid rgba(245,172,0,.2)}
+.edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.edit-input{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:10px 12px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none}
+.edit-input:focus{border-color:var(--gold)}
+.edit-btns{display:flex;gap:8px;margin-top:8px}
+.btn-save-edit{flex:1;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.btn-cancel-edit{flex:1;background:var(--ink3);color:var(--slate);border:none;border-radius:50px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+
 .empty{text-align:center;color:var(--slate);padding:28px 16px;font-size:14px;line-height:1.7}
 .btn{display:block;width:100%;border:none;border-radius:50px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font);transition:transform .1s,opacity .15s}
 .btn:active{transform:scale(.97);opacity:.9}
@@ -71,15 +88,12 @@ main{flex:1;overflow-y:auto;padding:14px 14px 40px;display:flex;flex-direction:c
 select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
 select:focus,input:focus{border-color:var(--gold)}
 select option{background:#081828}
-/* ON chips */
 .on-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s;color:var(--snow)}
+.on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow);transition:background .15s,border-color .15s}
 .on-chip.sel{background:rgba(245,172,0,.2);border-color:var(--gold);color:var(--gold)}
-/* Kategori grid */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
-.cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:11px 10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;transition:background .15s,border-color .15s;color:var(--snow)}
+.cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:11px 10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow);transition:background .15s,border-color .15s}
 .cat-btn.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
-/* week */
 .week-row{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;border:1.5px solid transparent}
 .week-row.today{border-color:rgba(245,172,0,.3)}
 .wr-day{width:38px;flex-shrink:0}
@@ -96,9 +110,19 @@ select option{background:#081828}
 .ws{background:var(--ink3);border-radius:var(--r2);padding:14px}
 .ws-val{font-size:22px;font-weight:900;font-family:var(--mono)}
 .ws-lbl{font-size:10px;color:var(--slate);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* SYNC */
 .sync-status{border-radius:var(--r2);padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
 .sync-ok{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.25);color:var(--green)}
 .sync-wait{background:rgba(245,172,0,.1);border:1px solid rgba(245,172,0,.25);color:var(--gold)}
+.sync-sent{background:rgba(168,196,216,.1);border:1px solid rgba(168,196,216,.2);color:var(--mist)}
+.sync-steps{margin-top:10px;font-size:12px;color:var(--slate);line-height:2}
+.sync-step{display:flex;align-items:center;gap:8px;padding:4px 0}
+.sync-step-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-done{background:var(--green)}
+.dot-wait{background:var(--amber)}
+.dot-idle{background:rgba(255,255,255,.15)}
+
 .export-card{background:var(--ink3);border-radius:var(--r2);padding:14px;border:1px solid rgba(245,172,0,.15)}
 .export-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
 .export-row:last-child{border-bottom:none}
@@ -109,7 +133,6 @@ select option{background:#081828}
 .toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
 .toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
 .save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
-.divider{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
 </style>
 </head>
 <body>
@@ -141,19 +164,12 @@ const WORK_H  = 7.5;
 const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-
-// Kendte ON-numre (hurtigvalg chips)
-const QUICK_ON = ['Beta M','My M','2613','2965','2973','3179','3200','3201'];
-// Kategorier
-const CATS = [
-  {label:'Admin',      icon:'📋'},
-  {label:'Beta M',     icon:'🔧'},
-  {label:'My M',       icon:'🔩'},
-  {label:'Møde',       icon:'💬'},
-  {label:'Kørsel',     icon:'🚗'},
-  {label:'Frokost',    icon:'🥪'},
-  {label:'Service',    icon:'⚙️'},
-  {label:'Andet',      icon:'📌'},
+const QUICK_ON= ['Beta M','My M','2613','2965','2973','3179','3200','3201'];
+const CATS    = [
+  {label:'Admin',icon:'📋'},{label:'Beta M',icon:'🔧'},
+  {label:'My M',icon:'🔩'},{label:'Møde',icon:'💬'},
+  {label:'Kørsel',icon:'🚗'},{label:'Frokost',icon:'🥪'},
+  {label:'Service',icon:'⚙️'},{label:'Andet',icon:'📌'},
 ];
 
 // ── STORAGE ───────────────────────────────────────────────────────────
@@ -162,12 +178,18 @@ const ss = (k,v) => localStorage.setItem('vct_'+k, JSON.stringify(v));
 const getEntries  = dk => sg('e_'+dk) || [];
 const saveEntries = (dk,a) => ss('e_'+dk, a);
 const addEntry    = (dk,e) => { const a=getEntries(dk); a.push(e); saveEntries(dk,a); };
-const delEntry    = (dk,i) => { const a=getEntries(dk); a.splice(i,1); saveEntries(dk,a); };
 const getDayType  = dk => sg('wh_'+dk) || 'Kontor 🏢';
 const setDayType  = (dk,t) => ss('wh_'+dk, t);
-const getPending  = () => sg('sync_pending') || [];
-const addPending  = e => { const a=getPending(); a.push(e); ss('sync_pending',a); };
-const clearPending= () => localStorage.removeItem('vct_sync_pending');
+
+// Pending: liste af entries der IKKE er sendt endnu
+const getPending   = () => sg('sync_pending') || [];
+const addPending   = e  => { const a=getPending(); a.push(e); ss('sync_pending',a); };
+const clearPending = () => localStorage.removeItem('vct_sync_pending');
+
+// Sent: entries der er sendt men ikke bekræftet af Python endnu
+const getSent   = () => sg('sync_sent') || [];
+const setSent   = a  => ss('sync_sent', a);
+const clearSent = () => localStorage.removeItem('vct_sync_sent');
 
 // ── DATE ──────────────────────────────────────────────────────────────
 const fmtH = h => { if(!h||h<0)h=0; const t=Math.round(h*60); return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`; };
@@ -180,14 +202,16 @@ const hmToH  = hm => { if(!hm)return 0; const[h,m]=hm.split(':').map(Number); re
 
 // ── STATE ─────────────────────────────────────────────────────────────
 let activeTimer=null, timerIv=null, currentTab='dag';
-// Tilføj-formular state
 let selCat='', selOn='', customOn='';
+let editingIdx = -1; // hvilken entry redigeres
 
 // ── INIT ──────────────────────────────────────────────────────────────
 function init(){
   updateHeader();
   const saved=sg('activeTimer'); if(saved) activeTimer=saved;
   tab('dag');
+  // Check for done-fil hvert 15. sek (kun relevant når vi kan polle)
+  setInterval(checkSyncDone, 15000);
 }
 function updateHeader(){
   const d=new Date();
@@ -197,7 +221,7 @@ function updateHeader(){
 
 // ── ROUTING ───────────────────────────────────────────────────────────
 function tab(name){
-  currentTab=name;
+  currentTab=name; editingIdx=-1;
   ['dag','tilfoej','uge'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
@@ -222,6 +246,7 @@ function dagHTML(){
   const ss2=diff>0.05?'+':diff<-0.05?'-':'';
   const barClr=diff>0.05?'var(--green)':worked>0?'var(--gold)':'var(--slate)';
   const pending=getPending().length;
+  const sent=getSent().length;
 
   const timerHTML=activeTimer?`
     <div class="live-card">
@@ -232,29 +257,75 @@ function dagHTML(){
       <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
 
-  const listHTML=entries.length?entries.map((e,i)=>`
-    <div class="entry">
-      <div class="entry-time-col">
-        <div class="entry-time">${e.start}</div>
-        <div class="entry-time">${e.stop}</div>
+  const listHTML=entries.length?entries.map((e,i)=>{
+    const isEditing=editingIdx===i;
+    const editPanel=isEditing?`
+      <div class="edit-panel">
+        <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
+        <div style="margin-bottom:8px">
+          <label class="field-label">ON / Projekt</label>
+          <input type="text" class="edit-input" id="editOn" value="${e.on}">
+        </div>
+        <div class="edit-row">
+          <div>
+            <label class="field-label">Start</label>
+            <input type="time" class="edit-input" id="editStart" value="${e.start}">
+          </div>
+          <div>
+            <label class="field-label">Stop</label>
+            <input type="time" class="edit-input" id="editStop" value="${e.stop}">
+          </div>
+        </div>
+        <div class="edit-btns">
+          <button class="btn-cancel-edit" onclick="cancelEdit()">Annuller</button>
+          <button class="btn-save-edit" onclick="saveEdit('${dk}',${i})">Gem ✓</button>
+        </div>
+      </div>`:''  ;
+    return`<div class="entry" id="entry-${i}">
+      <div class="entry-main-row">
+        <div class="entry-time-col">
+          <div class="entry-time">${e.start}</div>
+          <div class="entry-time">${e.stop}</div>
+        </div>
+        <div class="entry-divider"></div>
+        <div class="entry-body">
+          <div class="entry-on">${e.on}</div>
+          ${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}
+        </div>
+        <div class="entry-dur">${fmtH(e.hours)}</div>
       </div>
-      <div class="entry-divider"></div>
-      <div class="entry-body">
-        <div class="entry-on">${e.on}</div>
-        ${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}
+      <div class="entry-actions">
+        <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
+        <div class="entry-btn-sep"></div>
+        <button class="entry-btn del" onclick="doDelEntry('${dk}',${i})">✕ Slet</button>
       </div>
-      <div class="entry-dur">${fmtH(e.hours)}</div>
-      <button class="entry-del" onclick="doDelEntry('${dk}',${i})">✕</button>
-    </div>`).join('')
+      ${editPanel}
+    </div>`;}).join('')
     :`<div class="empty">Ingen timer registreret endnu.<br>Gå til <b>Tilføj</b> for at starte.</div>`;
 
-  const syncHTML=pending>0?`
-    <div class="sync-status sync-wait">⏳&nbsp; ${pending} rækker klar til Excel</div>
-    <button class="btn-sync" style="margin-top:10px" onclick="doSync()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-      Send til Excel nu
-    </button>`
-    :`<div class="sync-status sync-ok">✓&nbsp; Alt synkroniseret med Excel</div>`;
+  // Sync status
+  let syncHTML='';
+  if(pending>0){
+    syncHTML=`
+      <div class="sync-status sync-wait">⏳&nbsp; ${pending} rækker klar til sync</div>
+      <button class="btn-sync" style="margin-top:10px" onclick="doSync()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        Send til Excel nu
+      </button>`;
+  } else if(sent>0){
+    syncHTML=`
+      <div class="sync-status sync-sent">📤&nbsp; Sendt — venter på Excel bekræftelse</div>
+      <div class="sync-steps">
+        <div class="sync-step"><div class="sync-step-dot dot-done"></div>Fil sendt til OneDrive</div>
+        <div class="sync-step"><div class="sync-step-dot dot-wait"></div>Python skriver i Excel...</div>
+        <div class="sync-step"><div class="sync-step-dot dot-idle"></div>Bekræftelse afventes</div>
+      </div>
+      <div style="font-size:11px;color:var(--slate);margin-top:8px">
+        Flyt <b>timer_sync.json</b> fra Downloads til <b>OneDrive → Timer → App</b>
+      </div>`;
+  } else {
+    syncHTML=`<div class="sync-status sync-ok">✓&nbsp; Alt synkroniseret med Excel</div>`;
+  }
 
   return`${timerHTML}
   <div class="card">
@@ -286,7 +357,34 @@ function dagHTML(){
   </div>`;
 }
 
-function doDelEntry(dk,i){delEntry(dk,i);render();toast('Slettet','err')}
+// ── EDIT ──────────────────────────────────────────────────────────────
+function startEdit(i){ editingIdx=i; render(); }
+function cancelEdit(){ editingIdx=-1; render(); }
+
+function saveEdit(dk, i){
+  const on    = document.getElementById('editOn').value.trim();
+  const start = document.getElementById('editStart').value;
+  const stop  = document.getElementById('editStop').value;
+  if(!on||!start||!stop){toast('Udfyld alle felter','err');return}
+  const sh=hmToH(start), eh=hmToH(stop);
+  if(eh<=sh){toast('Stop skal være efter start','err');return}
+  const arr=getEntries(dk);
+  arr[i]={...arr[i], on, start, stop, hours:eh-sh};
+  saveEntries(dk,arr);
+  // Også opdater i pending hvis den er der
+  const pending=getPending();
+  const pi=pending.findIndex(p=>p.date===dk&&p.start===arr[i].start);
+  if(pi>=0){pending[pi]={...arr[i],date:dk};ss('sync_pending',pending);}
+  else { addPending({...arr[i],date:dk}); }
+  editingIdx=-1;
+  toast('✓ Rettet','ok');
+  render();
+}
+
+function doDelEntry(dk,i){
+  const arr=getEntries(dk); arr.splice(i,1); saveEntries(dk,arr);
+  editingIdx=-1; render(); toast('Slettet','err');
+}
 function toggleDayType(dk){setDayType(dk,getDayType(dk).includes('Kontor')?'Hjemme 🏠':'Kontor 🏢');render()}
 
 function startDisp(){
@@ -302,34 +400,23 @@ function startDisp(){
 // ── TILFOEJ ───────────────────────────────────────────────────────────
 function tilfoejHTML(){
   const now=nowHM();
-
-  // Kategori-knapper
   const catBtns=CATS.map(c=>`
-    <button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">
-      ${c.icon} ${c.label}
-    </button>`).join('');
-
-  // ON hurtigvalg chips
+    <button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
   const chips=QUICK_ON.map(o=>`
     <button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
-
   return`
   <div class="card">
     <div class="section-label">Kategori</div>
     <div class="cat-grid">${catBtns}</div>
   </div>
-
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
     <div style="margin-top:10px">
       <label class="field-label">Eller skriv selv</label>
-      <input type="text" id="onInput" placeholder="fx 3052" value="${customOn}"
-        oninput="customOn=this.value;selOn=''"
-        style="margin-top:0">
+      <input type="text" id="onInput" placeholder="fx 3052" value="${customOn}" oninput="customOn=this.value;selOn=''">
     </div>
   </div>
-
   <div class="card">
     <div class="section-label">▶ Start timer</div>
     <div class="form-col">
@@ -338,7 +425,6 @@ function tilfoejHTML(){
         :`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
     </div>
   </div>
-
   <div class="card">
     <div class="section-label">Tilføj manuelt</div>
     <div class="form-col">
@@ -359,63 +445,39 @@ function tilfoejHTML(){
   </div>`;
 }
 
-function pickCat(cat){
-  selCat=cat;
-  // Sæt ON til samme som kategori hvis intet ON er valgt
-  if(!selOn&&!customOn) selOn=cat;
-  render(); tab('tilfoej');
-}
-
-function pickOn(on){
-  selOn=on; customOn='';
-  render(); tab('tilfoej');
-}
-
-function setNow(id){document.getElementById(id).value=nowHM()}
-
-function getLabel(){
-  const on=customOn||selOn||selCat||'?';
-  const cat=selCat;
-  return cat&&cat!==on?`${on} / ${cat}`:on;
-}
+function pickCat(cat){ selCat=cat; if(!selOn&&!customOn)selOn=cat; render(); tab('tilfoej'); }
+function pickOn(on){ selOn=on; customOn=''; render(); tab('tilfoej'); }
+function setNow(id){ document.getElementById(id).value=nowHM(); }
+function getLabel(){ const on=customOn||selOn||selCat||'?'; return (selCat&&selCat!==on)?`${on} / ${selCat}`:on; }
 
 function startTimer(){
   if(!selCat&&!selOn&&!customOn){toast('Vælg kategori eller ON-nummer','err');return}
-  const on=customOn||selOn||selCat;
-  const cat=selCat;
-  const label=getLabel();
+  const on=customOn||selOn||selCat, cat=selCat, label=getLabel();
   activeTimer={on,cat,label,t0:Date.now(),startHM:nowHM()};
   ss('activeTimer',activeTimer);
-  toast(`▶ ${label} startet`,'ok');
-  tab('dag');
+  toast(`▶ ${label} startet`,'ok'); tab('dag');
 }
-
 function stopTimer(){
   if(!activeTimer)return;
   clearInterval(timerIv);
-  const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
+  const stop=nowHM(), hours=(Date.now()-activeTimer.t0)/3600000;
   const dk=dateKey(new Date());
   const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
   addEntry(dk,entry); addPending(entry);
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   toast('✓ Gemt','ok'); tab('dag');
 }
-
 function saveManual(){
   if(!selCat&&!selOn&&!customOn){toast('Vælg kategori eller ON-nummer','err');return}
-  const start=document.getElementById('mStart').value;
-  const stop=document.getElementById('mStop').value;
+  const start=document.getElementById('mStart').value, stop=document.getElementById('mStop').value;
   if(!start||!stop){toast('Udfyld start og stop','err');return}
-  const sh=hmToH(start),eh=hmToH(stop);
+  const sh=hmToH(start), eh=hmToH(stop);
   if(eh<=sh){toast('Stop skal være efter start','err');return}
-  const on=customOn||selOn||selCat;
-  const cat=selCat;
+  const on=customOn||selOn||selCat, cat=selCat;
   const dk=dateKey(new Date());
   const entry={on,cat,start,stop,hours:eh-sh,date:dk};
   addEntry(dk,entry); addPending(entry);
-  savePulse();
-  toast(`✓ ${getLabel()}  ${start}–${stop}`,'ok');
-  tab('dag');
+  savePulse(); toast(`✓ ${getLabel()}  ${start}–${stop}`,'ok'); tab('dag');
 }
 
 // ── SYNC ─────────────────────────────────────────────────────────────
@@ -426,16 +488,37 @@ async function doSync(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='timer_sync.json'; a.click();
   URL.revokeObjectURL(url);
+  // Flyt til "sent" — bliver ikke slettet før bekræftelse
+  setSent([...getSent(), ...pending]);
   clearPending();
-  toast(`✓ ${pending.length} rækker — flyt filen til Timer\\App`,'ok');
+  toast('📥 Fil downloadet — upload til OneDrive → Timer → App','ok');
   setTimeout(()=>render(),600);
+}
+
+function checkSyncDone(){
+  // Vi kan ikke direkte læse en fil fra OneDrive,
+  // men vi kan tjekke om der er gået nok tid (5 min = bekræftet)
+  const sent=getSent();
+  if(!sent.length) return;
+  const oldest=sent[0];
+  if(oldest && Date.now()-new Date(oldest.date+'T'+oldest.start).getTime() > 5*60*1000){
+    // Marker som done efter 5 min
+    clearSent();
+    if(currentTab==='dag') render();
+  }
+}
+
+// Manual bekræft knap
+function confirmSync(){
+  clearSent(); clearPending();
+  toast('✓ Bekræftet — Excel opdateret','ok');
+  render();
 }
 
 // ── UGE ──────────────────────────────────────────────────────────────
 function ugeHTML(){
   const now=new Date(),mon=monday(now),ti=todayIdx();
   let totalH=0,officeDays=0,homeDays=0;
-
   const daysHTML=DAY_S.map((name,i)=>{
     const d=new Date(mon); d.setDate(mon.getDate()+i);
     const dk=dateKey(d);
@@ -462,10 +545,8 @@ function ugeHTML(){
       <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}</div>
     </div>`;
   }).join('');
-
   const wDiff=totalH-WORK_H*5;
   const exportHTML=buildExport(mon);
-
   return`
   <div class="card">
     <div class="section-label">Uge ${weekNum(now)} · oversigt</div>
@@ -498,25 +579,27 @@ function buildExport(mon){
   <div class="card">
     <div class="section-label">Promak-oversigt</div>
     <div class="export-card">${rows}</div>
-    <button class="btn btn-ghost" style="margin-top:10px" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">Kopiér til Promak</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">Kopiér</button>
+      <button class="btn btn-gold" style="flex:1" onclick="confirmSync()">✓ Excel OK</button>
+    </div>
+    <div style="font-size:11px;color:var(--slate);margin-top:8px;text-align:center">Tryk "Excel OK" efter Python har skrevet ind</div>
   </div>`;
 }
 
 function copyText(txt){
   navigator.clipboard.writeText(txt).then(()=>toast('Kopieret ✓','ok')).catch(()=>toast('Prøv igen','err'));
 }
-
 function toast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast show'+(type?' '+type:'');
-  clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',3000);
+  clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',3500);
 }
 function savePulse(){
   const b=document.getElementById('saveBar');
   b.style.width='65%';
   setTimeout(()=>{b.style.width='100%';setTimeout(()=>b.style.width='0',350)},350);
 }
-
 init();
 </script>
 </body>
