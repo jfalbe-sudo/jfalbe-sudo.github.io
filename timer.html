@@ -459,6 +459,11 @@ function dagHTML() {
   </div>`;
 }
 
+function toggleDay(id){
+  const el=document.getElementById(id);
+  if(el) el.style.display=el.style.display==='none'?'block':'none';
+}
+
 function savePartial(dk, type, val){
   const partialH = sg('partial_'+dk) || {};
   if(val) partialH[type] = val;
@@ -655,17 +660,30 @@ function ugeHTML(){
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
 
-    return`<div class="week-row ${rowCls}">
-      <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
-      <div class="wr-mid">
-        <div class="wr-bar-row">
-          <span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span>
-          <span>${isSygDay||isBarnSygDay?'—':h>0?fmtH(h):'—'}</span>
+    const entryRows=entries.map(e=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px">
+        <span style="color:var(--slate);font-family:var(--mono);width:76px;flex-shrink:0">${e.start}–${e.stop}</span>
+        <span style="flex:1;font-weight:600">${e.on}</span>
+        <span style="color:var(--gold);font-family:var(--mono);font-weight:700">${fmtH(e.hours)}</span>
+      </div>`).join('');
+
+    return`<div class="week-row ${rowCls}" style="flex-direction:column;align-items:stretch;padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer" onclick="toggleDay('wd-${dk}')">
+        <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
+        <div class="wr-mid">
+          <div class="wr-bar-row">
+            <span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span>
+            <span>${isSygDay||isBarnSygDay?'—':h>0?fmtH(h):'—'}</span>
+          </div>
+          <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
+          ${diffHTML}
         </div>
-        <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
-        ${diffHTML}
+        <div class="wr-right">
+          ${isToday?'<div class="wr-badge">I dag</div>':''}
+          ${entries.length>0?`<div style="font-size:10px;color:var(--slate);margin-top:2px">▼ ${entries.length}</div>`:''}
+        </div>
       </div>
-      <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}</div>
+      ${entries.length>0?`<div id="wd-${dk}" style="display:none;padding:2px 12px 10px;border-top:1px solid rgba(255,255,255,.05)">${entryRows}</div>`:''}
     </div>`;
   }).join('');
 
