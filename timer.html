@@ -183,10 +183,10 @@ select option{background:#081828}
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
-const GH_TOKEN = 'ghp_9O2W6RIstk9IJEMmJuDH1kHKnh9CsI4eLfLJ';
-const GH_REPO  = 'jfalbe-sudo/jfalbe-sudo.github.io';
-const GH_FILE  = 'timer_data.json';
-const GH_API   = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
+const GH_TOKEN   = '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';
+const GIST_ID    = 'cdff9229870dc7f4c74b99cf30acedfd';
+const GIST_FILE  = 'timer_data.json';
+const GIST_API   = `https://api.github.com/gists/${GIST_ID}`;
 
 // ═══════════════════════════════════════════════════════
 //  CONFIG
@@ -214,7 +214,6 @@ const DAY_TYPES=[
 //  STATE
 // ═══════════════════════════════════════════════════════
 let db = { version:3, days:{} }; // master database
-let ghSha = null; // GitHub file SHA for updates
 let activeTimer=null, timerIv=null, currentTab='dag';
 let selCat='', selOn='', customOn='', selSpecial='';
 let editingIdx=-1;
@@ -231,24 +230,20 @@ function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | ''
 async function ghLoad(){
   setSyncStatus('syncing');
   try {
-    const r=await fetch(GH_API,{headers:{'Authorization':`token ${GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
-    if(r.status===404){ setSyncStatus('ok'); return; } // Ingen fil endnu
+    const r=await fetch(GIST_API,{headers:{'Authorization':`token ${GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
-    ghSha=j.sha;
-    const decoded=JSON.parse(atob(j.content.replace(/\n/g,'')));
-    // Merge: GitHub vinder ved konflikt (nyeste data)
+    const fileContent=j.files[GIST_FILE]?.content;
+    if(!fileContent) throw new Error('Ingen data i Gist');
+    const decoded=JSON.parse(fileContent);
     db=decoded;
-    // Gem lokalt som cache
     localStorage.setItem('vct_db', JSON.stringify(db));
-    localStorage.setItem('vct_sha', ghSha);
     setSyncStatus('ok');
   } catch(e){
     console.error('ghLoad',e);
     setSyncStatus('err');
-    // Brug lokalt cache hvis GitHub fejler
     const local=localStorage.getItem('vct_db');
-    if(local) db=JSON.parse(local);
+    if(local) try{ db=JSON.parse(local); }catch{}
   }
 }
 
@@ -256,18 +251,13 @@ async function ghSave(){
   if(!isDirty) return;
   setSyncStatus('syncing');
   try {
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(db,null,2))));
-    const body={message:'Timer update',content};
-    if(ghSha) body.sha=ghSha;
-    const r=await fetch(GH_API,{
-      method:'PUT',
+    const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
+    const r=await fetch(GIST_API,{
+      method:'PATCH',
       headers:{'Authorization':`token ${GH_TOKEN}`,'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
     if(!r.ok){ const t=await r.text(); throw new Error(t); }
-    const j=await r.json();
-    ghSha=j.content.sha;
-    localStorage.setItem('vct_sha', ghSha);
     localStorage.setItem('vct_db', JSON.stringify(db));
     isDirty=false;
     setSyncStatus('ok');
@@ -329,7 +319,7 @@ async function init(){
   // Brug lokalt cache straks mens vi loader fra GitHub
   const local=localStorage.getItem('vct_db');
   if(local) { try{ db=JSON.parse(local); }catch{} }
-  ghSha=localStorage.getItem('vct_sha')||null;
+  // Gist behøver ikke SHA
   const saved=localStorage.getItem('vct_activeTimer');
   if(saved) try{ activeTimer=JSON.parse(saved); }catch{}
   tab('dag');
