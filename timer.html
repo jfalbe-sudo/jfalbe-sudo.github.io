@@ -183,10 +183,10 @@ select option{background:#081828}
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
-const GH_TOKEN   = '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';
 const GIST_ID    = 'cdff9229870dc7f4c74b99cf30acedfd';
 const GIST_FILE  = 'timer_data.json';
 const GIST_API   = `https://api.github.com/gists/${GIST_ID}`;
+function getToken(){ return localStorage.getItem('vct_ghtoken')||''; }
 
 // ═══════════════════════════════════════════════════════
 //  CONFIG
@@ -230,7 +230,7 @@ function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | ''
 async function ghLoad(){
   setSyncStatus('syncing');
   try {
-    const r=await fetch(GIST_API,{headers:{'Authorization':`token ${GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
+    const r=await fetch(GIST_API,{headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'}});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
     const fileContent=j.files[GIST_FILE]?.content;
@@ -254,7 +254,7 @@ async function ghSave(){
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
     const r=await fetch(GIST_API,{
       method:'PATCH',
-      headers:{'Authorization':`token ${GH_TOKEN}`,'Content-Type':'application/json'},
+      headers:{'Authorization':`token ${getToken()}`,'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
     if(!r.ok){ const t=await r.text(); throw new Error(t); }
@@ -323,11 +323,44 @@ async function init(){
   const saved=localStorage.getItem('vct_activeTimer');
   if(saved) try{ activeTimer=JSON.parse(saved); }catch{}
   tab('dag');
+  // Tjek om token er sat
+  if(!getToken()){
+    showTokenSetup();
+    return;
+  }
   // Load fra GitHub i baggrunden
   await ghLoad();
   render(); // Genrender med GitHub data
   // Auto-sync hvert 30 sek (henter andres ændringer)
   setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 30000);
+}
+
+function showTokenSetup(){
+  document.getElementById('main').innerHTML=`
+  <div class="card" style="margin-top:20px">
+    <div class="section-label">Første gangs opsætning</div>
+    <div style="font-size:14px;color:var(--mist);margin-bottom:14px;line-height:1.6">
+      Indtast dit GitHub token for at aktivere sync mellem PC og telefon.
+      Token gemmes kun på denne enhed.
+    </div>
+    <div>
+      <label class="field-label">GitHub Token</label>
+      <input type="password" id="tokenInput" placeholder="ghp_..." style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none">
+    </div>
+    <button class="btn btn-gold" style="margin-top:12px" onclick="saveToken()">Gem token og start →</button>
+    <div style="font-size:11px;color:var(--slate);margin-top:10px">
+      Token gemmes kun lokalt i browseren — ikke i koden.
+    </div>
+  </div>`;
+}
+
+async function saveToken(){
+  const t=document.getElementById('tokenInput').value.trim();
+  if(!t||!t.startsWith('ghp_')){toast('Ugyldigt token','err');return;}
+  localStorage.setItem('vct_ghtoken',t);
+  toast('Token gemt!','ok');
+  await ghLoad();
+  render();
 }
 
 function updateHeader(){
