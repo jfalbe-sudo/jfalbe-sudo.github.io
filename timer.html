@@ -10,129 +10,173 @@
 <style>
 :root {
   --ink:#040F1A;--ink2:#081828;--ink3:#0d2236;--ink4:#122d47;--ink5:#1a3d5c;
-  --gold:#F5AC00;--green:#3DDC97;--red:#FF5C5C;--amber:#FF9F43;
+  --gold:#F5AC00;--green:#3DDC97;--red:#FF5C5C;--amber:#FF9F43;--blue:#4DA6FF;--purple:#B06EFF;
   --slate:#6B8FA8;--mist:#A8C4D8;--snow:#EEF4F8;
   --font:'Segoe UI',system-ui,-apple-system,sans-serif;
   --mono:'SF Mono','Consolas',monospace;--r:16px;--r2:12px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--font);background:var(--ink);color:var(--snow);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
-.app-header{padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50;background:var(--ink);display:flex;align-items:center;justify-content:space-between}
+.app-header{padding:14px 18px 10px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50;background:var(--ink);display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
-.date-line{font-size:14px;color:var(--mist);margin-top:2px;font-weight:500}
-.week-chip{background:var(--ink4);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--gold)}
-nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:57px;z-index:49}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
-.nav-btn svg{width:18px;height:18px}
+.date-line{font-size:13px;color:var(--mist);margin-top:2px;font-weight:500}
+.week-chip{background:var(--ink4);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--gold)}
+nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:53px;z-index:49}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
+.nav-btn svg{width:17px;height:17px}
 .nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
-main{flex:1;overflow-y:auto;padding:14px 14px 40px;display:flex;flex-direction:column;gap:12px}
-.card{background:var(--ink2);border-radius:var(--r);padding:16px}
-.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:11px}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.stat-box{background:var(--ink3);border-radius:var(--r2);padding:13px 10px;text-align:center}
-.stat-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
-.stat-num.good{color:var(--green)}.stat-num.bad{color:var(--red)}.stat-num.amber{color:var(--amber)}.stat-num.white{color:var(--snow)}
-.stat-lbl{font-size:10px;color:var(--slate);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
-.prog-wrap{margin-top:13px}
-.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:5px}
-.prog-bg{background:rgba(255,255,255,.06);border-radius:99px;height:7px;overflow:hidden}
+main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--ink2);border-radius:var(--r);padding:14px}
+.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:10px}
+
+/* STAT */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.stat-box{background:var(--ink3);border-radius:var(--r2);padding:11px 8px;text-align:center}
+.stat-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.good{color:var(--green)}.bad{color:var(--red)}.amber{color:var(--amber)}.white{color:var(--snow)}.blue{color:var(--blue)}.purple{color:var(--purple)}
+
+/* PROG */
+.prog-wrap{margin-top:11px}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:4px}
+.prog-bg{background:rgba(255,255,255,.06);border-radius:99px;height:6px;overflow:hidden}
 .prog-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.live-card{background:linear-gradient(140deg,var(--ink3) 0%,var(--ink4) 100%);border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:16px}
-.live-label{font-size:12px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:7px}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.4s ease-in-out infinite}
+
+/* LIVE */
+.live-card{background:linear-gradient(140deg,var(--ink3),var(--ink4));border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:14px}
+.live-label{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
-.live-project{font-size:17px;font-weight:700;margin-top:6px}
-.live-sub{font-size:12px;color:var(--slate);margin-top:2px}
-.live-time{font-size:44px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:12px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.live-project{font-size:16px;font-weight:700;margin-top:5px}
+.live-sub{font-size:11px;color:var(--slate);margin-top:1px}
+.live-time{font-size:40px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:10px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 
 /* ENTRIES */
-.entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;overflow:hidden}
-.entry-main-row{display:flex;align-items:center;gap:11px;padding:11px 13px}
-.entry-time-col{text-align:right;flex-shrink:0}
-.entry-time{font-size:11px;color:var(--slate);font-family:var(--mono);line-height:1.8}
-.entry-divider{width:1px;height:28px;background:rgba(255,255,255,.08);flex-shrink:0}
+.entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;overflow:hidden}
+.entry-main-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.entry-time-col{text-align:right;flex-shrink:0;min-width:34px}
+.entry-time{font-size:11px;color:var(--slate);font-family:var(--mono);line-height:1.7}
+.entry-divider{width:1px;height:26px;background:rgba(255,255,255,.08);flex-shrink:0}
 .entry-body{flex:1;min-width:0}
-.entry-on{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-on{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .entry-cat{font-size:11px;color:var(--slate);margin-top:1px}
-.entry-dur{font-size:14px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
-.entry-actions{display:flex;border-top:1px solid rgba(255,255,255,.06)}
-.entry-btn{flex:1;background:none;border:none;color:var(--slate);font-size:12px;font-weight:700;padding:9px;cursor:pointer;font-family:var(--font);transition:color .15s,background .15s}
-.entry-btn:active{background:rgba(255,255,255,.05)}
+.entry-dur{font-size:13px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
+.entry-actions{display:flex;border-top:1px solid rgba(255,255,255,.05)}
+.entry-btn{flex:1;background:none;border:none;color:var(--slate);font-size:11px;font-weight:700;padding:8px;cursor:pointer;font-family:var(--font)}
 .entry-btn.edit{color:var(--gold)}
 .entry-btn.del{color:var(--red)}
-.entry-btn-sep{width:1px;background:rgba(255,255,255,.06)}
+.entry-btn-sep{width:1px;background:rgba(255,255,255,.05)}
 
-/* EDIT PANEL */
-.edit-panel{background:var(--ink4);padding:12px 13px;border-top:1px solid rgba(245,172,0,.2)}
-.edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.edit-input{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:10px 12px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none}
+/* EDIT */
+.edit-panel{background:var(--ink4);padding:11px 12px;border-top:1px solid rgba(245,172,0,.2)}
+.edit-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
+.edit-input{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:10px 11px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none}
 .edit-input:focus{border-color:var(--gold)}
-.edit-btns{display:flex;gap:8px;margin-top:8px}
-.btn-save-edit{flex:1;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
-.btn-cancel-edit{flex:1;background:var(--ink3);color:var(--slate);border:none;border-radius:50px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.edit-btns{display:flex;gap:7px}
+.btn-save-edit{flex:1;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.btn-cancel-edit{flex:1;background:var(--ink3);color:var(--slate);border:none;border-radius:50px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
 
-.empty{text-align:center;color:var(--slate);padding:28px 16px;font-size:14px;line-height:1.7}
-.btn{display:block;width:100%;border:none;border-radius:50px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font);transition:transform .1s,opacity .15s}
+/* SPECIAL DAY */
+.special-day{border-radius:var(--r2);padding:11px 13px;display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.special-syg{background:rgba(255,92,92,.12);border:1px solid rgba(255,92,92,.3)}
+.special-barnsyg{background:rgba(77,166,255,.12);border:1px solid rgba(77,166,255,.3)}
+.special-p56{background:rgba(176,110,255,.12);border:1px solid rgba(176,110,255,.3)}
+.special-fri{background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.3)}
+
+.empty{text-align:center;color:var(--slate);padding:24px 16px;font-size:14px;line-height:1.7}
+
+/* BTNS */
+.btn{display:block;width:100%;border:none;border-radius:50px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);transition:transform .1s,opacity .15s}
 .btn:active{transform:scale(.97);opacity:.9}
 .btn-gold{background:var(--gold);color:var(--ink)}
 .btn-green{background:var(--green);color:var(--ink)}
 .btn-red{background:var(--red);color:#fff}
 .btn-ghost{background:var(--ink4);color:var(--snow)}
-.btn-sync{background:linear-gradient(135deg,#1a3d5c,#122d47);color:var(--gold);border:1.5px solid rgba(245,172,0,.4);border-radius:50px;padding:15px;font-size:16px;font-weight:800;width:100%;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s}
-.btn-sync:active{transform:scale(.97)}
-.btn-sm{padding:9px 16px;font-size:13px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
-.btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:6px;width:100%}
-.form-col{display:flex;flex-direction:column;gap:11px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
-select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
+.btn-sm{padding:8px 14px;font-size:12px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
+.btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:5px;width:100%}
+
+/* FORM */
+.form-col{display:flex;flex-direction:column;gap:10px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
+select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
 select:focus,input:focus{border-color:var(--gold)}
 select option{background:#081828}
-.on-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow);transition:background .15s,border-color .15s}
+
+/* CHIPS */
+.on-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow)}
 .on-chip.sel{background:rgba(245,172,0,.2);border-color:var(--gold);color:var(--gold)}
-.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
-.cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:11px 10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow);transition:background .15s,border-color .15s}
+
+/* CAT GRID */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+.cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow)}
 .cat-btn.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
-.week-row{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;border:1.5px solid transparent}
+
+/* SPECIAL BTN GRID */
+.special-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+.special-btn{border:1.5px solid;border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;background:transparent;font-family:var(--font)}
+.special-btn.syg{border-color:rgba(255,92,92,.4);color:var(--red)}
+.special-btn.barnsyg{border-color:rgba(77,166,255,.4);color:var(--blue)}
+.special-btn.sel{opacity:1}
+.special-btn.syg.sel{background:rgba(255,92,92,.15)}
+.special-btn.barnsyg.sel{background:rgba(77,166,255,.15)}
+
+/* WEEK */
+.week-row{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;border:1.5px solid transparent}
 .week-row.today{border-color:rgba(245,172,0,.3)}
-.wr-day{width:38px;flex-shrink:0}
+.week-row.syg-day{border-color:rgba(255,92,92,.3);background:rgba(255,92,92,.05)}
+.week-row.barnsyg-day{border-color:rgba(77,166,255,.3);background:rgba(77,166,255,.05)}
+.wr-day{width:36px;flex-shrink:0}
 .wr-name{font-size:13px;font-weight:700}
 .wr-date{font-size:10px;color:var(--slate);margin-top:1px}
 .wr-mid{flex:1;min-width:0}
-.wr-bar-row{display:flex;justify-content:space-between;font-size:10px;color:var(--slate);margin-bottom:4px}
-.wr-bar-bg{background:rgba(255,255,255,.06);border-radius:99px;height:6px;overflow:hidden}
+.wr-bar-row{display:flex;justify-content:space-between;font-size:10px;color:var(--slate);margin-bottom:3px}
+.wr-bar-bg{background:rgba(255,255,255,.06);border-radius:99px;height:5px;overflow:hidden}
 .wr-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
-.wr-diff{font-size:10px;margin-top:4px;font-weight:700;font-family:var(--mono)}
+.wr-diff{font-size:10px;margin-top:3px;font-weight:700;font-family:var(--mono)}
 .wr-right{text-align:right;flex-shrink:0}
-.wr-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;background:var(--gold);color:var(--ink);display:inline-block}
-.week-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
-.ws{background:var(--ink3);border-radius:var(--r2);padding:14px}
-.ws-val{font-size:22px;font-weight:900;font-family:var(--mono)}
+.wr-badge{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:700;background:var(--gold);color:var(--ink);display:inline-block}
+
+.week-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:11px}
+.ws{background:var(--ink3);border-radius:var(--r2);padding:12px}
+.ws-val{font-size:20px;font-weight:900;font-family:var(--mono)}
 .ws-lbl{font-size:10px;color:var(--slate);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
 
-/* SYNC */
-.sync-status{border-radius:var(--r2);padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
-.sync-ok{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.25);color:var(--green)}
-.sync-wait{background:rgba(245,172,0,.1);border:1px solid rgba(245,172,0,.25);color:var(--gold)}
-.sync-sent{background:rgba(168,196,216,.1);border:1px solid rgba(168,196,216,.2);color:var(--mist)}
-.sync-steps{margin-top:10px;font-size:12px;color:var(--slate);line-height:2}
-.sync-step{display:flex;align-items:center;gap:8px;padding:4px 0}
-.sync-step-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.dot-done{background:var(--green)}
-.dot-wait{background:var(--amber)}
-.dot-idle{background:rgba(255,255,255,.15)}
+/* RAPPORT */
+.report-section{margin-bottom:16px}
+.report-week{background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;overflow:hidden}
+.report-week-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;cursor:pointer}
+.report-week-title{font-size:13px;font-weight:700}
+.report-week-meta{font-size:11px;color:var(--slate)}
+.report-week-hours{font-size:14px;font-weight:800;color:var(--gold);font-family:var(--mono)}
+.report-week-body{padding:0 13px 11px;display:none}
+.report-week-body.open{display:block}
+.report-entry{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.report-entry:last-child{border-bottom:none}
+.report-year-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px}
+.rys{background:var(--ink3);border-radius:var(--r2);padding:12px;text-align:center}
+.rys-val{font-size:20px;font-weight:900}
+.rys-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
 
-.export-card{background:var(--ink3);border-radius:var(--r2);padding:14px;border:1px solid rgba(245,172,0,.15)}
-.export-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
-.export-row:last-child{border-bottom:none}
-.export-on{font-weight:600}
-.export-time{color:var(--gold);font-family:var(--mono);font-size:13px;font-weight:700}
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:12px 22px;font-size:14px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+/* SYNC */
+.sync-ok{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.25);color:var(--green);border-radius:var(--r2);padding:10px 13px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
 .toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
 .save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
+
+/* DAY TYPE ROW */
+.daytype-row{display:flex;gap:6px;flex-wrap:wrap}
+.daytype-btn{border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;font-family:var(--font);color:var(--slate);transition:all .15s}
+.daytype-btn.sel-kontor{background:rgba(61,220,151,.15);border-color:var(--green);color:var(--green)}
+.daytype-btn.sel-hjemme{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
+.daytype-btn.sel-syg{background:rgba(255,92,92,.15);border-color:var(--red);color:var(--red)}
+.daytype-btn.sel-barnsyg{background:rgba(77,166,255,.15);border-color:var(--blue);color:var(--blue)}
+.daytype-btn.sel-p56{background:rgba(176,110,255,.15);border-color:var(--purple);color:var(--purple)}
 </style>
 </head>
 <body>
@@ -154,99 +198,191 @@ select option{background:#081828}
   <button class="nav-btn" onclick="tab('uge')" id="tab-uge">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Uge
   </button>
+  <button class="nav-btn" onclick="tab('rapport')" id="tab-rapport">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Rapport
+  </button>
 </nav>
 <main id="main"></main>
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────
-const WORK_H  = 7.5;
+// ═══════════════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+// Arbejdstimer: man-tor = 7.5, fre = 6.5
+const DAY_TARGET = [7.5, 7.5, 7.5, 7.5, 6.5, 0, 0]; // 0=man
+
 const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const MONTHS_L= ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+
 const QUICK_ON= ['Beta M','My M','2613','2965','2973','3179','3200','3201'];
 const CATS    = [
   {label:'Admin',icon:'📋'},{label:'Beta M',icon:'🔧'},
   {label:'My M',icon:'🔩'},{label:'Møde',icon:'💬'},
-  {label:'Kørsel',icon:'🚗'},{label:'Frokost',icon:'🥪'},
-  {label:'Service',icon:'⚙️'},{label:'Andet',icon:'📌'},
+  {label:'Kørsel',icon:'🚗'},{label:'Service',icon:'⚙️'},
+  {label:'Andet',icon:'📌'},
 ];
 
-// ── STORAGE ───────────────────────────────────────────────────────────
+// Dag-typer
+const DAY_TYPES = [
+  {id:'kontor',  label:'🏢 Kontor',     cls:'sel-kontor'},
+  {id:'hjemme',  label:'🏠 Hjemme',     cls:'sel-hjemme'},
+  {id:'syg',     label:'🤒 Syg',        cls:'sel-syg'},
+  {id:'barnsyg', label:'👶 Barn syg',   cls:'sel-barnsyg'},
+  {id:'p56',     label:'§56',           cls:'sel-p56'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STORAGE — localStorage med JSON backup til OneDrive
+// ═══════════════════════════════════════════════════════════════════════
 const sg = k => { try{return JSON.parse(localStorage.getItem('vct_'+k))}catch{return null} };
-const ss = (k,v) => localStorage.setItem('vct_'+k, JSON.stringify(v));
-const getEntries  = dk => sg('e_'+dk) || [];
-const saveEntries = (dk,a) => ss('e_'+dk, a);
-const addEntry    = (dk,e) => { const a=getEntries(dk); a.push(e); saveEntries(dk,a); };
-const getDayType  = dk => sg('wh_'+dk) || 'Kontor 🏢';
-const setDayType  = (dk,t) => ss('wh_'+dk, t);
+const ss = (k,v) => { localStorage.setItem('vct_'+k, JSON.stringify(v)); scheduleBackup(); };
 
-// Pending: liste af entries der IKKE er sendt endnu
-const getPending   = () => sg('sync_pending') || [];
-const addPending   = e  => { const a=getPending(); a.push(e); ss('sync_pending',a); };
-const clearPending = () => localStorage.removeItem('vct_sync_pending');
+function getEntries(dk)     { return sg('e_'+dk) || []; }
+function saveEntries(dk,arr){ ss('e_'+dk, arr); }
+function addEntry(dk,e)     { const a=getEntries(dk); a.push(e); saveEntries(dk,a); }
+function getDayType(dk)     { return sg('wh_'+dk) || 'kontor'; }
+function setDayType(dk,t)   { ss('wh_'+dk, t); }
 
-// Sent: entries der er sendt men ikke bekræftet af Python endnu
-const getSent   = () => sg('sync_sent') || [];
-const setSent   = a  => ss('sync_sent', a);
-const clearSent = () => localStorage.removeItem('vct_sync_sent');
+// Alle data til backup
+function getAllData() {
+  const data = { version:2, exported: new Date().toISOString(), days:{} };
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('vct_e_')) {
+      const dk = k.replace('vct_e_','');
+      data.days[dk] = { entries: JSON.parse(localStorage.getItem(k)||'[]'), type: sg('wh_'+dk)||'kontor' };
+    }
+  }
+  return data;
+}
 
-// ── DATE ──────────────────────────────────────────────────────────────
+// Backup timer
+let backupTimer = null;
+function scheduleBackup() {
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(autoBackup, 30000); // 30 sek efter sidst ændring
+}
+function autoBackup() {
+  ss('last_backup', new Date().toISOString());
+  // Gem backup i localStorage som ekstra sikkerhed
+  localStorage.setItem('vct_backup_'+new Date().toISOString().slice(0,10), JSON.stringify(getAllData()));
+  // Ryd gamle backups (behold de 30 seneste)
+  const bkeys = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('vct_backup_')) bkeys.push(k);
+  }
+  bkeys.sort().slice(0,-30).forEach(k=>localStorage.removeItem(k));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DATE HELPERS
+// ═══════════════════════════════════════════════════════════════════════
 const fmtH = h => { if(!h||h<0)h=0; const t=Math.round(h*60); return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`; };
-const nowHM= () => { const d=new Date(); return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-const dateKey= d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const weekNum= d => { const c=new Date(d); c.setHours(0,0,0,0); c.setDate(c.getDate()+4-(c.getDay()||7)); return Math.ceil((((c-new Date(c.getFullYear(),0,1))/86400000)+1)/7); };
+const nowHM = () => { const d=new Date(); return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const dateKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const weekNum = d => { const c=new Date(d); c.setHours(0,0,0,0); c.setDate(c.getDate()+4-(c.getDay()||7)); return Math.ceil((((c-new Date(c.getFullYear(),0,1))/86400000)+1)/7); };
 const monday = d => { const c=new Date(d); const day=c.getDay()||7; c.setDate(c.getDate()-day+1); c.setHours(0,0,0,0); return c; };
-const todayIdx=()=>(new Date().getDay()+6)%7;
-const hmToH  = hm => { if(!hm)return 0; const[h,m]=hm.split(':').map(Number); return h+m/60; };
+const todayIdx = () => (new Date().getDay()+6)%7;
+const hmToH = hm => { if(!hm)return 0; const[h,m]=hm.split(':').map(Number); return h+m/60; };
+const dayTarget = idx => DAY_TARGET[idx] || 0; // timer for ugedag
 
-// ── STATE ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════
 let activeTimer=null, timerIv=null, currentTab='dag';
 let selCat='', selOn='', customOn='';
-let editingIdx = -1; // hvilken entry redigeres
+let editingIdx=-1;
+// Syg/barnsyg på time-basis
+let selSpecial=''; // 'syg' eller 'barnsyg' (tom = normal)
 
-// ── INIT ──────────────────────────────────────────────────────────────
-function init(){
+// ═══════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════
+function init() {
   updateHeader();
   const saved=sg('activeTimer'); if(saved) activeTimer=saved;
   tab('dag');
-  // Check for done-fil hvert 15. sek (kun relevant når vi kan polle)
-  setInterval(checkSyncDone, 15000);
+  scheduleBackup();
 }
-function updateHeader(){
+function updateHeader() {
   const d=new Date();
   document.getElementById('hdrDate').textContent=`${WDAYS[d.getDay()]} ${d.getDate()}. ${MONTHS_S[d.getMonth()]}`;
   document.getElementById('hdrWeek').textContent=`Uge ${weekNum(d)}`;
 }
 
-// ── ROUTING ───────────────────────────────────────────────────────────
-function tab(name){
+// ═══════════════════════════════════════════════════════════════════════
+//  ROUTING
+// ═══════════════════════════════════════════════════════════════════════
+function tab(name) {
   currentTab=name; editingIdx=-1;
-  ['dag','tilfoej','uge'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
+  ['dag','tilfoej','uge','rapport'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
-function render(){
+function render() {
   const m=document.getElementById('main');
-  if(currentTab==='dag') m.innerHTML=dagHTML();
+  if(currentTab==='dag')         m.innerHTML=dagHTML();
   else if(currentTab==='tilfoej') m.innerHTML=tilfoejHTML();
-  else m.innerHTML=ugeHTML();
+  else if(currentTab==='uge')     m.innerHTML=ugeHTML();
+  else                            m.innerHTML=rapportHTML();
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
-// ── DAG ───────────────────────────────────────────────────────────────
-function dagHTML(){
-  const today=new Date(), dk=dateKey(today);
+// ═══════════════════════════════════════════════════════════════════════
+//  DAG TAB
+// ═══════════════════════════════════════════════════════════════════════
+function dagHTML() {
+  const today=new Date(), dk=dateKey(today), di=todayIdx();
   const entries=getEntries(dk);
   const dayType=getDayType(dk);
+  const target=dayTarget(di);
+  const isSyg=dayType==='syg'||dayType==='p56', isBarnSyg=dayType==='barnsyg';
+
+  // Timer arbejdet (kun normale entries, ikke syg/barnsyg hele dag)
   const worked=entries.reduce((s,e)=>s+e.hours,0);
-  const diff=worked-WORK_H;
-  const pct=Math.min(100,(worked/WORK_H)*100);
-  const sc=diff>0.05?'good':diff<-0.05?'bad':'amber';
-  const sl=diff>0.05?'Overarb.':diff<-0.05?'Mangler':'Næsten';
+  const diff=worked-target;
+  const pct=target>0?Math.min(100,(worked/target)*100):0;
+  const sc=isSyg||isBarnSyg?'blue':diff>0.05?'good':diff<-0.05?'bad':'amber';
+  const sl=isSyg?'Sygedag':isBarnSyg?'Barn syg':diff>0.05?'Overarb.':diff<-0.05?'Mangler':'Næsten';
   const ss2=diff>0.05?'+':diff<-0.05?'-':'';
   const barClr=diff>0.05?'var(--green)':worked>0?'var(--gold)':'var(--slate)';
-  const pending=getPending().length;
-  const sent=getSent().length;
+
+  // Dag-type knapper
+  const dtBtns=DAY_TYPES.map(dt=>`
+    <button class="daytype-btn ${dayType===dt.id?dt.cls:''}" onclick="setDT('${dk}','${dt.id}')">${dt.label}</button>`).join('');
+
+  const isP56 = dayType==='p56';
+  // Hent gemte delvise timer
+  const partialH = sg('partial_'+dk) || {};
+
+  // Syg/Barn-syg/P56 hel-dag banner
+  let specialBanner='';
+  if(isSyg||isBarnSyg||isP56){
+    const icon=isSyg?'🤒':isP56?'§':'👶';
+    const title=isSyg?'Sygedag':isP56?'Paragraf 56':'Barn syg';
+    const clsName=isSyg?'special-syg':isP56?'special-p56':'special-barnsyg';
+    const ph=partialH[dayType]||'';
+    specialBanner=`<div class="card">
+      <div class="section-label">${icon} ${title}</div>
+      <div class="${clsName} special-day" style="margin-bottom:10px">
+        <div style="flex:1">
+          <div style="font-weight:700;margin-bottom:4px">Antal timer (valgfrit)</div>
+          <div style="font-size:11px;color:var(--slate)">Skriv antal timer hvis det er en delvis dag. Lad stå tomt for hel dag.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="partialHours" min="0" max="8" step="0.5" 
+          style="flex:1;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px 14px;font-size:16px;font-family:var(--font);outline:none"
+          placeholder="Timer (fx 3.5)" value="${ph}"
+          oninput="savePartial('${dk}','${dayType}',this.value)">
+        <div style="font-size:13px;color:var(--slate);flex-shrink:0">timer</div>
+      </div>
+      ${ph?`<div style="margin-top:8px;font-size:13px;color:var(--gold);font-weight:700">${title}: ${ph} timer registreret</div>`:'<div style="margin-top:8px;font-size:11px;color:var(--slate)">Hel dag registreret</div>'}
+    </div>`;
+  }
 
   const timerHTML=activeTimer?`
     <div class="live-card">
@@ -259,29 +395,25 @@ function dagHTML(){
 
   const listHTML=entries.length?entries.map((e,i)=>{
     const isEditing=editingIdx===i;
+    const isSygEntry=e.special==='syg'||e.special==='barnsyg';
+    const entryColor=e.special==='syg'?'var(--red)':e.special==='barnsyg'?'var(--blue)':'var(--gold)';
     const editPanel=isEditing?`
       <div class="edit-panel">
         <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
-        <div style="margin-bottom:8px">
+        <div style="margin-bottom:7px">
           <label class="field-label">ON / Projekt</label>
           <input type="text" class="edit-input" id="editOn" value="${e.on}">
         </div>
         <div class="edit-row">
-          <div>
-            <label class="field-label">Start</label>
-            <input type="time" class="edit-input" id="editStart" value="${e.start}">
-          </div>
-          <div>
-            <label class="field-label">Stop</label>
-            <input type="time" class="edit-input" id="editStop" value="${e.stop}">
-          </div>
+          <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${e.start}"></div>
+          <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${e.stop}"></div>
         </div>
         <div class="edit-btns">
           <button class="btn-cancel-edit" onclick="cancelEdit()">Annuller</button>
           <button class="btn-save-edit" onclick="saveEdit('${dk}',${i})">Gem ✓</button>
         </div>
-      </div>`:''  ;
-    return`<div class="entry" id="entry-${i}">
+      </div>`:'';
+    return`<div class="entry">
       <div class="entry-main-row">
         <div class="entry-time-col">
           <div class="entry-time">${e.start}</div>
@@ -289,10 +421,10 @@ function dagHTML(){
         </div>
         <div class="entry-divider"></div>
         <div class="entry-body">
-          <div class="entry-on">${e.on}</div>
+          <div class="entry-on">${e.on}${isSygEntry?` <span style="font-size:10px;color:${entryColor}">(${e.special==='syg'?'Syg':'Barn syg'})</span>`:''}</div>
           ${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}
         </div>
-        <div class="entry-dur">${fmtH(e.hours)}</div>
+        <div class="entry-dur" style="color:${entryColor}">${fmtH(e.hours)}</div>
       </div>
       <div class="entry-actions">
         <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
@@ -303,107 +435,86 @@ function dagHTML(){
     </div>`;}).join('')
     :`<div class="empty">Ingen timer registreret endnu.<br>Gå til <b>Tilføj</b> for at starte.</div>`;
 
-  // Sync status
-  let syncHTML='';
-  if(pending>0){
-    syncHTML=`
-      <div class="sync-status sync-wait">⏳&nbsp; ${pending} rækker klar til sync</div>
-      <button class="btn-sync" style="margin-top:10px" onclick="doSync()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-        Send til Excel nu
-      </button>`;
-  } else if(sent>0){
-    syncHTML=`
-      <div class="sync-status sync-sent">📤&nbsp; Sendt — venter på Excel bekræftelse</div>
-      <div class="sync-steps">
-        <div class="sync-step"><div class="sync-step-dot dot-done"></div>Fil sendt til OneDrive</div>
-        <div class="sync-step"><div class="sync-step-dot dot-wait"></div>Python skriver i Excel...</div>
-        <div class="sync-step"><div class="sync-step-dot dot-idle"></div>Bekræftelse afventes</div>
-      </div>
-      <div style="font-size:11px;color:var(--slate);margin-top:8px">
-        Flyt <b>timer_sync.json</b> fra Downloads til <b>OneDrive → Timer → App</b>
-      </div>`;
-  } else {
-    syncHTML=`<div class="sync-status sync-ok">✓&nbsp; Alt synkroniseret med Excel</div>`;
-  }
-
   return`${timerHTML}
   <div class="card">
     <div class="section-label">Status i dag</div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num white">${fmtH(worked)}</div><div class="stat-lbl">Arbejdet</div></div>
-      <div class="stat-box"><div class="stat-num white">${fmtH(WORK_H)}</div><div class="stat-lbl">Mål</div></div>
-      <div class="stat-box"><div class="stat-num ${sc}">${ss2}${fmtH(Math.abs(diff))}</div><div class="stat-lbl">${sl}</div></div>
+      <div class="stat-box"><div class="stat-num white">${fmtH(target)}</div><div class="stat-lbl">Mål</div></div>
+      <div class="stat-box"><div class="stat-num ${sc}">${isSyg||isBarnSyg?'':ss2}${isSyg||isBarnSyg?sl:fmtH(Math.abs(diff))}</div><div class="stat-lbl">${isSyg||isBarnSyg?'Status':sl}</div></div>
     </div>
-    <div class="prog-wrap">
+    ${target>0?`<div class="prog-wrap">
       <div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div>
       <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div>
-    </div>
+    </div>`:''}
   </div>
-  <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
-    <div>
-      <div class="section-label" style="margin-bottom:2px">Dag-type</div>
-      <div style="font-size:15px;font-weight:700">${dayType}</div>
-    </div>
-    <button class="btn-sm btn-now" onclick="toggleDayType('${dk}')" style="width:auto;padding:8px 16px">Skift</button>
+  <div class="card">
+    <div class="section-label">Dag-type</div>
+    <div class="daytype-row">${dtBtns}</div>
   </div>
+  ${specialBanner}
   <div class="card">
     <div class="section-label">Registreringer</div>
     ${listHTML}
-  </div>
-  <div class="card">
-    <div class="section-label">Excel Sync</div>
-    ${syncHTML}
   </div>`;
 }
 
-// ── EDIT ──────────────────────────────────────────────────────────────
-function startEdit(i){ editingIdx=i; render(); }
-function cancelEdit(){ editingIdx=-1; render(); }
+function savePartial(dk, type, val){
+  const partialH = sg('partial_'+dk) || {};
+  if(val) partialH[type] = val;
+  else delete partialH[type];
+  ss('partial_'+dk, partialH);
+  // Re-render kun partial display uden at resette input
+  const disp = document.querySelector('.partial-display');
+  if(disp) disp.textContent = val ? `${type==='syg'?'Sygedag':type==='barnsyg'?'Barn syg':'Paragraf 56'}: ${val} timer` : 'Hel dag registreret';
+}
 
-function saveEdit(dk, i){
-  const on    = document.getElementById('editOn').value.trim();
-  const start = document.getElementById('editStart').value;
-  const stop  = document.getElementById('editStop').value;
+function setDT(dk, type) {
+  setDayType(dk, type);
+  render();
+  const msgs={'syg':'🤒 Sygedag','barnsyg':'👶 Barn syg','p56':'§56 Paragraf 56','hjemme':'🏠 Hjemmedag','kontor':'🏢 Kontordag'};
+  toast((msgs[type]||type)+' registreret','ok');
+}
+
+function startEdit(i) { editingIdx=i; render(); }
+function cancelEdit() { editingIdx=-1; render(); }
+function saveEdit(dk, i) {
+  const on=document.getElementById('editOn').value.trim();
+  const start=document.getElementById('editStart').value;
+  const stop=document.getElementById('editStop').value;
   if(!on||!start||!stop){toast('Udfyld alle felter','err');return}
   const sh=hmToH(start), eh=hmToH(stop);
   if(eh<=sh){toast('Stop skal være efter start','err');return}
   const arr=getEntries(dk);
-  arr[i]={...arr[i], on, start, stop, hours:eh-sh};
+  arr[i]={...arr[i],on,start,stop,hours:eh-sh};
   saveEntries(dk,arr);
-  // Også opdater i pending hvis den er der
-  const pending=getPending();
-  const pi=pending.findIndex(p=>p.date===dk&&p.start===arr[i].start);
-  if(pi>=0){pending[pi]={...arr[i],date:dk};ss('sync_pending',pending);}
-  else { addPending({...arr[i],date:dk}); }
-  editingIdx=-1;
-  toast('✓ Rettet','ok');
-  render();
+  editingIdx=-1; toast('✓ Rettet','ok'); render();
 }
-
-function doDelEntry(dk,i){
+function doDelEntry(dk,i) {
   const arr=getEntries(dk); arr.splice(i,1); saveEntries(dk,arr);
   editingIdx=-1; render(); toast('Slettet','err');
 }
-function toggleDayType(dk){setDayType(dk,getDayType(dk).includes('Kontor')?'Hjemme 🏠':'Kontor 🏢');render()}
 
-function startDisp(){
+function startDisp() {
   if(timerIv)clearInterval(timerIv);
   timerIv=setInterval(()=>{
     const el=document.getElementById('timerDisp'); if(!el){clearInterval(timerIv);return}
     const ms=Date.now()-activeTimer.t0;
-    const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);
+    const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000);
     el.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   },1000);
 }
 
-// ── TILFOEJ ───────────────────────────────────────────────────────────
-function tilfoejHTML(){
+// ═══════════════════════════════════════════════════════════════════════
+//  TILFOEJ TAB
+// ═══════════════════════════════════════════════════════════════════════
+function tilfoejHTML() {
   const now=nowHM();
   const catBtns=CATS.map(c=>`
     <button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
   const chips=QUICK_ON.map(o=>`
     <button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
+
   return`
   <div class="card">
     <div class="section-label">Kategori</div>
@@ -412,10 +523,21 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
-    <div style="margin-top:10px">
+    <div style="margin-top:9px">
       <label class="field-label">Eller skriv selv</label>
       <input type="text" id="onInput" placeholder="fx 3052" value="${customOn}" oninput="customOn=this.value;selOn=''">
     </div>
+  </div>
+  <div class="card">
+    <div class="section-label">Syg / Barn syg på timer</div>
+    <div class="special-grid">
+      <button class="special-btn syg${selSpecial==='syg'?' sel':''}" onclick="toggleSpecial('syg')">🤒 Syg</button>
+      <button class="special-btn barnsyg${selSpecial==='barnsyg'?' sel':''}" onclick="toggleSpecial('barnsyg')">👶 Barn syg</button>
+    </div>
+    <div class="special-grid" style="margin-top:5px">
+      <button class="special-btn" style="border-color:rgba(176,110,255,.4);color:var(--purple);${selSpecial==='p56'?'background:rgba(176,110,255,.15)':''}" onclick="toggleSpecial('p56')">§ Paragraf 56</button>
+    </div>
+    <div style="font-size:11px;color:var(--slate);margin-top:6px">Her registrerer du på timer. For hel dag: brug Dag-type på "I dag" siden.</div>
   </div>
   <div class="card">
     <div class="section-label">▶ Start timer</div>
@@ -447,13 +569,21 @@ function tilfoejHTML(){
 
 function pickCat(cat){ selCat=cat; if(!selOn&&!customOn)selOn=cat; render(); tab('tilfoej'); }
 function pickOn(on){ selOn=on; customOn=''; render(); tab('tilfoej'); }
+function toggleSpecial(s){ selSpecial=selSpecial===s?'':s; render(); tab('tilfoej'); }
 function setNow(id){ document.getElementById(id).value=nowHM(); }
 function getLabel(){ const on=customOn||selOn||selCat||'?'; return (selCat&&selCat!==on)?`${on} / ${selCat}`:on; }
 
+function buildEntry(on, cat, start, stop, hours) {
+  const e={on,cat,start,stop,hours,date:dateKey(new Date())};
+  if(selSpecial) e.special=selSpecial;
+  return e;
+}
+
 function startTimer(){
-  if(!selCat&&!selOn&&!customOn){toast('Vælg kategori eller ON-nummer','err');return}
-  const on=customOn||selOn||selCat, cat=selCat, label=getLabel();
-  activeTimer={on,cat,label,t0:Date.now(),startHM:nowHM()};
+  if(!selCat&&!selOn&&!customOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return}
+  const on=customOn||selOn||selCat||(selSpecial==='syg'?'Syg':'Barn syg');
+  const cat=selCat, label=selSpecial?(selSpecial==='syg'?'🤒 Syg':'👶 Barn syg'):getLabel();
+  activeTimer={on,cat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
   ss('activeTimer',activeTimer);
   toast(`▶ ${label} startet`,'ok'); tab('dag');
 }
@@ -463,90 +593,86 @@ function stopTimer(){
   const stop=nowHM(), hours=(Date.now()-activeTimer.t0)/3600000;
   const dk=dateKey(new Date());
   const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
-  addEntry(dk,entry); addPending(entry);
+  if(activeTimer.special) entry.special=activeTimer.special;
+  addEntry(dk,entry);
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   toast('✓ Gemt','ok'); tab('dag');
 }
 function saveManual(){
-  if(!selCat&&!selOn&&!customOn){toast('Vælg kategori eller ON-nummer','err');return}
   const start=document.getElementById('mStart').value, stop=document.getElementById('mStop').value;
   if(!start||!stop){toast('Udfyld start og stop','err');return}
   const sh=hmToH(start), eh=hmToH(stop);
   if(eh<=sh){toast('Stop skal være efter start','err');return}
-  const on=customOn||selOn||selCat, cat=selCat;
+  const on=selSpecial?(selSpecial==='syg'?'Syg':'Barn syg'):(customOn||selOn||selCat);
+  if(!on){toast('Vælg kategori eller ON-nummer','err');return}
+  const cat=selCat;
   const dk=dateKey(new Date());
   const entry={on,cat,start,stop,hours:eh-sh,date:dk};
-  addEntry(dk,entry); addPending(entry);
-  savePulse(); toast(`✓ ${getLabel()}  ${start}–${stop}`,'ok'); tab('dag');
+  if(selSpecial) entry.special=selSpecial;
+  addEntry(dk,entry);
+  savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
 }
 
-// ── SYNC ─────────────────────────────────────────────────────────────
-async function doSync(){
-  const pending=getPending();
-  if(!pending.length){toast('Intet at sende','ok');return}
-  const blob=new Blob([JSON.stringify({synced_at:new Date().toISOString(),entries:pending})],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='timer_sync.json'; a.click();
-  URL.revokeObjectURL(url);
-  // Flyt til "sent" — bliver ikke slettet før bekræftelse
-  setSent([...getSent(), ...pending]);
-  clearPending();
-  toast('📥 Fil downloadet — upload til OneDrive → Timer → App','ok');
-  setTimeout(()=>render(),600);
-}
-
-function checkSyncDone(){
-  // Vi kan ikke direkte læse en fil fra OneDrive,
-  // men vi kan tjekke om der er gået nok tid (5 min = bekræftet)
-  const sent=getSent();
-  if(!sent.length) return;
-  const oldest=sent[0];
-  if(oldest && Date.now()-new Date(oldest.date+'T'+oldest.start).getTime() > 5*60*1000){
-    // Marker som done efter 5 min
-    clearSent();
-    if(currentTab==='dag') render();
-  }
-}
-
-// Manual bekræft knap
-function confirmSync(){
-  clearSent(); clearPending();
-  toast('✓ Bekræftet — Excel opdateret','ok');
-  render();
-}
-
-// ── UGE ──────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+//  UGE TAB
+// ═══════════════════════════════════════════════════════════════════════
 function ugeHTML(){
-  const now=new Date(),mon=monday(now),ti=todayIdx();
-  let totalH=0,officeDays=0,homeDays=0;
+  const now=new Date(), mon=monday(now), ti=todayIdx();
+  let totalH=0, officeDays=0, homeDays=0, sygDays=0, barnSygDays=0;
+
   const daysHTML=DAY_S.map((name,i)=>{
     const d=new Date(mon); d.setDate(mon.getDate()+i);
     const dk=dateKey(d);
     const entries=getEntries(dk);
+    const type=getDayType(dk);
     const h=entries.reduce((s,e)=>s+e.hours,0);
-    const isHome=getDayType(dk).includes('Hjemme');
-    if(i<5&&h>0){totalH+=h; isHome?homeDays++:officeDays++}
-    const pct=Math.min(100,(h/WORK_H)*100);
-    const diff=h-WORK_H;
+    const target=DAY_TARGET[i];
+
+    if(i<5){
+      if(type==='syg')     { sygDays++; }
+      else if(type==='barnsyg') { barnSygDays++; }
+      else if(h>0) {
+        totalH+=h;
+        type==='hjemme'?homeDays++:officeDays++;
+      }
+    }
+
+    const pct=target>0?Math.min(100,(h/target)*100):0;
+    const diff=h-target;
     const isToday=i===ti, isPast=i<ti&&i<5;
-    const barClr=h>=WORK_H?'var(--green)':h>0?'var(--gold)':'transparent';
+    const isSygDay=type==='syg', isBarnSygDay=type==='barnsyg';
+    const barClr=isSygDay||isBarnSygDay?'var(--blue)':h>=target?'var(--green)':h>0?'var(--gold)':'transparent';
+
     let diffHTML='';
-    if((isPast||isToday)&&h>0){
+    if(isSygDay)     diffHTML=`<div class="wr-diff" style="color:var(--red)">🤒 Sygedag</div>`;
+    else if(isP56Day) diffHTML=`<div class="wr-diff" style="color:var(--purple)">§56 Paragraf 56</div>`;
+    else if(isBarnSygDay) diffHTML=`<div class="wr-diff" style="color:var(--blue)">👶 Barn syg</div>`;
+    else if((isPast||isToday)&&h>0){
       const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
-    return`<div class="week-row ${isToday?'today':''}">
+
+    const isP56Day=type==='p56';
+    const rowCls=isSygDay||isP56Day?'syg-day':isBarnSygDay?'barnsyg-day':isToday?'today':'';
+
+    return`<div class="week-row ${rowCls}">
       <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
       <div class="wr-mid">
-        <div class="wr-bar-row"><span>${isHome?'🏠':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
+        <div class="wr-bar-row">
+          <span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span>
+          <span>${isSygDay||isBarnSygDay?'—':h>0?fmtH(h):'—'}</span>
+        </div>
         <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
         ${diffHTML}
       </div>
       <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}</div>
     </div>`;
   }).join('');
-  const wDiff=totalH-WORK_H*5;
+
+  const wTarget=7.5*4+6.5; // 36.5 timer om ugen
+  const wDiff=totalH-wTarget;
   const exportHTML=buildExport(mon);
+
   return`
   <div class="card">
     <div class="section-label">Uge ${weekNum(now)} · oversigt</div>
@@ -555,6 +681,8 @@ function ugeHTML(){
       <div class="ws"><div class="ws-val" style="${wDiff>=0?'color:var(--green)':'color:var(--red)'}">${wDiff>=0?'+':'-'}${fmtH(Math.abs(wDiff))}</div><div class="ws-lbl">${wDiff>=0?'Overarb.':'Mangler'}</div></div>
       <div class="ws"><div class="ws-val">🏢 ${officeDays}</div><div class="ws-lbl">Kontor</div></div>
       <div class="ws"><div class="ws-val">🏠 ${homeDays}</div><div class="ws-lbl">Hjemme</div></div>
+      ${sygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--red)">🤒 ${sygDays}</div><div class="ws-lbl">Sygedage</div></div>`:''}
+      ${barnSygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--blue)">👶 ${barnSygDays}</div><div class="ws-lbl">Barn syg</div></div>`:''}
     </div>
     ${daysHTML}
   </div>
@@ -566,6 +694,7 @@ function buildExport(mon){
   for(let i=0;i<5;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
     for(const e of getEntries(dateKey(d))){
+      if(e.special) continue; // Syg/barnsyg tæller ikke til Promak
       const key=e.on||e.cat||'?';
       totals[key]=(totals[key]||0)+e.hours;
     }
@@ -573,33 +702,213 @@ function buildExport(mon){
   const keys=Object.keys(totals);
   if(!keys.length)return'';
   const rows=keys.map(k=>`
-    <div class="export-row"><span class="export-on">${k}</span><span class="export-time">${fmtH(totals[k])}</span></div>`).join('');
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px">
+      <span style="font-weight:600">${k}</span>
+      <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span>
+    </div>`).join('');
   const txt=keys.map(k=>`${k}: ${fmtH(totals[k])}`).join('\n');
   return`
   <div class="card">
-    <div class="section-label">Promak-oversigt</div>
-    <div class="export-card">${rows}</div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btn-ghost" style="flex:1" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">Kopiér</button>
-      <button class="btn btn-gold" style="flex:1" onclick="confirmSync()">✓ Excel OK</button>
+    <div class="section-label">Promak-oversigt (uden syg)</div>
+    <div style="background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)">${rows}</div>
+    <div style="display:flex;gap:7px;margin-top:9px">
+      <button class="btn btn-ghost" style="flex:1" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">📋 Kopiér</button>
+      <button class="btn btn-gold" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
     </div>
-    <div style="font-size:11px;color:var(--slate);margin-top:8px;text-align:center">Tryk "Excel OK" efter Python har skrevet ind</div>
   </div>`;
 }
 
-function copyText(txt){
-  navigator.clipboard.writeText(txt).then(()=>toast('Kopieret ✓','ok')).catch(()=>toast('Prøv igen','err'));
+// ═══════════════════════════════════════════════════════════════════════
+//  RAPPORT TAB
+// ═══════════════════════════════════════════════════════════════════════
+function rapportHTML(){
+  // Saml alle uger fra localStorage
+  const allDays={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('vct_e_')){
+      const dk=k.replace('vct_e_','');
+      allDays[dk]={entries:JSON.parse(localStorage.getItem(k)||'[]'),type:sg('wh_'+dk)||'kontor'};
+    }
+  }
+
+  // Grupper per uge
+  const byWeek={};
+  Object.keys(allDays).sort().forEach(dk=>{
+    const d=new Date(dk);
+    const mon=monday(d);
+    const wk=`${d.getFullYear()}-W${String(weekNum(d)).padStart(2,'0')}`;
+    if(!byWeek[wk]) byWeek[wk]={mon,days:{},totalH:0,officeDays:0,homeDays:0,sygDays:0,barnSygDays:0};
+    byWeek[wk].days[dk]=allDays[dk];
+  });
+
+  // Beregn per uge
+  let yearTotal=0, yearOffice=0, yearHome=0, yearSyg=0, yearBarnSyg=0;
+  const weekKeys=Object.keys(byWeek).sort().reverse(); // Nyeste først
+
+  // År-totaler
+  const currentYear=new Date().getFullYear();
+  weekKeys.forEach(wk=>{
+    const w=byWeek[wk];
+    Object.keys(w.days).forEach(dk=>{
+      const d=new Date(dk);
+      if(d.getFullYear()!==currentYear) return;
+      const {entries,type}=w.days[dk];
+      const di=(d.getDay()+6)%7;
+      if(di>=5) return;
+      const h=entries.reduce((s,e)=>s+e.hours,0);
+      if(type==='syg'||type==='p56') { w.sygDays++;     yearSyg++; }
+      else if(type==='barnsyg'){ w.barnSygDays++; yearBarnSyg++; }
+      else if(h>0){
+        w.totalH+=h; yearTotal+=h;
+        type==='hjemme'?(w.homeDays++,yearHome++):(w.officeDays++,yearOffice++);
+      }
+    });
+  });
+
+  // År-summary
+  const yearHTML=`
+  <div class="card">
+    <div class="section-label">${currentYear} · Årsovervigt</div>
+    <div class="report-year-summary">
+      <div class="rys"><div class="rys-val">${fmtH(yearTotal)}</div><div class="rys-lbl">Timer i alt</div></div>
+      <div class="rys"><div class="rys-val">🏢 ${yearOffice}</div><div class="rys-lbl">Kontordage</div></div>
+      <div class="rys"><div class="rys-val">🏠 ${yearHome}</div><div class="rys-lbl">Hjemmedage</div></div>
+      <div class="rys"><div class="rys-val" style="color:var(--red)">🤒 ${yearSyg}</div><div class="rys-lbl">Syg/§56</div></div>
+      <div class="rys"><div class="rys-val" style="color:var(--blue)">👶 ${yearBarnSyg}</div><div class="rys-lbl">Barn syg</div></div>
+      <div class="rys"><div class="rys-val">${yearOffice+yearHome}</div><div class="rys-lbl">Arbejdsdage</div></div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost" style="flex:1" onclick="importData()">📥 Importer</button>
+      <button class="btn btn-gold" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
+    </div>
+  </div>`;
+
+  // Uger
+  const weeksHTML=weekKeys.map(wk=>{
+    const w=byWeek[wk];
+    const mon=w.mon;
+    const monStr=`${mon.getDate()}. ${MONTHS_S[mon.getMonth()]}`;
+    const fri=new Date(mon); fri.setDate(mon.getDate()+4);
+    const friStr=`${fri.getDate()}. ${MONTHS_S[fri.getMonth()]}`;
+    const wNum=weekNum(mon);
+
+    // ON-totaler for ugen
+    const onTotals={};
+    Object.values(w.days).forEach(({entries})=>{
+      entries.forEach(e=>{
+        if(e.special) return;
+        const key=e.on||e.cat||'?';
+        onTotals[key]=(onTotals[key]||0)+e.hours;
+      });
+    });
+    const onRows=Object.keys(onTotals).map(k=>`
+      <div class="report-entry">
+        <span>${k}</span>
+        <span style="color:var(--gold);font-family:var(--mono)">${fmtH(onTotals[k])}</span>
+      </div>`).join('');
+
+    const badges=[];
+    if(w.officeDays) badges.push(`🏢${w.officeDays}`);
+    if(w.homeDays)   badges.push(`🏠${w.homeDays}`);
+    if(w.sygDays)    badges.push(`🤒${w.sygDays}`);
+    if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
+
+    return`<div class="report-week">
+      <div class="report-week-hdr" onclick="toggleWeek('${wk}')">
+        <div>
+          <div class="report-week-title">Uge ${wNum}</div>
+          <div class="report-week-meta">${monStr} – ${friStr} · ${badges.join(' ')}</div>
+        </div>
+        <div class="report-week-hours">${fmtH(w.totalH)}</div>
+      </div>
+      <div class="report-week-body" id="rwb-${wk}">
+        ${onRows||'<div style="color:var(--slate);font-size:12px;padding:4px 0">Ingen registreringer</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  return`${yearHTML}
+  <div class="card">
+    <div class="section-label">Uger — klik for detaljer</div>
+    <div class="report-section">${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>
+  </div>`;
 }
+
+function toggleWeek(wk){
+  const el=document.getElementById('rwb-'+wk);
+  if(el) el.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BACKUP / EXPORT
+// ═══════════════════════════════════════════════════════════════════════
+
+function importData(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = async e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data.days) { toast('Ugyldig fil','err'); return; }
+      let count = 0;
+      Object.keys(data.days).forEach(dk => {
+        const day = data.days[dk];
+        if(day.entries && day.entries.length > 0) {
+          const existing = getEntries(dk);
+          // Undgå dubletter
+          const existingKeys = new Set(existing.map(e=>e.start+e.on));
+          const newEntries = day.entries.filter(e=>!existingKeys.has(e.start+e.on));
+          if(newEntries.length > 0) {
+            saveEntries(dk, [...existing, ...newEntries]);
+            count += newEntries.length;
+          }
+        }
+        if(day.type && day.type !== 'kontor') {
+          setDayType(dk, day.type);
+        }
+      });
+      toast(`✓ ${count} registreringer importeret`,'ok');
+      render();
+    } catch(err) { toast('Fejl: '+err.message,'err'); }
+  };
+  input.click();
+}
+
+function downloadBackup(){
+  const data=getAllData();
+  const json=JSON.stringify(data, null, 2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`timer_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('💾 Backup downloadet','ok');
+}
+
+function copyText(txt){
+  navigator.clipboard.writeText(txt).then(()=>toast('📋 Kopieret','ok')).catch(()=>toast('Prøv igen','err'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════════
 function toast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast show'+(type?' '+type:'');
-  clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',3500);
+  clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',3000);
 }
 function savePulse(){
   const b=document.getElementById('saveBar');
   b.style.width='65%';
   setTimeout(()=>{b.style.width='100%';setTimeout(()=>b.style.width='0',350)},350);
 }
+
 init();
 </script>
 </body>
