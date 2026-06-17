@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#040F1A">
+<title>Timer · JIF</title>
+<style>
+:root {
+  --ink:#040F1A;--ink2:#081828;--ink3:#0d2236;--ink4:#122d47;--ink5:#1a3d5c;
+  --gold:#F5AC00;--gold2:#FFD166;--green:#3DDC97;--red:#FF5C5C;--amber:#FF9F43;
+  --slate:#6B8FA8;--mist:#A8C4D8;--snow:#EEF4F8;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'SF Mono','Consolas',monospace;--r:16px;--r2:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{font-family:var(--font);background:var(--ink);color:var(--snow);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
+.app-header{padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50;background:var(--ink);display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.date-line{font-size:14px;color:var(--mist);margin-top:2px;font-weight:500}
+.week-chip{background:var(--ink4);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:57px;z-index:49}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
+.nav-btn svg{width:18px;height:18px}
+.nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
+main{flex:1;overflow-y:auto;padding:14px 14px 40px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--ink2);border-radius:var(--r);padding:16px}
+.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:11px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.stat-box{background:var(--ink3);border-radius:var(--r2);padding:13px 10px;text-align:center}
+.stat-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat-num.good{color:var(--green)}.stat-num.bad{color:var(--red)}.stat-num.amber{color:var(--amber)}.stat-num.white{color:var(--snow)}
+.stat-lbl{font-size:10px;color:var(--slate);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.prog-wrap{margin-top:13px}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:5px}
+.prog-bg{background:rgba(255,255,255,.06);border-radius:99px;height:7px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.live-card{background:linear-gradient(140deg,var(--ink3) 0%,var(--ink4) 100%);border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:16px}
+.live-label{font-size:12px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+.live-project{font-size:17px;font-weight:700;margin-top:6px}
+.live-sub{font-size:12px;color:var(--slate);margin-top:2px}
+.live-time{font-size:44px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:12px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.entry{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--ink3);border-radius:var(--r2);margin-bottom:6px}
+.entry-time-col{text-align:right;flex-shrink:0}
+.entry-time{font-size:11px;color:var(--slate);font-family:var(--mono);line-height:1.8}
+.entry-divider{width:1px;height:28px;background:rgba(255,255,255,.08);flex-shrink:0}
+.entry-body{flex:1;min-width:0}
+.entry-on{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-cat{font-size:11px;color:var(--slate);margin-top:1px}
+.entry-dur{font-size:14px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
+.entry-del{background:none;border:none;color:rgba(255,92,92,.4);font-size:16px;cursor:pointer;flex-shrink:0;padding:2px 4px;transition:color .15s}
+.entry-del:active{color:var(--red)}
+.empty{text-align:center;color:var(--slate);padding:28px 16px;font-size:14px;line-height:1.7}
+.btn{display:block;width:100%;border:none;border-radius:50px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font);transition:transform .1s,opacity .15s}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn-gold{background:var(--gold);color:var(--ink)}
+.btn-green{background:var(--green);color:var(--ink)}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:var(--ink4);color:var(--snow)}
+.btn-sync{background:linear-gradient(135deg,#1a3d5c,#122d47);color:var(--gold);border:1.5px solid rgba(245,172,0,.4);border-radius:50px;padding:15px;font-size:16px;font-weight:800;width:100%;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s}
+.btn-sync:active{transform:scale(.97)}
+.btn-sm{padding:9px 16px;font-size:13px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.btn-sm:active{opacity:.7}
+.btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:6px;width:100%}
+.form-col{display:flex;flex-direction:column;gap:11px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+select,input[type=time]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
+select:focus,input:focus{border-color:var(--gold)}
+select option{background:#081828}
+.week-row{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;border:1.5px solid transparent;transition:border-color .2s}
+.week-row.today{border-color:rgba(245,172,0,.3)}
+.wr-day{width:38px;flex-shrink:0}
+.wr-name{font-size:13px;font-weight:700}
+.wr-date{font-size:10px;color:var(--slate);margin-top:1px}
+.wr-mid{flex:1;min-width:0}
+.wr-bar-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--slate);margin-bottom:4px}
+.wr-bar-bg{background:rgba(255,255,255,.06);border-radius:99px;height:6px;overflow:hidden}
+.wr-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.wr-diff{font-size:10px;margin-top:4px;font-weight:700;font-family:var(--mono)}
+.wr-right{text-align:right;flex-shrink:0}
+.wr-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;background:var(--gold);color:var(--ink);display:inline-block}
+.week-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
+.ws{background:var(--ink3);border-radius:var(--r2);padding:14px}
+.ws-val{font-size:22px;font-weight:900;font-family:var(--mono)}
+.ws-lbl{font-size:10px;color:var(--slate);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+/* SYNC STATUS */
+.sync-status{border-radius:var(--r2);padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
+.sync-ok{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.25);color:var(--green)}
+.sync-wait{background:rgba(245,172,0,.1);border:1px solid rgba(245,172,0,.25);color:var(--gold)}
+.sync-count{background:var(--ink3);border-radius:20px;padding:2px 8px;font-size:11px;font-family:var(--mono)}
+/* EXPORT */
+.export-card{background:var(--ink3);border-radius:var(--r2);padding:14px;border:1px solid rgba(245,172,0,.15)}
+.export-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.export-row:last-child{border-bottom:none}
+.export-on{font-weight:600}
+.export-time{color:var(--gold);font-family:var(--mono);font-size:13px;font-weight:700}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:12px 22px;font-size:14px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
+.toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
+.save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
+</style>
+</head>
+<body>
+<div class="save-bar" id="saveBar"></div>
+<header class="app-header">
+  <div>
+    <div class="logo">Vestergaard · Timer</div>
+    <div class="date-line" id="hdrDate">—</div>
+  </div>
+  <div class="week-chip" id="hdrWeek">Uge —</div>
+</header>
+<nav>
+  <button class="nav-btn on" onclick="tab('dag')" id="tab-dag">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>I dag
+  </button>
+  <button class="nav-btn" onclick="tab('tilfoej')" id="tab-tilfoej">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Tilføj
+  </button>
+  <button class="nav-btn" onclick="tab('uge')" id="tab-uge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Uge
+  </button>
+</nav>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+const WORK_H  = 7.5;
+const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+const KNOWN_ON= ['Beta M','My M','Admin','Kørsel','Frokost','Møde','Service',
+                 '2556','2613','2921','2965','2973','3037','3052','3055',
+                 '3127','3138','3155','3179','3200','3201'];
+const CATS    = ['Beta M','My M','Admin','Kørsel','Frokost','Møde','Service','Andet'];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════════════════════════════════
+function sg(k)   { try{return JSON.parse(localStorage.getItem('vct_'+k))}catch{return null} }
+function ss(k,v) { localStorage.setItem('vct_'+k, JSON.stringify(v)) }
+function getEntries(dk)     { return sg('e_'+dk) || [] }
+function saveEntries(dk,arr){ ss('e_'+dk, arr) }
+function addEntry(dk,e)     { const a=getEntries(dk); a.push(e); saveEntries(dk,a) }
+function delEntry(dk,i)     { const a=getEntries(dk); a.splice(i,1); saveEntries(dk,a) }
+function getDayType(dk)     { return sg('wh_'+dk) || 'Kontor 🏢' }
+function setDayType(dk,t)   { ss('wh_'+dk, t) }
+function getSyncPending()   { return sg('sync_pending') || [] }
+function addSyncPending(e)  { const a=getSyncPending(); a.push(e); ss('sync_pending',a) }
+function clearSyncPending() { localStorage.removeItem('vct_sync_pending') }
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DATE HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+function fmtH(h){if(!h||h<0)h=0;const t=Math.round(h*60);return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`}
+function nowHM(){const d=new Date();return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function dateKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function weekNum(d){const c=new Date(d);c.setHours(0,0,0,0);c.setDate(c.getDate()+4-(c.getDay()||7));return Math.ceil((((c-new Date(c.getFullYear(),0,1))/86400000)+1)/7)}
+function monday(d){const c=new Date(d);const day=c.getDay()||7;c.setDate(c.getDate()-day+1);c.setHours(0,0,0,0);return c}
+function todayIdx(){return(new Date().getDay()+6)%7}
+function hmToH(hm){if(!hm)return 0;const[h,m]=hm.split(':').map(Number);return h+m/60}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════
+let activeTimer=null, timerIv=null, currentTab='dag';
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════
+function init(){
+  updateHeader();
+  const saved=sg('activeTimer');
+  if(saved) activeTimer=saved;
+  tab('dag');
+}
+function updateHeader(){
+  const d=new Date();
+  document.getElementById('hdrDate').textContent=`${WDAYS[d.getDay()]} ${d.getDate()}. ${MONTHS_S[d.getMonth()]}`;
+  document.getElementById('hdrWeek').textContent=`Uge ${weekNum(d)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ROUTING
+// ═══════════════════════════════════════════════════════════════════════
+function tab(name){
+  currentTab=name;
+  ['dag','tilfoej','uge'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
+  render();
+}
+function render(){
+  const m=document.getElementById('main');
+  if(currentTab==='dag') m.innerHTML=dagHTML();
+  else if(currentTab==='tilfoej') m.innerHTML=tilfoejHTML();
+  else m.innerHTML=ugeHTML();
+  if(currentTab==='dag'&&activeTimer) startDisp();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DAG
+// ═══════════════════════════════════════════════════════════════════════
+function dagHTML(){
+  const today=new Date(), dk=dateKey(today);
+  const entries=getEntries(dk);
+  const dayType=getDayType(dk);
+  const worked=entries.reduce((s,e)=>s+e.hours,0);
+  const diff=worked-WORK_H;
+  const pct=Math.min(100,(worked/WORK_H)*100);
+  const sc=diff>0.05?'good':diff<-0.05?'bad':'amber';
+  const sl=diff>0.05?'Overarb.':diff<-0.05?'Mangler':'Næsten';
+  const ss=diff>0.05?'+':diff<-0.05?'-':'';
+  const barClr=diff>0.05?'var(--green)':worked>0?'var(--gold)':'var(--slate)';
+  const pending=getSyncPending().length;
+
+  const timerHTML=activeTimer?`
+    <div class="live-card">
+      <div class="live-label"><div class="live-dot"></div>Timer kører</div>
+      <div class="live-project">${activeTimer.label}</div>
+      <div class="live-sub">Startet kl. ${activeTimer.startHM}</div>
+      <div class="live-time" id="timerDisp">0:00:00</div>
+      <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
+    </div>`:'';
+
+  const listHTML=entries.length?entries.map((e,i)=>`
+    <div class="entry">
+      <div class="entry-time-col">
+        <div class="entry-time">${e.start}</div>
+        <div class="entry-time">${e.stop}</div>
+      </div>
+      <div class="entry-divider"></div>
+      <div class="entry-body">
+        <div class="entry-on">${e.on}</div>
+        ${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}
+      </div>
+      <div class="entry-dur">${fmtH(e.hours)}</div>
+      <button class="entry-del" onclick="doDelEntry('${dk}',${i})">✕</button>
+    </div>`).join('')
+    :`<div class="empty">Ingen timer registreret endnu.<br>Gå til <b>Tilføj</b> for at starte.</div>`;
+
+  const syncHTML=pending>0?`
+    <div class="sync-status sync-wait">
+      <span>⏳</span>
+      <span style="flex:1">${pending} rækker klar til Excel-sync</span>
+    </div>`:`
+    <div class="sync-status sync-ok">
+      <span>✓</span>
+      <span>Alt synkroniseret med Excel</span>
+    </div>`;
+
+  return`${timerHTML}
+  <div class="card">
+    <div class="section-label">Status i dag</div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num white">${fmtH(worked)}</div><div class="stat-lbl">Arbejdet</div></div>
+      <div class="stat-box"><div class="stat-num white">${fmtH(WORK_H)}</div><div class="stat-lbl">Mål</div></div>
+      <div class="stat-box"><div class="stat-num ${sc}">${ss}${fmtH(Math.abs(diff))}</div><div class="stat-lbl">${sl}</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div>
+    </div>
+  </div>
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+    <div>
+      <div class="section-label" style="margin-bottom:2px">Dag-type</div>
+      <div style="font-size:15px;font-weight:700">${dayType}</div>
+    </div>
+    <button class="btn-sm btn-now" onclick="toggleDayType('${dk}')" style="width:auto;padding:8px 16px">Skift</button>
+  </div>
+  <div class="card">
+    <div class="section-label">Registreringer</div>
+    ${listHTML}
+  </div>
+  <div class="card">
+    <div class="section-label">Excel Sync</div>
+    ${syncHTML}
+    ${pending>0?`<button class="btn-sync" style="margin-top:10px" onclick="doSync()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      Send til Excel nu
+    </button>`:''}
+  </div>`;
+}
+
+function doDelEntry(dk,i){delEntry(dk,i);render();toast('Slettet','err')}
+function toggleDayType(dk){setDayType(dk,getDayType(dk).includes('Kontor')?'Hjemme 🏠':'Kontor 🏢');render()}
+
+function startDisp(){
+  if(timerIv)clearInterval(timerIv);
+  timerIv=setInterval(()=>{
+    const el=document.getElementById('timerDisp');
+    if(!el){clearInterval(timerIv);return}
+    const ms=Date.now()-activeTimer.t0;
+    const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);
+    el.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TILFOEJ
+// ═══════════════════════════════════════════════════════════════════════
+function tilfoejHTML(){
+  const now=nowHM();
+  const onO=KNOWN_ON.map(o=>`<option>${o}</option>`).join('');
+  const catO=CATS.map(c=>`<option>${c}</option>`).join('');
+  return`
+  <div class="card">
+    <div class="section-label">▶ Start timer</div>
+    <div class="form-col">
+      <div><label class="field-label">ON / Projekt</label><select id="sOn">${onO}</select></div>
+      <div><label class="field-label">Kategori</label><select id="sCat">${catO}</select></div>
+      ${activeTimer
+        ?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${activeTimer.label}</button>`
+        :`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-label">Tilføj manuelt</div>
+    <div class="form-col">
+      <div><label class="field-label">ON / Projekt</label><select id="mOn">${onO}</select></div>
+      <div><label class="field-label">Kategori</label><select id="mCat">${catO}</select></div>
+      <div class="form-row">
+        <div>
+          <label class="field-label">Start</label>
+          <input type="time" id="mStart" value="${now}">
+          <button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button>
+        </div>
+        <div>
+          <label class="field-label">Stop</label>
+          <input type="time" id="mStop" value="${now}">
+          <button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
+    </div>
+  </div>`;
+}
+
+function setNow(id){document.getElementById(id).value=nowHM()}
+
+function startTimer(){
+  const on=document.getElementById('sOn').value,cat=document.getElementById('sCat').value;
+  const label=(cat&&cat!==on)?`${on} / ${cat}`:on;
+  activeTimer={on,cat,label,t0:Date.now(),startHM:nowHM()};
+  ss('activeTimer',activeTimer);
+  toast(`▶ ${label} startet`,'ok');
+  tab('dag');
+}
+
+function stopTimer(){
+  if(!activeTimer)return;
+  clearInterval(timerIv);
+  const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
+  const dk=dateKey(new Date());
+  const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
+  addEntry(dk,entry);
+  addSyncPending(entry);
+  activeTimer=null;
+  localStorage.removeItem('vct_activeTimer');
+  toast('✓ Gemt','ok');
+  tab('dag');
+}
+
+function saveManual(){
+  const on=document.getElementById('mOn').value,cat=document.getElementById('mCat').value;
+  const start=document.getElementById('mStart').value,stop=document.getElementById('mStop').value;
+  if(!start||!stop){toast('Udfyld start og stop','err');return}
+  const sh=hmToH(start),eh=hmToH(stop);
+  if(eh<=sh){toast('Stop skal være efter start','err');return}
+  const dk=dateKey(new Date());
+  const entry={on,cat,start,stop,hours:eh-sh,date:dk};
+  addEntry(dk,entry);
+  addSyncPending(entry);
+  savePulse();
+  toast(`✓ ${on}  ${start}–${stop}`,'ok');
+  tab('dag');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SYNC TIL EXCEL
+// ═══════════════════════════════════════════════════════════════════════
+async function doSync(){
+  const pending=getSyncPending();
+  if(!pending.length){toast('Intet at sende','ok');return}
+
+  const payload=JSON.stringify({
+    synced_at: new Date().toISOString(),
+    entries: pending
+  });
+
+  // Prøv at downloade JSON-filen som brugeren lægger i OneDrive
+  const blob=new Blob([payload],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='timer_sync.json';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  clearSyncPending();
+  toast(`✓ ${pending.length} rækker sendt til Excel`,'ok');
+  setTimeout(()=>render(),500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  UGE
+// ═══════════════════════════════════════════════════════════════════════
+function ugeHTML(){
+  const now=new Date(),mon=monday(now),ti=todayIdx();
+  let totalH=0,officeDays=0,homeDays=0;
+
+  const daysHTML=DAY_S.map((name,i)=>{
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    const dk=dateKey(d);
+    const entries=getEntries(dk);
+    const h=entries.reduce((s,e)=>s+e.hours,0);
+    const type=getDayType(dk);
+    const isHome=type.includes('Hjemme');
+    if(i<5&&h>0){totalH+=h;isHome?homeDays++:officeDays++}
+    const pct=Math.min(100,(h/WORK_H)*100);
+    const diff=h-WORK_H;
+    const isToday=i===ti,isPast=i<ti&&i<5;
+    const barClr=h>=WORK_H?'var(--green)':h>0?'var(--gold)':'transparent';
+    let diffHTML='';
+    if((isPast||isToday)&&h>0){
+      const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
+      diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
+    }
+    return`<div class="week-row ${isToday?'today':''}">
+      <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
+      <div class="wr-mid">
+        <div class="wr-bar-row"><span>${isHome?'🏠':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
+        <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
+        ${diffHTML}
+      </div>
+      <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}</div>
+    </div>`;
+  }).join('');
+
+  const wDiff=totalH-WORK_H*5;
+  const exportHTML=buildExport(mon);
+
+  return`
+  <div class="card">
+    <div class="section-label">Uge ${weekNum(now)} · oversigt</div>
+    <div class="week-summary">
+      <div class="ws"><div class="ws-val">${fmtH(totalH)}</div><div class="ws-lbl">Arbejdet</div></div>
+      <div class="ws"><div class="ws-val" style="${wDiff>=0?'color:var(--green)':'color:var(--red)'}">${wDiff>=0?'+':'-'}${fmtH(Math.abs(wDiff))}</div><div class="ws-lbl">${wDiff>=0?'Overarb.':'Mangler'}</div></div>
+      <div class="ws"><div class="ws-val">🏢 ${officeDays}</div><div class="ws-lbl">Kontor</div></div>
+      <div class="ws"><div class="ws-val">🏠 ${homeDays}</div><div class="ws-lbl">Hjemme</div></div>
+    </div>
+    ${daysHTML}
+  </div>
+  ${exportHTML}`;
+}
+
+function buildExport(mon){
+  const totals={};
+  for(let i=0;i<5;i++){
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    for(const e of getEntries(dateKey(d))){
+      totals[e.on]=(totals[e.on]||0)+e.hours;
+    }
+  }
+  const keys=Object.keys(totals);
+  if(!keys.length)return'';
+  const rows=keys.map(k=>`
+    <div class="export-row">
+      <span class="export-on">${k}</span>
+      <span class="export-time">${fmtH(totals[k])}</span>
+    </div>`).join('');
+  const txt=keys.map(k=>`${k}: ${fmtH(totals[k])}`).join('\n');
+  return`
+  <div class="card">
+    <div class="section-label">Promak-oversigt</div>
+    <div class="export-card">${rows}</div>
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">Kopiér til Promak</button>
+  </div>`;
+}
+
+function copyText(txt){
+  navigator.clipboard.writeText(txt).then(()=>toast('Kopieret ✓','ok')).catch(()=>toast('Kopiér manuelt','err'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  clearTimeout(t._to);t._to=setTimeout(()=>t.className='toast',3000);
+}
+function savePulse(){
+  const b=document.getElementById('saveBar');
+  b.style.width='65%';
+  setTimeout(()=>{b.style.width='100%';setTimeout(()=>b.style.width='0',350)},350);
+}
+init();
+</script>
+</body>
+</html>
