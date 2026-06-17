@@ -21,6 +21,11 @@ body{font-family:var(--font);background:var(--ink);color:var(--snow);min-height:
 .logo{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
 .date-line{font-size:13px;color:var(--mist);margin-top:2px;font-weight:500}
 .week-chip{background:var(--ink4);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--gold)}
+.sync-indicator{width:8px;height:8px;border-radius:50%;background:var(--slate);flex-shrink:0;transition:background .3s}
+.sync-indicator.syncing{background:var(--amber);animation:pulse 1s ease-in-out infinite}
+.sync-indicator.ok{background:var(--green)}
+.sync-indicator.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:53px;z-index:49}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
 .nav-btn svg{width:17px;height:17px}
@@ -28,30 +33,21 @@ nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,
 main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:column;gap:10px}
 .card{background:var(--ink2);border-radius:var(--r);padding:14px}
 .section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:10px}
-
-/* STAT */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 .stat-box{background:var(--ink3);border-radius:var(--r2);padding:11px 8px;text-align:center}
 .stat-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .stat-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
-.good{color:var(--green)}.bad{color:var(--red)}.amber{color:var(--amber)}.white{color:var(--snow)}.blue{color:var(--blue)}.purple{color:var(--purple)}
-
-/* PROG */
+.good{color:var(--green)}.bad{color:var(--red)}.amber{color:var(--amber)}.white{color:var(--snow)}.blue{color:var(--blue)}
 .prog-wrap{margin-top:11px}
 .prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:4px}
 .prog-bg{background:rgba(255,255,255,.06);border-radius:99px;height:6px;overflow:hidden}
 .prog-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-
-/* LIVE */
 .live-card{background:linear-gradient(140deg,var(--ink3),var(--ink4));border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:14px}
 .live-label{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.4s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
 .live-project{font-size:16px;font-weight:700;margin-top:5px}
 .live-sub{font-size:11px;color:var(--slate);margin-top:1px}
 .live-time{font-size:40px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:10px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-
-/* ENTRIES */
 .entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;overflow:hidden}
 .entry-main-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
 .entry-time-col{text-align:right;flex-shrink:0;min-width:34px}
@@ -63,11 +59,8 @@ main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:c
 .entry-dur{font-size:13px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
 .entry-actions{display:flex;border-top:1px solid rgba(255,255,255,.05)}
 .entry-btn{flex:1;background:none;border:none;color:var(--slate);font-size:11px;font-weight:700;padding:8px;cursor:pointer;font-family:var(--font)}
-.entry-btn.edit{color:var(--gold)}
-.entry-btn.del{color:var(--red)}
+.entry-btn.edit{color:var(--gold)}.entry-btn.del{color:var(--red)}
 .entry-btn-sep{width:1px;background:rgba(255,255,255,.05)}
-
-/* EDIT */
 .edit-panel{background:var(--ink4);padding:11px 12px;border-top:1px solid rgba(245,172,0,.2)}
 .edit-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
 .edit-input{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:10px 11px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none}
@@ -75,17 +68,11 @@ main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:c
 .edit-btns{display:flex;gap:7px}
 .btn-save-edit{flex:1;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
 .btn-cancel-edit{flex:1;background:var(--ink3);color:var(--slate);border:none;border-radius:50px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
-
-/* SPECIAL DAY */
 .special-day{border-radius:var(--r2);padding:11px 13px;display:flex;align-items:center;gap:10px;margin-bottom:5px}
 .special-syg{background:rgba(255,92,92,.12);border:1px solid rgba(255,92,92,.3)}
 .special-barnsyg{background:rgba(77,166,255,.12);border:1px solid rgba(77,166,255,.3)}
 .special-p56{background:rgba(176,110,255,.12);border:1px solid rgba(176,110,255,.3)}
-.special-fri{background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.3)}
-
 .empty{text-align:center;color:var(--slate);padding:24px 16px;font-size:14px;line-height:1.7}
-
-/* BTNS */
 .btn{display:block;width:100%;border:none;border-radius:50px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);transition:transform .1s,opacity .15s}
 .btn:active{transform:scale(.97);opacity:.9}
 .btn-gold{background:var(--gold);color:var(--ink)}
@@ -94,39 +81,29 @@ main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:c
 .btn-ghost{background:var(--ink4);color:var(--snow)}
 .btn-sm{padding:8px 14px;font-size:12px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
 .btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:5px;width:100%}
-
-/* FORM */
 .form-col{display:flex;flex-direction:column;gap:10px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
 select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
 select:focus,input:focus{border-color:var(--gold)}
 select option{background:#081828}
-
-/* CHIPS */
 .on-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
 .on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow)}
 .on-chip.sel{background:rgba(245,172,0,.2);border-color:var(--gold);color:var(--gold)}
-
-/* CAT GRID */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
 .cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow)}
 .cat-btn.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
-
-/* SPECIAL BTN GRID */
 .special-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
 .special-btn{border:1.5px solid;border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;background:transparent;font-family:var(--font)}
 .special-btn.syg{border-color:rgba(255,92,92,.4);color:var(--red)}
 .special-btn.barnsyg{border-color:rgba(77,166,255,.4);color:var(--blue)}
-.special-btn.sel{opacity:1}
 .special-btn.syg.sel{background:rgba(255,92,92,.15)}
 .special-btn.barnsyg.sel{background:rgba(77,166,255,.15)}
-
-/* WEEK */
-.week-row{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;border:1.5px solid transparent}
+.week-row{background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;border:1.5px solid transparent;overflow:hidden}
 .week-row.today{border-color:rgba(245,172,0,.3)}
 .week-row.syg-day{border-color:rgba(255,92,92,.3);background:rgba(255,92,92,.05)}
 .week-row.barnsyg-day{border-color:rgba(77,166,255,.3);background:rgba(77,166,255,.05)}
+.wr-hdr{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer}
 .wr-day{width:36px;flex-shrink:0}
 .wr-name{font-size:13px;font-weight:700}
 .wr-date{font-size:10px;color:var(--slate);margin-top:1px}
@@ -137,20 +114,21 @@ select option{background:#081828}
 .wr-diff{font-size:10px;margin-top:3px;font-weight:700;font-family:var(--mono)}
 .wr-right{text-align:right;flex-shrink:0}
 .wr-badge{font-size:9px;padding:2px 6px;border-radius:20px;font-weight:700;background:var(--gold);color:var(--ink);display:inline-block}
-
+.wr-body{display:none;padding:0 12px 10px;border-top:1px solid rgba(255,255,255,.05)}
+.wr-body.open{display:block}
 .week-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:11px}
 .ws{background:var(--ink3);border-radius:var(--r2);padding:12px}
 .ws-val{font-size:20px;font-weight:900;font-family:var(--mono)}
 .ws-lbl{font-size:10px;color:var(--slate);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-
-/* RAPPORT */
-.report-section{margin-bottom:16px}
+.promak-box{background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)}
+.promak-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.promak-row:last-child{border-bottom:none}
 .report-week{background:var(--ink3);border-radius:var(--r2);margin-bottom:6px;overflow:hidden}
 .report-week-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;cursor:pointer}
 .report-week-title{font-size:13px;font-weight:700}
 .report-week-meta{font-size:11px;color:var(--slate)}
 .report-week-hours{font-size:14px;font-weight:800;color:var(--gold);font-family:var(--mono)}
-.report-week-body{padding:0 13px 11px;display:none}
+.report-week-body{display:none;padding:0 13px 11px}
 .report-week-body.open{display:block}
 .report-entry{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .report-entry:last-child{border-bottom:none}
@@ -158,25 +136,18 @@ select option{background:#081828}
 .rys{background:var(--ink3);border-radius:var(--r2);padding:12px;text-align:center}
 .rys-val{font-size:20px;font-weight:900}
 .rys-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
-
-/* SYNC */
-.sync-ok{background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.25);color:var(--green);border-radius:var(--r2);padding:10px 13px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
-
-/* TOAST */
-.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
-.toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
-.save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
-
-/* DAY TYPE ROW */
 .daytype-row{display:flex;gap:6px;flex-wrap:wrap}
-.daytype-btn{border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;font-family:var(--font);color:var(--slate);transition:all .15s}
+.daytype-btn{border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;font-family:var(--font);color:var(--slate)}
 .daytype-btn.sel-kontor{background:rgba(61,220,151,.15);border-color:var(--green);color:var(--green)}
 .daytype-btn.sel-hjemme{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
 .daytype-btn.sel-syg{background:rgba(255,92,92,.15);border-color:var(--red);color:var(--red)}
 .daytype-btn.sel-barnsyg{background:rgba(77,166,255,.15);border-color:var(--blue);color:var(--blue)}
 .daytype-btn.sel-p56{background:rgba(176,110,255,.15);border-color:var(--purple);color:var(--purple)}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
+.toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
+.save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
 </style>
 </head>
 <body>
@@ -186,7 +157,10 @@ select option{background:#081828}
     <div class="logo">Vestergaard · Timer</div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
-  <div class="week-chip" id="hdrWeek">Uge —</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="sync-indicator" id="syncDot" title="Sync status"></div>
+    <div class="week-chip" id="hdrWeek">Uge —</div>
+  </div>
 </header>
 <nav>
   <button class="nav-btn on" onclick="tab('dag')" id="tab-dag">
@@ -206,17 +180,21 @@ select option{background:#081828}
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════════════════════════════════════
-// Arbejdstimer: man-tor = 7.5, fre = 6.5
-const DAY_TARGET = [7.5, 7.5, 7.5, 7.5, 6.5, 0, 0]; // 0=man
+// ═══════════════════════════════════════════════════════
+//  GITHUB SYNC CONFIG
+// ═══════════════════════════════════════════════════════
+const GH_TOKEN = 'ghp_9O2W6RIstk9IJEMmJuDH1kHKnh9CsI4eLfLJ';
+const GH_REPO  = 'jfalbe-sudo/jfalbe-sudo.github.io';
+const GH_FILE  = 'timer_data.json';
+const GH_API   = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
 
+// ═══════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════
+const DAY_TARGET = [7.5,7.5,7.5,7.5,6.5,0,0];
 const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
-const MONTHS_L= ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
 const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-
 const QUICK_ON= ['Beta M','My M','2613','2965','2973','3179','3200','3201'];
 const CATS    = [
   {label:'Admin',icon:'📋'},{label:'Beta M',icon:'🔧'},
@@ -224,165 +202,212 @@ const CATS    = [
   {label:'Kørsel',icon:'🚗'},{label:'Service',icon:'⚙️'},
   {label:'Andet',icon:'📌'},
 ];
-
-// Dag-typer
-const DAY_TYPES = [
-  {id:'kontor',  label:'🏢 Kontor',     cls:'sel-kontor'},
-  {id:'hjemme',  label:'🏠 Hjemme',     cls:'sel-hjemme'},
-  {id:'syg',     label:'🤒 Syg',        cls:'sel-syg'},
-  {id:'barnsyg', label:'👶 Barn syg',   cls:'sel-barnsyg'},
-  {id:'p56',     label:'§56',           cls:'sel-p56'},
+const DAY_TYPES=[
+  {id:'kontor',label:'🏢 Kontor',cls:'sel-kontor'},
+  {id:'hjemme',label:'🏠 Hjemme',cls:'sel-hjemme'},
+  {id:'syg',label:'🤒 Syg',cls:'sel-syg'},
+  {id:'barnsyg',label:'👶 Barn syg',cls:'sel-barnsyg'},
+  {id:'p56',label:'§56',cls:'sel-p56'},
 ];
 
-// ═══════════════════════════════════════════════════════════════════════
-//  STORAGE — localStorage med JSON backup til OneDrive
-// ═══════════════════════════════════════════════════════════════════════
-const sg = k => { try{return JSON.parse(localStorage.getItem('vct_'+k))}catch{return null} };
-const ss = (k,v) => { localStorage.setItem('vct_'+k, JSON.stringify(v)); scheduleBackup(); };
-
-function getEntries(dk)     { return sg('e_'+dk) || []; }
-function saveEntries(dk,arr){ ss('e_'+dk, arr); }
-function addEntry(dk,e)     { const a=getEntries(dk); a.push(e); saveEntries(dk,a); }
-function getDayType(dk)     { return sg('wh_'+dk) || 'kontor'; }
-function setDayType(dk,t)   { ss('wh_'+dk, t); }
-
-// Alle data til backup
-function getAllData() {
-  const data = { version:2, exported: new Date().toISOString(), days:{} };
-  for(let i=0; i<localStorage.length; i++){
-    const k = localStorage.key(i);
-    if(k && k.startsWith('vct_e_')) {
-      const dk = k.replace('vct_e_','');
-      data.days[dk] = { entries: JSON.parse(localStorage.getItem(k)||'[]'), type: sg('wh_'+dk)||'kontor' };
-    }
-  }
-  return data;
-}
-
-// Backup timer
-let backupTimer = null;
-function scheduleBackup() {
-  clearTimeout(backupTimer);
-  backupTimer = setTimeout(autoBackup, 30000); // 30 sek efter sidst ændring
-}
-function autoBackup() {
-  ss('last_backup', new Date().toISOString());
-  // Gem backup i localStorage som ekstra sikkerhed
-  localStorage.setItem('vct_backup_'+new Date().toISOString().slice(0,10), JSON.stringify(getAllData()));
-  // Ryd gamle backups (behold de 30 seneste)
-  const bkeys = [];
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k&&k.startsWith('vct_backup_')) bkeys.push(k);
-  }
-  bkeys.sort().slice(0,-30).forEach(k=>localStorage.removeItem(k));
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  DATE HELPERS
-// ═══════════════════════════════════════════════════════════════════════
-const fmtH = h => { if(!h||h<0)h=0; const t=Math.round(h*60); return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`; };
-const nowHM = () => { const d=new Date(); return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-const dateKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const weekNum = d => { const c=new Date(d); c.setHours(0,0,0,0); c.setDate(c.getDate()+4-(c.getDay()||7)); return Math.ceil((((c-new Date(c.getFullYear(),0,1))/86400000)+1)/7); };
-const monday = d => { const c=new Date(d); const day=c.getDay()||7; c.setDate(c.getDate()-day+1); c.setHours(0,0,0,0); return c; };
-const todayIdx = () => (new Date().getDay()+6)%7;
-const hmToH = hm => { if(!hm)return 0; const[h,m]=hm.split(':').map(Number); return h+m/60; };
-const dayTarget = idx => DAY_TARGET[idx] || 0; // timer for ugedag
-
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  STATE
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+let db = { version:3, days:{} }; // master database
+let ghSha = null; // GitHub file SHA for updates
 let activeTimer=null, timerIv=null, currentTab='dag';
-let selCat='', selOn='', customOn='';
+let selCat='', selOn='', customOn='', selSpecial='';
 let editingIdx=-1;
-// Syg/barnsyg på time-basis
-let selSpecial=''; // 'syg' eller 'barnsyg' (tom = normal)
+let syncTimer=null, isDirty=false;
 
-// ═══════════════════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════════════════
-function init() {
-  updateHeader();
-  const saved=sg('activeTimer'); if(saved) activeTimer=saved;
-  tab('dag');
-  scheduleBackup();
+// ═══════════════════════════════════════════════════════
+//  GITHUB SYNC
+// ═══════════════════════════════════════════════════════
+function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | ''
+  const d=document.getElementById('syncDot');
+  if(d){ d.className='sync-indicator'+(s?' '+s:''); }
 }
-function updateHeader() {
+
+async function ghLoad(){
+  setSyncStatus('syncing');
+  try {
+    const r=await fetch(GH_API,{headers:{'Authorization':`token ${GH_TOKEN}`,'Accept':'application/vnd.github.v3+json'}});
+    if(r.status===404){ setSyncStatus('ok'); return; } // Ingen fil endnu
+    if(!r.ok) throw new Error(r.status);
+    const j=await r.json();
+    ghSha=j.sha;
+    const decoded=JSON.parse(atob(j.content.replace(/\n/g,'')));
+    // Merge: GitHub vinder ved konflikt (nyeste data)
+    db=decoded;
+    // Gem lokalt som cache
+    localStorage.setItem('vct_db', JSON.stringify(db));
+    localStorage.setItem('vct_sha', ghSha);
+    setSyncStatus('ok');
+  } catch(e){
+    console.error('ghLoad',e);
+    setSyncStatus('err');
+    // Brug lokalt cache hvis GitHub fejler
+    const local=localStorage.getItem('vct_db');
+    if(local) db=JSON.parse(local);
+  }
+}
+
+async function ghSave(){
+  if(!isDirty) return;
+  setSyncStatus('syncing');
+  try {
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(db,null,2))));
+    const body={message:'Timer update',content};
+    if(ghSha) body.sha=ghSha;
+    const r=await fetch(GH_API,{
+      method:'PUT',
+      headers:{'Authorization':`token ${GH_TOKEN}`,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!r.ok){ const t=await r.text(); throw new Error(t); }
+    const j=await r.json();
+    ghSha=j.content.sha;
+    localStorage.setItem('vct_sha', ghSha);
+    localStorage.setItem('vct_db', JSON.stringify(db));
+    isDirty=false;
+    setSyncStatus('ok');
+  } catch(e){
+    console.error('ghSave',e);
+    setSyncStatus('err');
+    toast('Sync fejl — data gemt lokalt','err');
+  }
+}
+
+function scheduleSave(){
+  isDirty=true;
+  localStorage.setItem('vct_db', JSON.stringify(db)); // Gem straks lokalt
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(ghSave, 2000); // Gem til GitHub efter 2 sek
+}
+
+// ═══════════════════════════════════════════════════════
+//  DATA ACCESS
+// ═══════════════════════════════════════════════════════
+function getEntries(dk)     { return (db.days[dk]||{}).entries||[]; }
+function getDayType(dk)     { return (db.days[dk]||{}).type||'kontor'; }
+function getPartial(dk,t)   { return ((db.days[dk]||{}).partial||{})[t]||''; }
+
+function ensureDay(dk){ if(!db.days[dk]) db.days[dk]={entries:[],type:'kontor',partial:{}}; }
+
+function saveEntries(dk,arr){
+  ensureDay(dk); db.days[dk].entries=arr; scheduleSave();
+}
+function addEntry(dk,e){
+  ensureDay(dk); db.days[dk].entries.push(e); scheduleSave();
+}
+function setDayType(dk,t){
+  ensureDay(dk); db.days[dk].type=t; scheduleSave();
+}
+function savePartialH(dk,t,v){
+  ensureDay(dk);
+  if(!db.days[dk].partial) db.days[dk].partial={};
+  if(v) db.days[dk].partial[t]=v; else delete db.days[dk].partial[t];
+  scheduleSave();
+}
+
+// ═══════════════════════════════════════════════════════
+//  DATE
+// ═══════════════════════════════════════════════════════
+const fmtH=h=>{if(!h||h<0)h=0;const t=Math.round(h*60);return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};
+const nowHM=()=>{const d=new Date();return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const dateKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const weekNum=d=>{const c=new Date(d);c.setHours(0,0,0,0);c.setDate(c.getDate()+4-(c.getDay()||7));return Math.ceil((((c-new Date(c.getFullYear(),0,1))/86400000)+1)/7);};
+const monday=d=>{const c=new Date(d);const day=c.getDay()||7;c.setDate(c.getDate()-day+1);c.setHours(0,0,0,0);return c;};
+const todayIdx=()=>(new Date().getDay()+6)%7;
+const hmToH=hm=>{if(!hm)return 0;const[h,m]=hm.split(':').map(Number);return h+m/60;};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+async function init(){
+  updateHeader();
+  // Brug lokalt cache straks mens vi loader fra GitHub
+  const local=localStorage.getItem('vct_db');
+  if(local) { try{ db=JSON.parse(local); }catch{} }
+  ghSha=localStorage.getItem('vct_sha')||null;
+  const saved=localStorage.getItem('vct_activeTimer');
+  if(saved) try{ activeTimer=JSON.parse(saved); }catch{}
+  tab('dag');
+  // Load fra GitHub i baggrunden
+  await ghLoad();
+  render(); // Genrender med GitHub data
+  // Auto-sync hvert 30 sek (henter andres ændringer)
+  setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 30000);
+}
+
+function updateHeader(){
   const d=new Date();
   document.getElementById('hdrDate').textContent=`${WDAYS[d.getDay()]} ${d.getDate()}. ${MONTHS_S[d.getMonth()]}`;
   document.getElementById('hdrWeek').textContent=`Uge ${weekNum(d)}`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  ROUTING
-// ═══════════════════════════════════════════════════════════════════════
-function tab(name) {
+// ═══════════════════════════════════════════════════════
+function tab(name){
   currentTab=name; editingIdx=-1;
   ['dag','tilfoej','uge','rapport'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
-function render() {
+function render(){
   const m=document.getElementById('main');
-  if(currentTab==='dag')         m.innerHTML=dagHTML();
+  if(currentTab==='dag')          m.innerHTML=dagHTML();
   else if(currentTab==='tilfoej') m.innerHTML=tilfoejHTML();
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else                            m.innerHTML=rapportHTML();
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  DAG TAB
-// ═══════════════════════════════════════════════════════════════════════
-function dagHTML() {
+// ═══════════════════════════════════════════════════════
+//  DAG
+// ═══════════════════════════════════════════════════════
+function dagHTML(){
   const today=new Date(), dk=dateKey(today), di=todayIdx();
   const entries=getEntries(dk);
   const dayType=getDayType(dk);
-  const target=dayTarget(di);
-  const isSyg=dayType==='syg'||dayType==='p56', isBarnSyg=dayType==='barnsyg';
-
-  // Timer arbejdet (kun normale entries, ikke syg/barnsyg hele dag)
+  const target=DAY_TARGET[di];
+  const isSyg=dayType==='syg'||dayType==='p56', isBarnSyg=dayType==='barnsyg', isP56=dayType==='p56';
   const worked=entries.reduce((s,e)=>s+e.hours,0);
   const diff=worked-target;
   const pct=target>0?Math.min(100,(worked/target)*100):0;
   const sc=isSyg||isBarnSyg?'blue':diff>0.05?'good':diff<-0.05?'bad':'amber';
-  const sl=isSyg?'Sygedag':isBarnSyg?'Barn syg':diff>0.05?'Overarb.':diff<-0.05?'Mangler':'Næsten';
   const ss2=diff>0.05?'+':diff<-0.05?'-':'';
   const barClr=diff>0.05?'var(--green)':worked>0?'var(--gold)':'var(--slate)';
 
-  // Dag-type knapper
-  const dtBtns=DAY_TYPES.map(dt=>`
-    <button class="daytype-btn ${dayType===dt.id?dt.cls:''}" onclick="setDT('${dk}','${dt.id}')">${dt.label}</button>`).join('');
+  const dtBtns=DAY_TYPES.map(dt=>`<button class="daytype-btn ${dayType===dt.id?dt.cls:''}" onclick="setDT('${dk}','${dt.id}')">${dt.label}</button>`).join('');
 
-  const isP56 = dayType==='p56';
-  // Hent gemte delvise timer
-  const partialH = sg('partial_'+dk) || {};
-
-  // Syg/Barn-syg/P56 hel-dag banner
   let specialBanner='';
-  if(isSyg||isBarnSyg||isP56){
-    const icon=isSyg?'🤒':isP56?'§':'👶';
-    const title=isSyg?'Sygedag':isP56?'Paragraf 56':'Barn syg';
-    const clsName=isSyg?'special-syg':isP56?'special-p56':'special-barnsyg';
-    const ph=partialH[dayType]||'';
+  if(isSyg||isBarnSyg){
+    const icon=isP56?'§':isSyg?'🤒':'👶';
+    const title=isP56?'Paragraf 56':isSyg?'Sygedag':'Barn syg';
+    const cls=isSyg?'special-syg':'special-barnsyg';
+    const ph=getPartial(dk,dayType);
     specialBanner=`<div class="card">
       <div class="section-label">${icon} ${title}</div>
-      <div class="${clsName} special-day" style="margin-bottom:10px">
-        <div style="flex:1">
-          <div style="font-weight:700;margin-bottom:4px">Antal timer (valgfrit)</div>
-          <div style="font-size:11px;color:var(--slate)">Skriv antal timer hvis det er en delvis dag. Lad stå tomt for hel dag.</div>
-        </div>
-      </div>
+      <div class="${cls} special-day" style="margin-bottom:10px"><div style="flex:1"><div style="font-weight:700;margin-bottom:2px">${ph?ph+' timer':'Hel dag'}</div><div style="font-size:11px;color:var(--slate)">Skriv timer hvis delvis dag</div></div></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <input type="number" id="partialHours" min="0" max="8" step="0.5" 
-          style="flex:1;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px 14px;font-size:16px;font-family:var(--font);outline:none"
-          placeholder="Timer (fx 3.5)" value="${ph}"
-          oninput="savePartial('${dk}','${dayType}',this.value)">
-        <div style="font-size:13px;color:var(--slate);flex-shrink:0">timer</div>
+        <input type="number" min="0" max="8" step="0.5" style="flex:1;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px 14px;font-size:16px;font-family:var(--font);outline:none" placeholder="Timer fx 3.5" value="${ph}" oninput="savePartialH('${dk}','${dayType}',this.value)">
+        <div style="font-size:13px;color:var(--slate)">timer</div>
       </div>
-      ${ph?`<div style="margin-top:8px;font-size:13px;color:var(--gold);font-weight:700">${title}: ${ph} timer registreret</div>`:'<div style="margin-top:8px;font-size:11px;color:var(--slate)">Hel dag registreret</div>'}
     </div>`;
   }
+
+  // Totaler
+  const onTotals={};
+  entries.forEach(e=>{ if(!e.special) onTotals[e.on]=(onTotals[e.on]||0)+e.hours; });
+  const onKeys=Object.keys(onTotals);
+  const summaryHTML=entries.length>0?`
+  <div class="card">
+    <div class="section-label">Totaler til Promak</div>
+    <div class="promak-box">
+      ${onKeys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+    </div>
+  </div>`:'';
 
   const timerHTML=activeTimer?`
     <div class="live-card">
@@ -393,33 +418,12 @@ function dagHTML() {
       <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
 
-  // Summér timer per ON
-  const onTotals={};
-  entries.forEach(e=>{ if(!e.special){ onTotals[e.on]=(onTotals[e.on]||0)+e.hours; }});
-  const onKeys=Object.keys(onTotals);
-  const summaryHTML=entries.length>0?`
-  <div class="card">
-    <div class="section-label">Totaler til Promak</div>
-    <div style="background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)">
-      ${onKeys.map(k=>`
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px">
-          <span style="font-weight:600">${k}</span>
-          <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span>
-        </div>`).join('')}
-    </div>
-  </div>`:'';
-
   const listHTML=entries.length?entries.map((e,i)=>{
     const isEditing=editingIdx===i;
-    const isSygEntry=e.special==='syg'||e.special==='barnsyg';
-    const entryColor=e.special==='syg'?'var(--red)':e.special==='barnsyg'?'var(--blue)':'var(--gold)';
     const editPanel=isEditing?`
       <div class="edit-panel">
         <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
-        <div style="margin-bottom:7px">
-          <label class="field-label">ON / Projekt</label>
-          <input type="text" class="edit-input" id="editOn" value="${e.on}">
-        </div>
+        <div style="margin-bottom:7px"><label class="field-label">ON / Projekt</label><input type="text" class="edit-input" id="editOn" value="${e.on}"></div>
         <div class="edit-row">
           <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${e.start}"></div>
           <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${e.stop}"></div>
@@ -431,16 +435,10 @@ function dagHTML() {
       </div>`:'';
     return`<div class="entry">
       <div class="entry-main-row">
-        <div class="entry-time-col">
-          <div class="entry-time">${e.start}</div>
-          <div class="entry-time">${e.stop}</div>
-        </div>
+        <div class="entry-time-col"><div class="entry-time">${e.start}</div><div class="entry-time">${e.stop}</div></div>
         <div class="entry-divider"></div>
-        <div class="entry-body">
-          <div class="entry-on">${e.on}${isSygEntry?` <span style="font-size:10px;color:${entryColor}">(${e.special==='syg'?'Syg':'Barn syg'})</span>`:''}</div>
-          ${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}
-        </div>
-        <div class="entry-dur" style="color:${entryColor}">${fmtH(e.hours)}</div>
+        <div class="entry-body"><div class="entry-on">${e.on}</div>${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}</div>
+        <div class="entry-dur">${fmtH(e.hours)}</div>
       </div>
       <div class="entry-actions">
         <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
@@ -457,101 +455,64 @@ function dagHTML() {
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num white">${fmtH(worked)}</div><div class="stat-lbl">Arbejdet</div></div>
       <div class="stat-box"><div class="stat-num white">${fmtH(target)}</div><div class="stat-lbl">Mål</div></div>
-      <div class="stat-box"><div class="stat-num ${sc}">${isSyg||isBarnSyg?'':ss2}${isSyg||isBarnSyg?sl:fmtH(Math.abs(diff))}</div><div class="stat-lbl">${isSyg||isBarnSyg?'Status':sl}</div></div>
+      <div class="stat-box"><div class="stat-num ${sc}">${isSyg||isBarnSyg?'—':ss2+fmtH(Math.abs(diff))}</div><div class="stat-lbl">${isSyg?'Syg':isBarnSyg?'Barn syg':diff>0.05?'Overarb.':diff<-0.05?'Mangler':'OK ✓'}</div></div>
     </div>
-    ${target>0?`<div class="prog-wrap">
-      <div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div>
-      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div>
-    </div>`:''}
+    ${target>0?`<div class="prog-wrap"><div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div></div>`:''}
   </div>
-  <div class="card">
-    <div class="section-label">Dag-type</div>
-    <div class="daytype-row">${dtBtns}</div>
-  </div>
+  <div class="card"><div class="section-label">Dag-type</div><div class="daytype-row">${dtBtns}</div></div>
   ${specialBanner}
-  <div class="card">
-    <div class="section-label">Registreringer</div>
-    ${listHTML}
-  </div>
+  <div class="card"><div class="section-label">Registreringer</div>${listHTML}</div>
   ${summaryHTML}`;
 }
 
-function toggleDay(id){
-  const el=document.getElementById(id);
-  if(el) el.style.display=el.style.display==='none'?'block':'none';
-}
-
-function savePartial(dk, type, val){
-  const partialH = sg('partial_'+dk) || {};
-  if(val) partialH[type] = val;
-  else delete partialH[type];
-  ss('partial_'+dk, partialH);
-  // Re-render kun partial display uden at resette input
-  const disp = document.querySelector('.partial-display');
-  if(disp) disp.textContent = val ? `${type==='syg'?'Sygedag':type==='barnsyg'?'Barn syg':'Paragraf 56'}: ${val} timer` : 'Hel dag registreret';
-}
-
-function setDT(dk, type) {
-  setDayType(dk, type);
+function setDT(dk,type){
+  setDayType(dk,type);
   render();
-  const msgs={'syg':'🤒 Sygedag','barnsyg':'👶 Barn syg','p56':'§56 Paragraf 56','hjemme':'🏠 Hjemmedag','kontor':'🏢 Kontordag'};
+  const msgs={syg:'🤒 Sygedag',barnsyg:'👶 Barn syg',p56:'§56',hjemme:'🏠 Hjemme',kontor:'🏢 Kontor'};
   toast((msgs[type]||type)+' registreret','ok');
 }
-
-function startEdit(i) { editingIdx=i; render(); }
-function cancelEdit() { editingIdx=-1; render(); }
-function saveEdit(dk, i) {
+function startEdit(i){editingIdx=i;render();}
+function cancelEdit(){editingIdx=-1;render();}
+function saveEdit(dk,i){
   const on=document.getElementById('editOn').value.trim();
   const start=document.getElementById('editStart').value;
   const stop=document.getElementById('editStop').value;
-  if(!on||!start||!stop){toast('Udfyld alle felter','err');return}
-  const sh=hmToH(start), eh=hmToH(stop);
-  if(eh<=sh){toast('Stop skal være efter start','err');return}
-  const arr=getEntries(dk);
-  arr[i]={...arr[i],on,start,stop,hours:eh-sh};
-  saveEntries(dk,arr);
-  editingIdx=-1; toast('✓ Rettet','ok'); render();
+  if(!on||!start||!stop){toast('Udfyld alle felter','err');return;}
+  const sh=hmToH(start),eh=hmToH(stop);
+  if(eh<=sh){toast('Stop skal være efter start','err');return;}
+  const arr=getEntries(dk); arr[i]={...arr[i],on,start,stop,hours:eh-sh};
+  saveEntries(dk,arr); editingIdx=-1; toast('✓ Rettet','ok'); render();
 }
-function doDelEntry(dk,i) {
+function doDelEntry(dk,i){
   const arr=getEntries(dk); arr.splice(i,1); saveEntries(dk,arr);
   editingIdx=-1; render(); toast('Slettet','err');
 }
-
-function startDisp() {
+function startDisp(){
   if(timerIv)clearInterval(timerIv);
   timerIv=setInterval(()=>{
-    const el=document.getElementById('timerDisp'); if(!el){clearInterval(timerIv);return}
+    const el=document.getElementById('timerDisp'); if(!el){clearInterval(timerIv);return;}
     const ms=Date.now()-activeTimer.t0;
-    const s=Math.floor(ms/1000)%60, m=Math.floor(ms/60000)%60, h=Math.floor(ms/3600000);
+    const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);
     el.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   },1000);
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  TILFOEJ TAB
-// ═══════════════════════════════════════════════════════════════════════
-function tilfoejHTML() {
+// ═══════════════════════════════════════════════════════
+//  TILFOEJ
+// ═══════════════════════════════════════════════════════
+function tilfoejHTML(){
   const now=nowHM();
-  const catBtns=CATS.map(c=>`
-    <button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
-  const chips=QUICK_ON.map(o=>`
-    <button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
-
+  const catBtns=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
+  const chips=QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
   return`
-  <div class="card">
-    <div class="section-label">Kategori</div>
-    <div class="cat-grid">${catBtns}</div>
-  </div>
+  <div class="card"><div class="section-label">Kategori</div><div class="cat-grid">${catBtns}</div></div>
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
-    <div style="margin-top:9px">
-      <label class="field-label">Eller skriv selv</label>
-      <input type="text" id="onInput" placeholder="fx 3052" value="${customOn}" oninput="customOn=this.value;selOn=''">
-    </div>
+    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${customOn}" oninput="customOn=this.value;selOn=''"></div>
   </div>
   <div class="card">
-    <div class="section-label">Syg / Barn syg på timer</div>
+    <div class="section-label">Syg / Barn syg / §56 på timer</div>
     <div class="special-grid">
       <button class="special-btn syg${selSpecial==='syg'?' sel':''}" onclick="toggleSpecial('syg')">🤒 Syg</button>
       <button class="special-btn barnsyg${selSpecial==='barnsyg'?' sel':''}" onclick="toggleSpecial('barnsyg')">👶 Barn syg</button>
@@ -559,157 +520,118 @@ function tilfoejHTML() {
     <div class="special-grid" style="margin-top:5px">
       <button class="special-btn" style="border-color:rgba(176,110,255,.4);color:var(--purple);${selSpecial==='p56'?'background:rgba(176,110,255,.15)':''}" onclick="toggleSpecial('p56')">§ Paragraf 56</button>
     </div>
-    <div style="font-size:11px;color:var(--slate);margin-top:6px">Her registrerer du på timer. For hel dag: brug Dag-type på "I dag" siden.</div>
+    <div style="font-size:11px;color:var(--slate);margin-top:6px">For hel dag: brug Dag-type på "I dag" siden</div>
   </div>
   <div class="card">
     <div class="section-label">▶ Start timer</div>
     <div class="form-col">
-      ${activeTimer
-        ?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${activeTimer.label}</button>`
-        :`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
+      ${activeTimer?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${activeTimer.label}</button>`:`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
     </div>
   </div>
   <div class="card">
     <div class="section-label">Tilføj manuelt</div>
     <div class="form-col">
       <div class="form-row">
-        <div>
-          <label class="field-label">Start</label>
-          <input type="time" id="mStart" value="${now}">
-          <button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button>
-        </div>
-        <div>
-          <label class="field-label">Stop</label>
-          <input type="time" id="mStop" value="${now}">
-          <button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button>
-        </div>
+        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${now}"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
+        <div><label class="field-label">Stop</label><input type="time" id="mStop" value="${now}"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
       </div>
       <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
     </div>
   </div>`;
 }
 
-function pickCat(cat){ selCat=cat; if(!selOn&&!customOn)selOn=cat; render(); tab('tilfoej'); }
-function pickOn(on){ selOn=on; customOn=''; render(); tab('tilfoej'); }
-function toggleSpecial(s){ selSpecial=selSpecial===s?'':s; render(); tab('tilfoej'); }
-function setNow(id){ document.getElementById(id).value=nowHM(); }
-function getLabel(){ const on=customOn||selOn||selCat||'?'; return (selCat&&selCat!==on)?`${on} / ${selCat}`:on; }
-
-function buildEntry(on, cat, start, stop, hours) {
-  const e={on,cat,start,stop,hours,date:dateKey(new Date())};
-  if(selSpecial) e.special=selSpecial;
-  return e;
-}
+function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();tab('tilfoej');}
+function pickOn(on){selOn=on;customOn='';render();tab('tilfoej');}
+function toggleSpecial(s){selSpecial=selSpecial===s?'':s;render();tab('tilfoej');}
+function setNow(id){document.getElementById(id).value=nowHM();}
+function getLabel(){const on=customOn||selOn||selCat||'?';return(selCat&&selCat!==on)?`${on} / ${selCat}`:on;}
 
 function startTimer(){
-  if(!selCat&&!selOn&&!customOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return}
-  const on=customOn||selOn||selCat||(selSpecial==='syg'?'Syg':'Barn syg');
-  const cat=selCat, label=selSpecial?(selSpecial==='syg'?'🤒 Syg':'👶 Barn syg'):getLabel();
-  activeTimer={on,cat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
-  ss('activeTimer',activeTimer);
+  if(!selCat&&!selOn&&!customOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return;}
+  const on=selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):(customOn||selOn||selCat);
+  const label=selSpecial?(selSpecial==='syg'?'🤒 Syg':selSpecial==='barnsyg'?'👶 Barn syg':'§56'):getLabel();
+  activeTimer={on,cat:selCat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
+  localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
   toast(`▶ ${label} startet`,'ok'); tab('dag');
 }
 function stopTimer(){
   if(!activeTimer)return;
   clearInterval(timerIv);
-  const stop=nowHM(), hours=(Date.now()-activeTimer.t0)/3600000;
+  const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
   const dk=dateKey(new Date());
   const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
-  if(activeTimer.special) entry.special=activeTimer.special;
+  if(activeTimer.special)entry.special=activeTimer.special;
   addEntry(dk,entry);
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   toast('✓ Gemt','ok'); tab('dag');
 }
 function saveManual(){
-  const start=document.getElementById('mStart').value, stop=document.getElementById('mStop').value;
-  if(!start||!stop){toast('Udfyld start og stop','err');return}
-  const sh=hmToH(start), eh=hmToH(stop);
-  if(eh<=sh){toast('Stop skal være efter start','err');return}
-  const on=selSpecial?(selSpecial==='syg'?'Syg':'Barn syg'):(customOn||selOn||selCat);
-  if(!on){toast('Vælg kategori eller ON-nummer','err');return}
-  const cat=selCat;
+  const start=document.getElementById('mStart').value,stop=document.getElementById('mStop').value;
+  if(!start||!stop){toast('Udfyld start og stop','err');return;}
+  const sh=hmToH(start),eh=hmToH(stop);
+  if(eh<=sh){toast('Stop skal være efter start','err');return;}
+  const on=selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):(customOn||selOn||selCat);
+  if(!on){toast('Vælg kategori eller ON-nummer','err');return;}
   const dk=dateKey(new Date());
-  const entry={on,cat,start,stop,hours:eh-sh,date:dk};
-  if(selSpecial) entry.special=selSpecial;
-  addEntry(dk,entry);
-  savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
+  const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
+  if(selSpecial)entry.special=selSpecial;
+  addEntry(dk,entry); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  UGE TAB
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  UGE
+// ═══════════════════════════════════════════════════════
 function ugeHTML(){
-  const now=new Date(), mon=monday(now), ti=todayIdx();
-  let totalH=0, officeDays=0, homeDays=0, sygDays=0, barnSygDays=0;
-
+  const now=new Date(),mon=monday(now),ti=todayIdx();
+  let totalH=0,officeDays=0,homeDays=0,sygDays=0,barnSygDays=0;
   const daysHTML=DAY_S.map((name,i)=>{
-    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
     const dk=dateKey(d);
     const entries=getEntries(dk);
     const type=getDayType(dk);
     const h=entries.reduce((s,e)=>s+e.hours,0);
     const target=DAY_TARGET[i];
-
     if(i<5){
-      if(type==='syg')     { sygDays++; }
-      else if(type==='barnsyg') { barnSygDays++; }
-      else if(h>0) {
-        totalH+=h;
-        type==='hjemme'?homeDays++:officeDays++;
-      }
+      if(type==='syg'||type==='p56') sygDays++;
+      else if(type==='barnsyg') barnSygDays++;
+      else if(h>0){totalH+=h;type==='hjemme'?homeDays++:officeDays++;}
     }
-
     const pct=target>0?Math.min(100,(h/target)*100):0;
     const diff=h-target;
-    const isToday=i===ti, isPast=i<ti&&i<5;
-    const isSygDay=type==='syg', isBarnSygDay=type==='barnsyg';
+    const isToday=i===ti,isPast=i<ti&&i<5;
+    const isSygDay=type==='syg'||type==='p56',isBarnSygDay=type==='barnsyg',isP56Day=type==='p56';
     const barClr=isSygDay||isBarnSygDay?'var(--blue)':h>=target?'var(--green)':h>0?'var(--gold)':'transparent';
-
-    const isP56Day=type==='p56';
-    const rowCls=isSygDay||isP56Day?'syg-day':isBarnSygDay?'barnsyg-day':isToday?'today':'';
-
+    const rowCls=isSygDay?'syg-day':isBarnSygDay?'barnsyg-day':isToday?'today':'';
     let diffHTML='';
-    if(isSygDay)          diffHTML=`<div class="wr-diff" style="color:var(--red)">🤒 Sygedag</div>`;
-    else if(isP56Day)     diffHTML=`<div class="wr-diff" style="color:var(--purple)">§56 Paragraf 56</div>`;
+    if(isSygDay)          diffHTML=`<div class="wr-diff" style="color:var(--red)">${isP56Day?'§56':'🤒 Sygedag'}</div>`;
     else if(isBarnSygDay) diffHTML=`<div class="wr-diff" style="color:var(--blue)">👶 Barn syg</div>`;
     else if((isPast||isToday)&&h>0){
       const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
-
-    // Summér per ON i uge-visning
+    // Dag-totaler per ON
     const ugeTotals={};
-    entries.forEach(e=>{ ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours; });
+    entries.forEach(e=>{ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours;});
     const entryRows=Object.keys(ugeTotals).map(k=>`
       <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px">
         <span style="flex:1;font-weight:600">${k}</span>
         <span style="color:var(--gold);font-family:var(--mono);font-weight:700">${fmtH(ugeTotals[k])}</span>
       </div>`).join('');
-
-    return`<div class="week-row ${rowCls}" style="flex-direction:column;align-items:stretch;padding:0;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer" onclick="toggleDay('wd-${dk}')">
+    return`<div class="week-row ${rowCls}">
+      <div class="wr-hdr" onclick="toggleDay('wd-${dk}')">
         <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
         <div class="wr-mid">
-          <div class="wr-bar-row">
-            <span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span>
-            <span>${isSygDay||isBarnSygDay?'—':h>0?fmtH(h):'—'}</span>
-          </div>
+          <div class="wr-bar-row"><span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
           <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
           ${diffHTML}
         </div>
-        <div class="wr-right">
-          ${isToday?'<div class="wr-badge">I dag</div>':''}
-          ${entries.length>0?`<div style="font-size:10px;color:var(--slate);margin-top:2px">▼ ${entries.length}</div>`:''}
-        </div>
+        <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}${entries.length>0?`<div style="font-size:10px;color:var(--slate);margin-top:2px">▼ ${entries.length}</div>`:''}</div>
       </div>
-      ${entries.length>0?`<div id="wd-${dk}" style="display:none;padding:2px 12px 10px;border-top:1px solid rgba(255,255,255,.05)">${entryRows}</div>`:''}
+      ${entries.length>0?`<div class="wr-body" id="wd-${dk}">${entryRows}</div>`:''}
     </div>`;
   }).join('');
-
-  const wTarget=7.5*4+6.5; // 36.5 timer om ugen
-  const wDiff=totalH-wTarget;
-  const exportHTML=buildExport(mon);
-
+  const wDiff=totalH-(7.5*4+6.5);
+  const exportHTML=buildUgeExport(mon);
   return`
   <div class="card">
     <div class="section-label">Uge ${weekNum(now)} · oversigt</div>
@@ -718,7 +640,7 @@ function ugeHTML(){
       <div class="ws"><div class="ws-val" style="${wDiff>=0?'color:var(--green)':'color:var(--red)'}">${wDiff>=0?'+':'-'}${fmtH(Math.abs(wDiff))}</div><div class="ws-lbl">${wDiff>=0?'Overarb.':'Mangler'}</div></div>
       <div class="ws"><div class="ws-val">🏢 ${officeDays}</div><div class="ws-lbl">Kontor</div></div>
       <div class="ws"><div class="ws-val">🏠 ${homeDays}</div><div class="ws-lbl">Hjemme</div></div>
-      ${sygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--red)">🤒 ${sygDays}</div><div class="ws-lbl">Sygedage</div></div>`:''}
+      ${sygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--red)">🤒 ${sygDays}</div><div class="ws-lbl">Syg/§56</div></div>`:''}
       ${barnSygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--blue)">👶 ${barnSygDays}</div><div class="ws-lbl">Barn syg</div></div>`:''}
     </div>
     ${daysHTML}
@@ -726,85 +648,84 @@ function ugeHTML(){
   ${exportHTML}`;
 }
 
-function buildExport(mon){
+function toggleDay(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+function buildUgeExport(mon){
   const totals={};
   for(let i=0;i<5;i++){
-    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
     for(const e of getEntries(dateKey(d))){
-      if(e.special) continue; // Syg/barnsyg tæller ikke til Promak
-      const key=e.on||e.cat||'?';
-      totals[key]=(totals[key]||0)+e.hours;
+      if(e.special)continue;
+      totals[e.on]=(totals[e.on]||0)+e.hours;
     }
   }
   const keys=Object.keys(totals);
   if(!keys.length)return'';
-  const rows=keys.map(k=>`
-    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px">
-      <span style="font-weight:600">${k}</span>
-      <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span>
-    </div>`).join('');
   const txt=keys.map(k=>`${k}: ${fmtH(totals[k])}`).join('\n');
   return`
   <div class="card">
-    <div class="section-label">Promak-oversigt (uden syg)</div>
-    <div style="background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)">${rows}</div>
-    <div style="display:flex;gap:7px;margin-top:9px">
-      <button class="btn btn-ghost" style="flex:1" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">📋 Kopiér</button>
-      <button class="btn btn-gold" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
-    </div>
+    <div class="section-label">Promak-oversigt</div>
+    <div class="promak-box">${keys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span></div>`).join('')}</div>
+    <button class="btn btn-ghost" style="margin-top:9px" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">📋 Kopiér til Promak</button>
   </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  RAPPORT TAB
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  RAPPORT
+// ═══════════════════════════════════════════════════════
 function rapportHTML(){
-  // Saml alle uger fra localStorage
-  const allDays={};
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k&&k.startsWith('vct_e_')){
-      const dk=k.replace('vct_e_','');
-      allDays[dk]={entries:JSON.parse(localStorage.getItem(k)||'[]'),type:sg('wh_'+dk)||'kontor'};
-    }
-  }
-
-  // Grupper per uge
   const byWeek={};
-  Object.keys(allDays).sort().forEach(dk=>{
+  Object.keys(db.days).sort().forEach(dk=>{
     const d=new Date(dk);
-    const mon=monday(d);
     const wk=`${d.getFullYear()}-W${String(weekNum(d)).padStart(2,'0')}`;
-    if(!byWeek[wk]) byWeek[wk]={mon,days:{},totalH:0,officeDays:0,homeDays:0,sygDays:0,barnSygDays:0};
-    byWeek[wk].days[dk]=allDays[dk];
+    if(!byWeek[wk])byWeek[wk]={mon:monday(d),days:{},totalH:0,officeDays:0,homeDays:0,sygDays:0,barnSygDays:0};
+    byWeek[wk].days[dk]=db.days[dk];
   });
-
-  // Beregn per uge
-  let yearTotal=0, yearOffice=0, yearHome=0, yearSyg=0, yearBarnSyg=0;
-  const weekKeys=Object.keys(byWeek).sort().reverse(); // Nyeste først
-
-  // År-totaler
   const currentYear=new Date().getFullYear();
+  let yearTotal=0,yearOffice=0,yearHome=0,yearSyg=0,yearBarnSyg=0;
+  const weekKeys=Object.keys(byWeek).sort().reverse();
   weekKeys.forEach(wk=>{
     const w=byWeek[wk];
     Object.keys(w.days).forEach(dk=>{
       const d=new Date(dk);
-      if(d.getFullYear()!==currentYear) return;
-      const {entries,type}=w.days[dk];
+      if(d.getFullYear()!==currentYear)return;
       const di=(d.getDay()+6)%7;
-      if(di>=5) return;
+      if(di>=5)return;
+      const {entries=[],type='kontor'}=w.days[dk];
       const h=entries.reduce((s,e)=>s+e.hours,0);
-      if(type==='syg'||type==='p56') { w.sygDays++;     yearSyg++; }
-      else if(type==='barnsyg'){ w.barnSygDays++; yearBarnSyg++; }
-      else if(h>0){
-        w.totalH+=h; yearTotal+=h;
-        type==='hjemme'?(w.homeDays++,yearHome++):(w.officeDays++,yearOffice++);
-      }
+      if(type==='syg'||type==='p56'){w.sygDays++;yearSyg++;}
+      else if(type==='barnsyg'){w.barnSygDays++;yearBarnSyg++;}
+      else if(h>0){w.totalH+=h;yearTotal+=h;type==='hjemme'?(w.homeDays++,yearHome++):(w.officeDays++,yearOffice++);}
     });
   });
-
-  // År-summary
-  const yearHTML=`
+  const weeksHTML=weekKeys.map(wk=>{
+    const w=byWeek[wk];
+    const mon=w.mon;
+    const fri=new Date(mon);fri.setDate(mon.getDate()+4);
+    const wNum=weekNum(mon);
+    const onTotals={};
+    Object.values(w.days).forEach(({entries=[]})=>{
+      entries.forEach(e=>{if(!e.special)onTotals[e.on]=(onTotals[e.on]||0)+e.hours;});
+    });
+    const badges=[];
+    if(w.officeDays)badges.push(`🏢${w.officeDays}`);
+    if(w.homeDays)badges.push(`🏠${w.homeDays}`);
+    if(w.sygDays)badges.push(`🤒${w.sygDays}`);
+    if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
+    return`<div class="report-week">
+      <div class="report-week-hdr" onclick="toggleWeek('rwb-${wk}')">
+        <div>
+          <div class="report-week-title">Uge ${wNum}</div>
+          <div class="report-week-meta">${mon.getDate()}. ${MONTHS_S[mon.getMonth()]} – ${fri.getDate()}. ${MONTHS_S[fri.getMonth()]} · ${badges.join(' ')}</div>
+        </div>
+        <div class="report-week-hours">${fmtH(w.totalH)}</div>
+      </div>
+      <div class="report-week-body" id="rwb-${wk}">
+        ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span>${k}</span><span style="color:var(--gold);font-family:var(--mono)">${fmtH(onTotals[k])}</span></div>`).join('')||'<div style="color:var(--slate);font-size:12px;padding:4px 0">Ingen registreringer</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  return`
   <div class="card">
     <div class="section-label">${currentYear} · Årsovervigt</div>
     <div class="report-year-summary">
@@ -817,128 +738,59 @@ function rapportHTML(){
     </div>
     <div style="display:flex;gap:7px">
       <button class="btn btn-ghost" style="flex:1" onclick="importData()">📥 Importer</button>
-      <button class="btn btn-gold" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
+      <button class="btn btn-gold" style="flex:1" onclick="manualSync()">🔄 Sync nu</button>
     </div>
-  </div>`;
-
-  // Uger
-  const weeksHTML=weekKeys.map(wk=>{
-    const w=byWeek[wk];
-    const mon=w.mon;
-    const monStr=`${mon.getDate()}. ${MONTHS_S[mon.getMonth()]}`;
-    const fri=new Date(mon); fri.setDate(mon.getDate()+4);
-    const friStr=`${fri.getDate()}. ${MONTHS_S[fri.getMonth()]}`;
-    const wNum=weekNum(mon);
-
-    // ON-totaler for ugen
-    const onTotals={};
-    Object.values(w.days).forEach(({entries})=>{
-      entries.forEach(e=>{
-        if(e.special) return;
-        const key=e.on||e.cat||'?';
-        onTotals[key]=(onTotals[key]||0)+e.hours;
-      });
-    });
-    const onRows=Object.keys(onTotals).map(k=>`
-      <div class="report-entry">
-        <span>${k}</span>
-        <span style="color:var(--gold);font-family:var(--mono)">${fmtH(onTotals[k])}</span>
-      </div>`).join('');
-
-    const badges=[];
-    if(w.officeDays) badges.push(`🏢${w.officeDays}`);
-    if(w.homeDays)   badges.push(`🏠${w.homeDays}`);
-    if(w.sygDays)    badges.push(`🤒${w.sygDays}`);
-    if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
-
-    return`<div class="report-week">
-      <div class="report-week-hdr" onclick="toggleWeek('${wk}')">
-        <div>
-          <div class="report-week-title">Uge ${wNum}</div>
-          <div class="report-week-meta">${monStr} – ${friStr} · ${badges.join(' ')}</div>
-        </div>
-        <div class="report-week-hours">${fmtH(w.totalH)}</div>
-      </div>
-      <div class="report-week-body" id="rwb-${wk}">
-        ${onRows||'<div style="color:var(--slate);font-size:12px;padding:4px 0">Ingen registreringer</div>'}
-      </div>
-    </div>`;
-  }).join('');
-
-  return`${yearHTML}
-  <div class="card">
-    <div class="section-label">Uger — klik for detaljer</div>
-    <div class="report-section">${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>
-  </div>`;
+  </div>
+  <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
 }
 
-function toggleWeek(wk){
-  const el=document.getElementById('rwb-'+wk);
-  if(el) el.classList.toggle('open');
-}
+function toggleWeek(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
 
-// ═══════════════════════════════════════════════════════════════════════
-//  BACKUP / EXPORT
-// ═══════════════════════════════════════════════════════════════════════
+async function manualSync(){
+  toast('Synkroniserer...','');
+  await ghLoad();
+  render();
+  toast('✓ Synkroniseret','ok');
+}
 
 function importData(){
-  const input = document.createElement('input');
-  input.type = 'file'; input.accept = '.json';
-  input.onchange = async e => {
-    const file = e.target.files[0];
-    if(!file) return;
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if(!data.days) { toast('Ugyldig fil','err'); return; }
-      let count = 0;
-      Object.keys(data.days).forEach(dk => {
-        const day = data.days[dk];
-        if(day.entries && day.entries.length > 0) {
-          const existing = getEntries(dk);
-          // Undgå dubletter
-          const existingKeys = new Set(existing.map(e=>e.start+e.on));
-          const newEntries = day.entries.filter(e=>!existingKeys.has(e.start+e.on));
-          if(newEntries.length > 0) {
-            saveEntries(dk, [...existing, ...newEntries]);
-            count += newEntries.length;
-          }
-        }
-        if(day.type && day.type !== 'kontor') {
-          setDayType(dk, day.type);
-        }
+  const input=document.createElement('input');
+  input.type='file';input.accept='.json';
+  input.onchange=async e=>{
+    const file=e.target.files[0];if(!file)return;
+    try{
+      const text=await file.text();
+      const data=JSON.parse(text);
+      const src=data.days||{};
+      let count=0;
+      Object.keys(src).forEach(dk=>{
+        const day=src[dk];
+        if(!db.days[dk]) db.days[dk]={entries:[],type:'kontor'};
+        if(day.type&&day.type!=='kontor') db.days[dk].type=day.type;
+        const existing=db.days[dk].entries||[];
+        const existKeys=new Set(existing.map(e=>e.start+e.on));
+        const newE=(day.entries||[]).filter(e=>!existKeys.has(e.start+e.on));
+        db.days[dk].entries=[...existing,...newE];
+        count+=newE.length;
       });
+      scheduleSave();
       toast(`✓ ${count} registreringer importeret`,'ok');
       render();
-    } catch(err) { toast('Fejl: '+err.message,'err'); }
+    }catch(err){toast('Fejl: '+err.message,'err');}
   };
   input.click();
 }
 
-function downloadBackup(){
-  const data=getAllData();
-  const json=JSON.stringify(data, null, 2);
-  const blob=new Blob([json],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`timer_backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('💾 Backup downloadet','ok');
-}
-
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
 function copyText(txt){
   navigator.clipboard.writeText(txt).then(()=>toast('📋 Kopieret','ok')).catch(()=>toast('Prøv igen','err'));
 }
-
-// ═══════════════════════════════════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════════════════════════════════
 function toast(msg,type=''){
   const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
-  clearTimeout(t._to); t._to=setTimeout(()=>t.className='toast',3000);
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  clearTimeout(t._to);t._to=setTimeout(()=>t.className='toast',3000);
 }
 function savePulse(){
   const b=document.getElementById('saveBar');
