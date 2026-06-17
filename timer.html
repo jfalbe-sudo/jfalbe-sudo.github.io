@@ -393,6 +393,22 @@ function dagHTML() {
       <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
 
+  // Summér timer per ON
+  const onTotals={};
+  entries.forEach(e=>{ if(!e.special){ onTotals[e.on]=(onTotals[e.on]||0)+e.hours; }});
+  const onKeys=Object.keys(onTotals);
+  const summaryHTML=onKeys.length>0?`
+  <div class="card">
+    <div class="section-label">Totaler til Promak</div>
+    <div style="background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)">
+      ${onKeys.map(k=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px">
+          <span style="font-weight:600">${k}</span>
+          <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span>
+        </div>`).join('')}
+    </div>
+  </div>`:'';
+
   const listHTML=entries.length?entries.map((e,i)=>{
     const isEditing=editingIdx===i;
     const isSygEntry=e.special==='syg'||e.special==='barnsyg';
@@ -456,7 +472,8 @@ function dagHTML() {
   <div class="card">
     <div class="section-label">Registreringer</div>
     ${listHTML}
-  </div>`;
+  </div>
+  ${summaryHTML}`;
 }
 
 function toggleDay(id){
