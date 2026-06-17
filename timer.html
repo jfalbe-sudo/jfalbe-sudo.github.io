@@ -643,17 +643,17 @@ function ugeHTML(){
     const isSygDay=type==='syg', isBarnSygDay=type==='barnsyg';
     const barClr=isSygDay||isBarnSygDay?'var(--blue)':h>=target?'var(--green)':h>0?'var(--gold)':'transparent';
 
+    const isP56Day=type==='p56';
+    const rowCls=isSygDay||isP56Day?'syg-day':isBarnSygDay?'barnsyg-day':isToday?'today':'';
+
     let diffHTML='';
-    if(isSygDay)     diffHTML=`<div class="wr-diff" style="color:var(--red)">🤒 Sygedag</div>`;
-    else if(isP56Day) diffHTML=`<div class="wr-diff" style="color:var(--purple)">§56 Paragraf 56</div>`;
+    if(isSygDay)          diffHTML=`<div class="wr-diff" style="color:var(--red)">🤒 Sygedag</div>`;
+    else if(isP56Day)     diffHTML=`<div class="wr-diff" style="color:var(--purple)">§56 Paragraf 56</div>`;
     else if(isBarnSygDay) diffHTML=`<div class="wr-diff" style="color:var(--blue)">👶 Barn syg</div>`;
     else if((isPast||isToday)&&h>0){
       const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
-
-    const isP56Day=type==='p56';
-    const rowCls=isSygDay||isP56Day?'syg-day':isBarnSygDay?'barnsyg-day':isToday?'today':'';
 
     return`<div class="week-row ${rowCls}">
       <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
