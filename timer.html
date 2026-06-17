@@ -397,7 +397,7 @@ function dagHTML() {
   const onTotals={};
   entries.forEach(e=>{ if(!e.special){ onTotals[e.on]=(onTotals[e.on]||0)+e.hours; }});
   const onKeys=Object.keys(onTotals);
-  const summaryHTML=onKeys.length>0?`
+  const summaryHTML=entries.length>0?`
   <div class="card">
     <div class="section-label">Totaler til Promak</div>
     <div style="background:var(--ink3);border-radius:var(--r2);padding:11px 13px;border:1px solid rgba(245,172,0,.15)">
@@ -677,11 +677,13 @@ function ugeHTML(){
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
 
-    const entryRows=entries.map(e=>`
+    // Summér per ON i uge-visning
+    const ugeTotals={};
+    entries.forEach(e=>{ ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours; });
+    const entryRows=Object.keys(ugeTotals).map(k=>`
       <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px">
-        <span style="color:var(--slate);font-family:var(--mono);width:76px;flex-shrink:0">${e.start}–${e.stop}</span>
-        <span style="flex:1;font-weight:600">${e.on}</span>
-        <span style="color:var(--gold);font-family:var(--mono);font-weight:700">${fmtH(e.hours)}</span>
+        <span style="flex:1;font-weight:600">${k}</span>
+        <span style="color:var(--gold);font-family:var(--mono);font-weight:700">${fmtH(ugeTotals[k])}</span>
       </div>`).join('');
 
     return`<div class="week-row ${rowCls}" style="flex-direction:column;align-items:stretch;padding:0;overflow:hidden">
