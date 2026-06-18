@@ -143,6 +143,7 @@ select option{background:#081828}
 .daytype-btn.sel-syg{background:rgba(255,92,92,.15);border-color:var(--red);color:var(--red)}
 .daytype-btn.sel-barnsyg{background:rgba(77,166,255,.15);border-color:var(--blue);color:var(--blue)}
 .daytype-btn.sel-p56{background:rgba(176,110,255,.15);border-color:var(--purple);color:var(--purple)}
+.daytype-btn.sel-ferie{background:rgba(61,220,151,.15);border-color:var(--green);color:var(--green)}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
@@ -208,6 +209,7 @@ const DAY_TYPES=[
   {id:'syg',label:'🤒 Syg',cls:'sel-syg'},
   {id:'barnsyg',label:'👶 Barn syg',cls:'sel-barnsyg'},
   {id:'p56',label:'§56',cls:'sel-p56'},
+  {id:'ferie',label:'🌴 Ferie',cls:'sel-ferie'},
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -606,7 +608,7 @@ function saveManual(){
 // ═══════════════════════════════════════════════════════
 function ugeHTML(){
   const now=new Date(),mon=monday(now),ti=todayIdx();
-  let totalH=0,officeDays=0,homeDays=0,sygDays=0,barnSygDays=0;
+  let totalH=0,officeDays=0,homeDays=0,sygDays=0,barnSygDays=0,ferieDays=0;
   const daysHTML=DAY_S.map((name,i)=>{
     const d=new Date(mon);d.setDate(mon.getDate()+i);
     const dk=dateKey(d);
@@ -617,6 +619,7 @@ function ugeHTML(){
     if(i<5){
       if(type==='syg'||type==='p56') sygDays++;
       else if(type==='barnsyg') barnSygDays++;
+      else if(type==='ferie') ferieDays++;
       else if(h>0){totalH+=h;type==='hjemme'?homeDays++:officeDays++;}
     }
     const pct=target>0?Math.min(100,(h/target)*100):0;
@@ -628,6 +631,7 @@ function ugeHTML(){
     let diffHTML='';
     if(isSygDay)          diffHTML=`<div class="wr-diff" style="color:var(--red)">${isP56Day?'§56':'🤒 Sygedag'}</div>`;
     else if(isBarnSygDay) diffHTML=`<div class="wr-diff" style="color:var(--blue)">👶 Barn syg</div>`;
+    else if(type==='ferie') diffHTML=`<div class="wr-diff" style="color:var(--green)">🌴 Ferie</div>`;
     else if((isPast||isToday)&&h>0){
       const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
@@ -644,7 +648,7 @@ function ugeHTML(){
       <div class="wr-hdr" onclick="toggleDay('wd-${dk}')">
         <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
         <div class="wr-mid">
-          <div class="wr-bar-row"><span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
+          <div class="wr-bar-row"><span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':type==='ferie'?'🌴':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
           <div class="wr-bar-bg"><div class="wr-bar-fill" style="width:${pct}%;background:${barClr}"></div></div>
           ${diffHTML}
         </div>
@@ -665,6 +669,7 @@ function ugeHTML(){
       <div class="ws"><div class="ws-val">🏠 ${homeDays}</div><div class="ws-lbl">Hjemme</div></div>
       ${sygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--red)">🤒 ${sygDays}</div><div class="ws-lbl">Syg/§56</div></div>`:''}
       ${barnSygDays>0?`<div class="ws"><div class="ws-val" style="color:var(--blue)">👶 ${barnSygDays}</div><div class="ws-lbl">Barn syg</div></div>`:''}
+      ${ferieDays>0?`<div class="ws"><div class="ws-val" style="color:var(--green)">🌴 ${ferieDays}</div><div class="ws-lbl">Feriedage</div></div>`:''}
     </div>
     ${daysHTML}
   </div>
@@ -705,7 +710,7 @@ function rapportHTML(){
     byWeek[wk].days[dk]=db.days[dk];
   });
   const currentYear=new Date().getFullYear();
-  let yearTotal=0,yearOffice=0,yearHome=0,yearSyg=0,yearBarnSyg=0;
+  let yearTotal=0,yearOffice=0,yearHome=0,yearSyg=0,yearBarnSyg=0,yearFerie=0;
   const weekKeys=Object.keys(byWeek).sort().reverse();
   weekKeys.forEach(wk=>{
     const w=byWeek[wk];
@@ -718,6 +723,7 @@ function rapportHTML(){
       const h=entries.reduce((s,e)=>s+e.hours,0);
       if(type==='syg'||type==='p56'){w.sygDays++;yearSyg++;}
       else if(type==='barnsyg'){w.barnSygDays++;yearBarnSyg++;}
+      else if(type==='ferie'){w.ferieDays=(w.ferieDays||0)+1;yearFerie++;}
       else if(h>0){w.totalH+=h;yearTotal+=h;type==='hjemme'?(w.homeDays++,yearHome++):(w.officeDays++,yearOffice++);}
     });
   });
@@ -735,6 +741,7 @@ function rapportHTML(){
     if(w.homeDays)badges.push(`🏠${w.homeDays}`);
     if(w.sygDays)badges.push(`🤒${w.sygDays}`);
     if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
+    if(w.ferieDays)badges.push(`🌴${w.ferieDays}`);
     return`<div class="report-week">
       <div class="report-week-hdr" onclick="toggleWeek('rwb-${wk}')">
         <div>
@@ -757,17 +764,183 @@ function rapportHTML(){
       <div class="rys"><div class="rys-val">🏠 ${yearHome}</div><div class="rys-lbl">Hjemmedage</div></div>
       <div class="rys"><div class="rys-val" style="color:var(--red)">🤒 ${yearSyg}</div><div class="rys-lbl">Syg/§56</div></div>
       <div class="rys"><div class="rys-val" style="color:var(--blue)">👶 ${yearBarnSyg}</div><div class="rys-lbl">Barn syg</div></div>
+      <div class="rys"><div class="rys-val" style="color:var(--green)">🌴 ${yearFerie}</div><div class="rys-lbl">Feriedage</div></div>
       <div class="rys"><div class="rys-val">${yearOffice+yearHome}</div><div class="rys-lbl">Arbejdsdage</div></div>
     </div>
-    <div style="display:flex;gap:7px">
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
       <button class="btn btn-ghost" style="flex:1" onclick="importData()">📥 Importer</button>
       <button class="btn btn-gold" style="flex:1" onclick="manualSync()">🔄 Sync nu</button>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:8px">
+      <button class="btn btn-ghost" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
+      <button class="btn" style="flex:1;background:rgba(61,220,151,.15);color:var(--green);border:1.5px solid rgba(61,220,151,.3)" onclick="showFerieModal()">🌴 Sæt ferie</button>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:8px">
+      <button class="btn" style="flex:1;background:rgba(77,166,255,.1);color:var(--blue);border:1.5px solid rgba(77,166,255,.3)" onclick="importOutlook()">📅 Hent fra Outlook</button>
     </div>
   </div>
   <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
 }
 
 function toggleWeek(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+const OUTLOOK_ICS = 'https://outlook.office365.com/owa/calendar/e56d83353543442bb9b3f286e4efc118@vestergaardcompany.com/bf3e9209c7c04724995694304cd2bb209642795787987125204/calendar.ics';
+
+async function importOutlook(){
+  toast('Henter kalender fra Outlook...','');
+  try {
+    // Brug en CORS proxy til at hente ICS filen
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(OUTLOOK_ICS);
+    const r = await fetch(proxyUrl);
+    if(!r.ok) throw new Error('Kunne ikke hente kalender');
+    const icsText = await r.text();
+    const result = parseICS(icsText);
+    toast(`✓ ${result.ferie} feriedage, ${result.helligdag} helligdage importeret`,'ok');
+    scheduleSave();
+    render();
+  } catch(e) {
+    // Fallback: bed brugeren uploade filen
+    toast('Automatisk hentning fejlede — prøv manuel upload','err');
+    setTimeout(()=>uploadICS(), 1500);
+  }
+}
+
+function uploadICS(){
+  const input=document.createElement('input');
+  input.type='file'; input.accept='.ics';
+  input.onchange=async e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const text=await file.text();
+    const result=parseICS(text);
+    toast(`✓ ${result.ferie} feriedage, ${result.helligdag} helligdage importeret`,'ok');
+    scheduleSave();
+    render();
+  };
+  input.click();
+}
+
+function parseICS(text){
+  // Parse ICS format
+  const lines = text.split(/\r?\n/);
+  let inEvent=false, current={};
+  let ferieCount=0, helligdagCount=0;
+
+  for(const line of lines){
+    if(line==='BEGIN:VEVENT'){ inEvent=true; current={}; continue; }
+    if(line==='END:VEVENT'){
+      inEvent=false;
+      if(current.start && current.summary){
+        processICSEvent(current);
+        const s=current.summary.toLowerCase();
+        if(s.includes('ferie')) ferieCount++;
+        else if(s.includes('helligdag')||s.includes('fridag')) helligdagCount++;
+      }
+      continue;
+    }
+    if(!inEvent) continue;
+
+    if(line.startsWith('DTSTART;VALUE=DATE:') || line.startsWith('DTSTART:')){
+      const val=line.split(':')[1]?.trim();
+      if(val) current.start=val;
+    }
+    if(line.startsWith('DTEND;VALUE=DATE:') || line.startsWith('DTEND:')){
+      const val=line.split(':')[1]?.trim();
+      if(val) current.end=val;
+    }
+    if(line.startsWith('SUMMARY:')){
+      current.summary=line.substring(8).trim();
+    }
+  }
+  return {ferie:ferieCount, helligdag:helligdagCount};
+}
+
+function processICSEvent(evt){
+  const summary=(evt.summary||'').toLowerCase();
+  const isFerie=summary.includes('ferie');
+  const isHolyday=summary.includes('helligdag')||summary.includes('fridag')||
+                  summary.includes('holiday')||summary.includes('1. mai')||
+                  summary.includes('grundlovsdag')||summary.includes('juledag')||
+                  summary.includes('nytår')||summary.includes('påske')||
+                  summary.includes('pinse')||summary.includes('kristi');
+
+  if(!isFerie && !isHolyday) return;
+  const type = isFerie ? 'ferie' : 'fri';
+
+  // Parse dato fra ICS format YYYYMMDD
+  function parseICSDate(s){
+    if(!s) return null;
+    const clean=s.substring(0,8);
+    if(clean.length!==8) return null;
+    return `${clean.slice(0,4)}-${clean.slice(4,6)}-${clean.slice(6,8)}`;
+  }
+
+  const startDk=parseICSDate(evt.start);
+  const endDk=parseICSDate(evt.end);
+  if(!startDk) return;
+
+  // Sæt alle dage i perioden
+  const start=new Date(startDk);
+  const end=endDk?new Date(endDk):new Date(startDk);
+  end.setDate(end.getDate()-1); // ICS DTEND er exclusive
+
+  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+    const di=d.getDay();
+    if(di===0||di===6) continue; // Skip weekend
+    const dk=dateKey(new Date(d));
+    // Sæt kun hvis dagen ikke allerede har timer
+    const entries=getEntries(dk);
+    if(entries.length===0){
+      setDayType(dk, type);
+    }
+  }
+}
+
+function downloadBackup(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`timer_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('💾 Backup downloadet','ok');
+}
+
+function showFerieModal(){
+  const today=dateKey(new Date());
+  document.getElementById('main').innerHTML+=`
+  <div id="ferieModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:100;display:flex;align-items:flex-end">
+    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
+      <div class="section-label" style="margin-bottom:14px">🌴 Sæt ferieperiode</div>
+      <div class="form-row" style="margin-bottom:12px">
+        <div><label class="field-label">Fra dato</label><input type="date" id="ferieFrom" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none"></div>
+        <div><label class="field-label">Til dato</label><input type="date" id="ferieTo" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none"></div>
+      </div>
+      <div style="font-size:12px;color:var(--slate);margin-bottom:14px">Weekender springes automatisk over</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('ferieModal').remove()">Annuller</button>
+        <button class="btn" style="flex:1;background:var(--green);color:var(--ink)" onclick="saveFerie()">Gem ferie ✓</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function saveFerie(){
+  const from=document.getElementById('ferieFrom').value;
+  const to=document.getElementById('ferieTo').value;
+  if(!from||!to){toast('Vælg datoer','err');return;}
+  const start=new Date(from), end=new Date(to);
+  if(end<start){toast('Slutdato skal være efter startdato','err');return;}
+  let count=0;
+  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+    const di=d.getDay();
+    if(di===0||di===6) continue; // Spring weekend over
+    const dk=dateKey(new Date(d));
+    setDayType(dk,'ferie');
+    count++;
+  }
+  document.getElementById('ferieModal')?.remove();
+  toast(`🌴 ${count} feriedage registreret`,'ok');
+  render();
+}
 
 async function manualSync(){
   toast('Synkroniserer...','');
