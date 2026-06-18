@@ -151,34 +151,22 @@ select option{background:#081828}
 .save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
 /* TIDSLINJE */
 .timeline-wrap{position:relative;margin:4px 0;user-select:none}
-.timeline-track{position:relative;height:48px;background:var(--ink3);border-radius:10px;overflow:hidden;cursor:crosshair}
-.timeline-block{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;overflow:hidden;white-space:nowrap;cursor:pointer;transition:opacity .15s}
-.timeline-block:active{opacity:.8}
+.timeline-track{position:relative;height:52px;background:var(--ink3);border-radius:10px;overflow:hidden;cursor:crosshair}
+.timeline-block{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;overflow:hidden;white-space:nowrap;cursor:pointer;transition:opacity .15s;pointer-events:none}
 .timeline-block.normal{background:rgba(245,172,0,.7);color:var(--ink)}
 .timeline-block.syg{background:rgba(255,92,92,.7);color:#fff}
 .timeline-block.barnsyg{background:rgba(77,166,255,.7);color:#fff}
 .timeline-block.p56{background:rgba(176,110,255,.7);color:#fff}
 .timeline-block.ferie{background:rgba(61,220,151,.5);color:var(--ink)}
 .timeline-block.overlap{background:rgba(255,50,50,.9);color:#fff;border:2px solid var(--red)}
-.timeline-hours{display:flex;justify-content:space-between;padding:2px 0;margin-top:2px}
-.timeline-hour{font-size:9px;color:var(--slate);text-align:center}
 .timeline-now{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);opacity:.8;pointer-events:none}
-.timeline-selector{position:absolute;top:0;bottom:0;background:rgba(245,172,0,.2);border:1.5px solid var(--gold);border-radius:6px;pointer-events:none}
-/* TIDSLINJE */
-.timeline-wrap{position:relative;margin:4px 0;user-select:none}
-.timeline-track{position:relative;height:48px;background:var(--ink3);border-radius:10px;overflow:hidden;cursor:crosshair}
-.timeline-block{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;overflow:hidden;white-space:nowrap;cursor:pointer;transition:opacity .15s}
-.timeline-block:active{opacity:.8}
-.timeline-block.normal{background:rgba(245,172,0,.7);color:var(--ink)}
-.timeline-block.syg{background:rgba(255,92,92,.7);color:#fff}
-.timeline-block.barnsyg{background:rgba(77,166,255,.7);color:#fff}
-.timeline-block.p56{background:rgba(176,110,255,.7);color:#fff}
-.timeline-block.ferie{background:rgba(61,220,151,.5);color:var(--ink)}
-.timeline-block.overlap{background:rgba(255,50,50,.9);color:#fff;border:2px solid var(--red)}
-.timeline-hours{display:flex;justify-content:space-between;padding:2px 0;margin-top:2px}
-.timeline-hour{font-size:9px;color:var(--slate);text-align:center}
-.timeline-now{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);opacity:.8;pointer-events:none}
-.timeline-selector{position:absolute;top:0;bottom:0;background:rgba(245,172,0,.2);border:1.5px solid var(--gold);border-radius:6px;pointer-events:none}
+.tl-sel{position:absolute;top:0;bottom:0;background:rgba(245,172,0,.18);border:2px solid var(--gold);border-radius:7px;pointer-events:auto;box-sizing:border-box}
+.tl-handle{position:absolute;top:0;bottom:0;width:18px;background:var(--gold);opacity:.85;border-radius:5px;cursor:ew-resize;display:flex;align-items:center;justify-content:center}
+.tl-handle::after{content:'';display:block;width:2px;height:16px;background:rgba(0,0,0,.35);border-radius:2px;box-shadow:3px 0 0 rgba(0,0,0,.35)}
+.tl-handle.left{left:0;border-radius:5px 2px 2px 5px}
+.tl-handle.right{right:0;border-radius:2px 5px 5px 2px}
+.tl-body{position:absolute;left:18px;right:18px;top:0;bottom:0;cursor:grab;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);overflow:hidden;white-space:nowrap}
+.tl-body:active{cursor:grabbing}
 /* KALENDER */
 .kal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .kal-title{font-size:16px;font-weight:800}
@@ -208,7 +196,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.9</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.0</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -452,7 +440,7 @@ function tab(name){
 function render(){
   const m=document.getElementById('main');
   if(currentTab==='dag')          m.innerHTML=dagHTML();
-  else if(currentTab==='tilfoej') m.innerHTML=tilfoejHTML();
+  else if(currentTab==='tilfoej') { m.innerHTML=tilfoejHTML(); setTimeout(bindSelHandlers,0); }
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
@@ -752,104 +740,194 @@ function buildTimelineEditor(dk){
   const now=nowHM();
   const nowPct=tlPct(now);
 
-  // Eksisterende blokke
+  // Eksisterende blokke (pointer-events:none via CSS, klik håndteres ikke her)
   const blocks=entries.map(e=>{
     const left=tlPct(e.start), right=tlPct(e.stop), width=right-left;
     if(width<=0)return'';
     const cls=e.special?e.special:'normal';
     const lbl=e.on.length>8?e.on.slice(0,7)+'…':e.on;
-    return`<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%" title="${e.on} ${e.start}–${e.stop}" onclick="tlEditorClickBlock('${e.start}','${e.stop}')">${width>8?lbl:''}</div>`;
+    return`<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%">${width>8?lbl:''}</div>`;
   }).join('');
 
-  // Nuværende selektion
-  const s=tilfoejStart||'07:00', e2=tilfoejStop||now;
-  const sl=tlPct(s), sr=tlPct(e2), sw=Math.max(0,sr-sl);
-  const selBlock=sw>0.5?`<div class="timeline-selector" id="tlSel" style="left:${sl}%;width:${sw}%"></div>`:'';
   const nowLine=`<div class="timeline-now" style="left:${nowPct}%"></div>`;
 
-  // Timemærker 06–20
+  // Timemærker
   const hours=[];
   for(let h=TL_START;h<=TL_END;h+=2)hours.push(h);
   const hourMarks=hours.map(h=>`<div class="timeline-hour" style="left:${(h-TL_START)/TL_SPAN*100}%;position:absolute;transform:translateX(-50%)">${h}</div>`).join('');
 
+  // Byg selector HTML hvis vi har en gyldig start+stop
+  const s=tilfoejStart||'07:00', e2=tilfoejStop||now;
+  const sl=tlPct(s), sr=tlPct(e2), sw=sr-sl;
+  const selHTML=sw>0.5?`
+    <div class="tl-sel" id="tlSel" style="left:${sl}%;width:${sw}%">
+      <div class="tl-handle left" id="tlHandleL"></div>
+      <div class="tl-body" id="tlBody">${s}–${e2}</div>
+      <div class="tl-handle right" id="tlHandleR"></div>
+    </div>`:'';
+
   return`
   <div style="margin-bottom:4px">
-    <div class="section-label" style="margin-bottom:6px">Tidslinje — træk for at vælge tid</div>
+    <div class="section-label" style="margin-bottom:6px">Tidslinje — træk for at vælge · kanter = juster · midte = flyt</div>
     <div class="timeline-wrap">
-      <div class="timeline-track" id="tlTrack"
-           onmousedown="tlEditorDown(event)"
-           ontouchstart="tlEditorTouchStart(event)">
-        ${blocks}${selBlock}${nowLine}
+      <div class="timeline-track" id="tlTrack">
+        ${blocks}${selHTML}${nowLine}
       </div>
       <div style="position:relative;height:16px;margin-top:2px">${hourMarks}</div>
     </div>
-    <div id="tlHint" style="font-size:11px;color:var(--gold);text-align:center;margin-top:4px;min-height:16px">${s!==e2?s+' → '+e2:''}</div>
+    <div id="tlHint" style="font-size:11px;color:var(--gold);text-align:center;margin-top:4px;min-height:16px">${sw>0.5?s+' → '+e2:''}</div>
   </div>`;
 }
 
 function updateTlSel(){
-  // Opdater selektion uden fuld render
-  const s=tilfoejStart||(document.getElementById('mStart')||{}).value||'07:00';
-  const e=tilfoejStop||(document.getElementById('mStop')||{}).value||'';
+  const s=tilfoejStart||'07:00';
+  const e=tilfoejStop||nowHM();
   const sl=tlPct(s),sr=tlPct(e),sw=Math.max(0,sr-sl);
-  let sel=document.getElementById('tlSel');
   const track=document.getElementById('tlTrack');
-  if(!track) return;
-  if(!sel){ sel=document.createElement('div'); sel.id='tlSel'; sel.className='timeline-selector'; track.appendChild(sel); }
+  if(!track)return;
+  let sel=document.getElementById('tlSel');
+  if(!sel){
+    // Opret selector med handles og body
+    sel=document.createElement('div'); sel.id='tlSel'; sel.className='tl-sel';
+    const hl=document.createElement('div'); hl.id='tlHandleL'; hl.className='tl-handle left';
+    const body=document.createElement('div'); body.id='tlBody'; body.className='tl-body';
+    const hr=document.createElement('div'); hr.id='tlHandleR'; hr.className='tl-handle right';
+    sel.appendChild(hl); sel.appendChild(body); sel.appendChild(hr);
+    track.appendChild(sel);
+    bindSelHandlers();
+  }
   sel.style.left=sl+'%'; sel.style.width=sw+'%';
+  const body=document.getElementById('tlBody');
+  if(body) body.textContent=`${s}–${e}`;
   const hint=document.getElementById('tlHint');
-  if(hint&&s&&e) hint.textContent=`${s} → ${e}`;
+  if(hint) hint.textContent=`${s} → ${e}`;
+  // Sync input fields
+  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
+  if(ms)ms.value=s; if(me)me.value=e;
 }
 
-let tlEdDragging=false, tlEdAnchorHM='';
-function tlEditorGetPct(ev,track){
+function tlGetX(ev){ return ev.clientX??ev.touches?.[0]?.clientX??0; }
+function tlPctFromX(x){
+  const track=document.getElementById('tlTrack'); if(!track)return 0;
   const rect=track.getBoundingClientRect();
-  const x=ev.clientX??ev.touches?.[0]?.clientX??0;
   return Math.max(0,Math.min(100,(x-rect.left)/rect.width*100));
 }
-function tlEditorApply(anchorHM, currentHM){
-  // Sørg for at start altid er < stop
-  const aH=hmToH(anchorHM), cH=hmToH(currentHM);
-  const startHM=aH<=cH?anchorHM:currentHM;
-  const stopHM =aH<=cH?currentHM:anchorHM;
-  tilfoejStart=startHM; tilfoejStop=stopHM;
-  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
-  if(ms)ms.value=startHM; if(me)me.value=stopHM;
+function tlSnap(pct){ // snap til 15 min
+  const h=TL_START+(pct/100)*TL_SPAN;
+  const totalMin=Math.round(h*60/15)*15;
+  const hh=Math.floor(totalMin/60),mm=totalMin%60;
+  return{hm:`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`,pct:(totalMin/60-TL_START)/TL_SPAN*100};
+}
+
+function bindSelHandlers(){
+  const track=document.getElementById('tlTrack'); if(!track)return;
+
+  // ── Track mousedown — opret nyt interval ved klik på tomt område ──
+  track.addEventListener('mousedown', ev=>{
+    if(ev.target.closest('.tl-sel'))return; // Ignorer klik på selector
+    ev.preventDefault();
+    const anchor=tlSnap(tlPctFromX(tlGetX(ev)));
+    tilfoejStart=anchor.hm; tilfoejStop=anchor.hm;
+    updateTlSel();
+    const move=ev2=>{
+      const cur=tlSnap(tlPctFromX(tlGetX(ev2)));
+      const aH=hmToH(anchor.hm),cH=hmToH(cur.hm);
+      tilfoejStart=aH<=cH?anchor.hm:cur.hm;
+      tilfoejStop =aH<=cH?cur.hm:anchor.hm;
+      updateTlSel();
+    };
+    const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+    document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+  });
+  track.addEventListener('touchstart', ev=>{
+    if(ev.target.closest('.tl-sel'))return;
+    ev.preventDefault();
+    const anchor=tlSnap(tlPctFromX(tlGetX(ev)));
+    tilfoejStart=anchor.hm; tilfoejStop=anchor.hm; updateTlSel();
+    const move=ev2=>{ ev2.preventDefault();
+      const cur=tlSnap(tlPctFromX(tlGetX(ev2)));
+      const aH=hmToH(anchor.hm),cH=hmToH(cur.hm);
+      tilfoejStart=aH<=cH?anchor.hm:cur.hm; tilfoejStop=aH<=cH?cur.hm:anchor.hm;
+      updateTlSel();
+    };
+    const up=()=>{ track.removeEventListener('touchmove',move); track.removeEventListener('touchend',up); };
+    track.addEventListener('touchmove',move,{passive:false}); track.addEventListener('touchend',up);
+  },{passive:false});
+
+  // ── Hjælpefunktion til at lave drag-handler for handle/body ──
+  function makeDragHandler(getNewTimes){
+    return function startDrag(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      const startX=tlGetX(ev);
+      const origStart=tilfoejStart, origStop=tilfoejStop;
+      const move=ev2=>{
+        const dx=tlGetX(ev2)-startX;
+        const dPct=dx/(document.getElementById('tlTrack').getBoundingClientRect().width)*100;
+        const {newStart,newStop}=getNewTimes(origStart,origStop,dPct);
+        if(newStart&&newStop&&hmToH(newStop)>hmToH(newStart)){
+          tilfoejStart=newStart; tilfoejStop=newStop; updateTlSel();
+        }
+      };
+      const up=()=>{ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+      document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+    };
+  }
+  function makeTouchDragHandler(getNewTimes){
+    return function startDrag(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      const startX=tlGetX(ev);
+      const origStart=tilfoejStart, origStop=tilfoejStop;
+      const trackW=document.getElementById('tlTrack').getBoundingClientRect().width;
+      const move=ev2=>{ ev2.preventDefault();
+        const dPct=(tlGetX(ev2)-startX)/trackW*100;
+        const {newStart,newStop}=getNewTimes(origStart,origStop,dPct);
+        if(newStart&&newStop&&hmToH(newStop)>hmToH(newStart)){
+          tilfoejStart=newStart; tilfoejStop=newStop; updateTlSel();
+        }
+      };
+      const up=()=>{ document.getElementById('tlHandleL')?.removeEventListener('touchmove',move); document.removeEventListener('touchend',up); };
+      document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up);
+    };
+  }
+
+  // ── Venstre håndtag — resize start ──
+  function resizeStart(origStart,origStop,dPct){
+    const newPct=Math.max(0,Math.min(tlPct(origStop)-2, tlPct(origStart)+dPct));
+    return{newStart:tlSnap(newPct).hm, newStop:origStop};
+  }
+  // ── Højre håndtag — resize stop ──
+  function resizeStop(origStart,origStop,dPct){
+    const newPct=Math.max(tlPct(origStart)+2,Math.min(100, tlPct(origStop)+dPct));
+    return{newStart:origStart, newStop:tlSnap(newPct).hm};
+  }
+  // ── Midte — flyt hele interval ──
+  function moveInterval(origStart,origStop,dPct){
+    const span=tlPct(origStop)-tlPct(origStart);
+    const newL=Math.max(0,Math.min(100-span, tlPct(origStart)+dPct));
+    const newR=newL+span;
+    return{newStart:tlSnap(newL).hm, newStop:tlSnap(newR).hm};
+  }
+
+  setTimeout(()=>{ // setTimeout fordi elementerne kan være netop oprettet
+    document.getElementById('tlHandleL')?.addEventListener('mousedown', makeDragHandler(resizeStart));
+    document.getElementById('tlHandleR')?.addEventListener('mousedown', makeDragHandler(resizeStop));
+    document.getElementById('tlBody')?.addEventListener('mousedown', makeDragHandler(moveInterval));
+    document.getElementById('tlHandleL')?.addEventListener('touchstart', makeTouchDragHandler(resizeStart),{passive:false});
+    document.getElementById('tlHandleR')?.addEventListener('touchstart', makeTouchDragHandler(resizeStop),{passive:false});
+    document.getElementById('tlBody')?.addEventListener('touchstart', makeTouchDragHandler(moveInterval),{passive:false});
+  },0);
+}
+
+let tlEdDragging=false, tlEdAnchorHM=''; // Behold for bagudkompatibilitet
+function tlEditorApply(anchorHM,currentHM){
+  const aH=hmToH(anchorHM),cH=hmToH(currentHM);
+  tilfoejStart=aH<=cH?anchorHM:currentHM;
+  tilfoejStop =aH<=cH?currentHM:anchorHM;
   updateTlSel();
-}
-function tlEditorDown(ev){
-  const track=document.getElementById('tlTrack'); if(!track)return;
-  tlEdDragging=true;
-  tlEdAnchorHM=tlHHMM(tlEditorGetPct(ev,track));
-  tlEditorApply(tlEdAnchorHM,tlEdAnchorHM);
-  const onMove=ev2=>{
-    if(!tlEdDragging)return;
-    const currentHM=tlHHMM(tlEditorGetPct(ev2,track));
-    tlEditorApply(tlEdAnchorHM,currentHM);
-  };
-  const onUp=()=>{ tlEdDragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
-  document.addEventListener('mousemove',onMove);
-  document.addEventListener('mouseup',onUp);
-}
-function tlEditorTouchStart(ev){
-  ev.preventDefault();
-  const track=document.getElementById('tlTrack'); if(!track)return;
-  tlEdAnchorHM=tlHHMM(tlEditorGetPct(ev,track));
-  tlEditorApply(tlEdAnchorHM,tlEdAnchorHM);
-  const onMove=ev2=>{ ev2.preventDefault();
-    const currentHM=tlHHMM(tlEditorGetPct(ev2,track));
-    tlEditorApply(tlEdAnchorHM,currentHM);
-  };
-  const onEnd=()=>{ track.removeEventListener('touchmove',onMove); track.removeEventListener('touchend',onEnd); };
-  track.addEventListener('touchmove',onMove,{passive:false});
-  track.addEventListener('touchend',onEnd);
 }
 function tlEditorClickBlock(start,stop){
   tilfoejStart=start; tilfoejStop=stop;
-  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
-  if(ms)ms.value=start; if(me)me.value=stop;
   updateTlSel();
-  const hint=document.getElementById('tlHint'); if(hint)hint.textContent=`Valgt: ${start} – ${stop}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────
