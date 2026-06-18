@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.3</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.4</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -445,6 +445,7 @@ function updateHeader(){
 // ═══════════════════════════════════════════════════════
 function tab(name){
   currentTab=name; editingIdx=-1;
+  if(name==='tilfoej'){ selCat=''; selOn=''; customOn=''; selSpecial=''; }
   ['dag','tilfoej','uge','rapport','kalender'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
@@ -467,7 +468,7 @@ function dagHTML(){
   const dayType=getDayType(dk);
   const target=DAY_TARGET[di];
   const isSyg=dayType==='syg'||dayType==='p56', isBarnSyg=dayType==='barnsyg', isP56=dayType==='p56';
-  const worked=entries.reduce((s,e)=>s+e.hours,0);
+  const worked=entries.filter(e=>!e.special&&!e.auto_special).reduce((s,e)=>s+e.hours,0);
   const diff=worked-target;
   const pct=target>0?Math.min(100,(worked/target)*100):0;
   const sc=isSyg||isBarnSyg?'blue':diff>0.05?'good':diff<-0.05?'bad':'amber';
@@ -479,14 +480,21 @@ function dagHTML(){
   let specialBanner=''; // Fjernet - auto-beregning klarer det
 
   // Totaler
+  // Normale timer til Promak
   const onTotals={};
   entries.forEach(e=>{ if(!e.special&&!e.auto_special) onTotals[e.on]=(onTotals[e.on]||0)+e.hours; });
+  // Special timer (syg/barnsyg/§56)
+  const specialTotals={};
+  entries.forEach(e=>{ if(e.special||e.auto_special) specialTotals[e.on]=(specialTotals[e.on]||0)+e.hours; });
   const onKeys=Object.keys(onTotals);
-  const summaryHTML=entries.length>0?`
+  const spKeys=Object.keys(specialTotals);
+  const summaryHTML=(onKeys.length>0||spKeys.length>0)?`
   <div class="card">
     <div class="section-label">Totaler til Promak</div>
     <div class="promak-box">
       ${onKeys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+      ${spKeys.length>0?`<div style="border-top:1px solid rgba(255,255,255,.06);margin:6px 0"></div>`:''}
+      ${spKeys.map(k=>`<div class="promak-row"><span style="font-weight:600;color:var(--slate)">${k}</span><span style="color:var(--slate);font-family:var(--mono);font-weight:700">${fmtH(specialTotals[k])}</span></div>`).join('')}
     </div>
   </div>`:'';
 
@@ -545,6 +553,30 @@ function dagHTML(){
   ${summaryHTML}`;
 }
 
+function recalcSpecial(dk){
+  // Genberegn special entries baseret på aktuel dag-type
+  const type=getDayType(dk);
+  if(!['syg','barnsyg','p56'].includes(type)) return;
+  const d=new Date(dk), di=(d.getDay()+6)%7;
+  const target=DAY_TARGET[di]||7.5;
+  const existing=getEntries(dk).filter(e=>!e.auto_special);
+  const workedH=existing.reduce((s,e)=>s+e.hours,0);
+  const remaining=Math.max(0,target-workedH);
+  if(remaining>0.1){
+    let lastStop='08:00';
+    if(existing.length>0){
+      const stops=existing.map(e=>e.stop).filter(Boolean).sort();
+      if(stops.length>0) lastStop=stops[stops.length-1];
+    }
+    const [sh,sm]=lastStop.split(':').map(Number);
+    const stopMin=sh*60+sm+Math.round(remaining*60);
+    const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
+    const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
+    existing.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
+  }
+  saveEntries(dk,existing);
+}
+
 function setDT(dk,type){
   setDayType(dk,type);
   if(['syg','barnsyg','p56'].includes(type)){
@@ -587,6 +619,7 @@ function saveEdit(dk,i){
 }
 function doDelEntry(dk,i){
   const arr=getEntries(dk); arr.splice(i,1); saveEntries(dk,arr);
+  recalcSpecial(dk); // Genberegn special timer
   editingIdx=-1; render(); toast('Slettet','err');
 }
 function startDisp(){
@@ -847,7 +880,7 @@ function saveManual(){
   if(overlap){toast('⚠️ '+overlap,'err');return;}
   const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
   if(selSpecial)entry.special=selSpecial;
-  addEntry(dk,entry); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
+  addEntry(dk,entry); recalcSpecial(dk); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
 }
 
 // ═══════════════════════════════════════════════════════
