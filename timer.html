@@ -856,15 +856,24 @@ function parseICS(text){
 
 function processICSEvent(evt){
   const summary=(evt.summary||'').toLowerCase();
-  const isFerie=summary.includes('ferie');
-  const isHolyday=summary.includes('helligdag')||summary.includes('fridag')||
-                  summary.includes('holiday')||summary.includes('1. mai')||
-                  summary.includes('grundlovsdag')||summary.includes('juledag')||
-                  summary.includes('nytår')||summary.includes('påske')||
-                  summary.includes('pinse')||summary.includes('kristi');
+  const isFerie    = summary.includes('ferie');
+  const isSyg      = summary.includes('syg')||summary.includes('sygdom');
+  const isBarnSyg  = summary.includes('barn') && summary.includes('syg');
+  const isHolyday  = summary.includes('helligdag')||summary.includes('fridag')||
+                     summary.includes('holiday')||summary.includes('1. mai')||
+                     summary.includes('grundlovsdag')||summary.includes('juledag')||
+                     summary.includes('nytår')||summary.includes('påske')||
+                     summary.includes('pinse')||summary.includes('kristi');
+  const isFravær   = summary.includes('fravær')||summary.includes('fraværende')||
+                     summary.includes('absent')||summary.includes('out of office')||
+                     summary.includes('ikke på kontoret');
 
-  if(!isFerie && !isHolyday) return;
-  const type = isFerie ? 'ferie' : 'fri';
+  if(!isFerie && !isHolyday && !isSyg && !isBarnSyg && !isFravær) return;
+
+  let type = 'fri';
+  if(isBarnSyg)   type = 'barnsyg';
+  else if(isSyg)  type = 'syg';
+  else if(isFerie||isFravær) type = 'ferie';
 
   // Parse dato fra ICS format YYYYMMDD
   function parseICSDate(s){
