@@ -662,7 +662,7 @@ function tilfoejHTML(){
     <div id="tlHint" style="font-size:11px;color:var(--slate);margin-top:4px;text-align:center">
       Klik og træk på tidslinjen for at sætte start/stop
     </div>
-  </div>\`;
+  </div>`;
 }
 
 function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();tab('tilfoej');}
@@ -937,12 +937,17 @@ function buildUgeExport(mon){
   const keys=Object.keys(totals);
   if(!keys.length)return'';
   const txt=keys.map(k=>`${k}: ${fmtH(totals[k])}`).join('\n');
+  window._ugeExportTxt = txt; // Gem til kopiering
   return`
   <div class="card">
     <div class="section-label">Promak-oversigt</div>
     <div class="promak-box">${keys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span></div>`).join('')}</div>
-    <button class="btn btn-ghost" style="margin-top:9px" onclick="copyText(\`${txt.replace(/`/g,'\\`')}\`)">📋 Kopiér til Promak</button>
+    <button class="btn btn-ghost" style="margin-top:9px" onclick="copyUgeText()">📋 Kopiér til Promak</button>
   </div>`;
+}
+
+function copyUgeText(){
+  copyText(window._ugeExportTxt||'');
 }
 
 // ═══════════════════════════════════════════════════════
