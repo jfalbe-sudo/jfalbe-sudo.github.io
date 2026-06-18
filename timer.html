@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.4</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.5</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -457,6 +457,7 @@ function render(){
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
   if(currentTab==='dag'&&activeTimer) startDisp();
+  if(currentTab==='tilfoej') setTimeout(initTlTouch, 50);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -685,7 +686,7 @@ function tilfoejHTML(){
     <div class="timeline-wrap" id="tlWrap">
       <div class="timeline-track" id="tlTrack"
            onmousedown="tlMouseDown(event)"
-           ontouchstart="tlTouchStart(event)">
+           id="tlTrackTouch">
         ${buildTimeline()}
       </div>
       <div class="timeline-hours">
@@ -813,6 +814,11 @@ function tlMouseDown(e){
   };
   document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onUp);
+}
+
+function initTlTouch(){
+  const t=document.getElementById('tlTrackTouch');
+  if(t) t.addEventListener('touchstart',tlTouchStart,{passive:false});
 }
 
 function tlTouchStart(e){
