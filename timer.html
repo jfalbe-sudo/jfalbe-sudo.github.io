@@ -178,7 +178,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.0</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.1</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -446,21 +446,7 @@ function dagHTML(){
 
   const dtBtns=DAY_TYPES.map(dt=>`<button class="daytype-btn ${dayType===dt.id?dt.cls:''}" onclick="setDT('${dk}','${dt.id}')">${dt.label}</button>`).join('');
 
-  let specialBanner='';
-  if(isSyg||isBarnSyg){
-    const icon=isP56?'§':isSyg?'🤒':'👶';
-    const title=isP56?'Paragraf 56':isSyg?'Sygedag':'Barn syg';
-    const cls=isSyg?'special-syg':'special-barnsyg';
-    const ph=getPartial(dk,dayType);
-    specialBanner=`<div class="card">
-      <div class="section-label">${icon} ${title}</div>
-      <div class="${cls} special-day" style="margin-bottom:10px"><div style="flex:1"><div style="font-weight:700;margin-bottom:2px">${ph?ph+' timer':'Hel dag'}</div><div style="font-size:11px;color:var(--slate)">Skriv timer hvis delvis dag</div></div></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="number" min="0" max="8" step="0.5" style="flex:1;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px 14px;font-size:16px;font-family:var(--font);outline:none" placeholder="Timer fx 3.5" value="${ph}" oninput="savePartialH('${dk}','${dayType}',this.value)">
-        <div style="font-size:13px;color:var(--slate)">timer</div>
-      </div>
-    </div>`;
-  }
+  let specialBanner=''; // Fjernet - auto-beregning klarer det
 
   // Totaler
   const onTotals={};
@@ -525,7 +511,6 @@ function dagHTML(){
     ${target>0?`<div class="prog-wrap"><div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div></div>`:''}
   </div>
   <div class="card"><div class="section-label">Dag-type</div><div class="daytype-row">${dtBtns}</div></div>
-  ${specialBanner}
   <div class="card"><div class="section-label">Registreringer</div>${listHTML}</div>
   ${summaryHTML}`;
 }
