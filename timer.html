@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.6</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.7</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -683,9 +683,9 @@ function tilfoejHTML(){
 `;
 }
 
-function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();tab('tilfoej');}
-function pickOn(on){selOn=on;customOn='';render();tab('tilfoej');}
-function toggleSpecial(s){selSpecial=selSpecial===s?'':s;render();tab('tilfoej');}
+function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();}
+function pickOn(on){selOn=on;customOn='';render();}
+function toggleSpecial(s){selSpecial=selSpecial===s?'':s;render();}
 function setNow(id){document.getElementById(id).value=nowHM();}
 function getLabel(){const on=customOn||selOn||selCat||'?';return(selCat&&selCat!==on)?`${on} / ${selCat}`:on;}
 
