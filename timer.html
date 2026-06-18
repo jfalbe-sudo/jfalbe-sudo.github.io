@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.8</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.9</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -554,53 +554,38 @@ function dagHTML(){
 }
 
 function recalcSpecial(dk){
-  // Genberegn special entries baseret på aktuel dag-type
   const type=getDayType(dk);
-  if(!['syg','barnsyg','p56'].includes(type)) return;
+  // Fjern ALTID gamle auto-entries
+  const normal=getEntries(dk).filter(e=>!e.auto_special);
+  if(!['syg','barnsyg','p56'].includes(type)){
+    saveEntries(dk,normal);
+    return;
+  }
   const d=new Date(dk), di=(d.getDay()+6)%7;
   const target=DAY_TARGET[di]||7.5;
-  const existing=getEntries(dk).filter(e=>!e.auto_special);
-  const workedH=existing.reduce((s,e)=>s+e.hours,0);
+  // Kun normale (ikke-special) entries tæller mod mål
+  const normalOnly=normal.filter(e=>!e.special);
+  const workedH=normalOnly.reduce((s,e)=>s+e.hours,0);
   const remaining=Math.max(0,target-workedH);
+  const result=[...normal];
   if(remaining>0.1){
-    let lastStop='08:00';
-    if(existing.length>0){
-      const stops=existing.map(e=>e.stop).filter(Boolean).sort();
+    let lastStop='07:00';
+    if(normal.length>0){
+      const stops=normal.map(e=>e.stop).filter(Boolean).sort();
       if(stops.length>0) lastStop=stops[stops.length-1];
     }
     const [sh,sm]=lastStop.split(':').map(Number);
     const stopMin=sh*60+sm+Math.round(remaining*60);
     const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
     const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
-    existing.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
+    result.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
   }
-  saveEntries(dk,existing);
+  saveEntries(dk,result);
 }
 
 function setDT(dk,type){
   setDayType(dk,type);
-  if(['syg','barnsyg','p56'].includes(type)){
-    const d=new Date(dk), di=(d.getDay()+6)%7;
-    const target=DAY_TARGET[di]||7.5;
-    // Fjern tidligere auto-entries
-    const existing=getEntries(dk).filter(e=>!e.auto_special);
-    const workedH=existing.reduce((s,e)=>s+e.hours,0);
-    const remaining=Math.max(0,target-workedH);
-    if(remaining>0.1){
-      // Find seneste stop-tidspunkt
-      let lastStop='08:00';
-      if(existing.length>0){
-        const stops=existing.map(e=>e.stop).filter(Boolean).sort();
-        if(stops.length>0) lastStop=stops[stops.length-1];
-      }
-      const [sh,sm]=lastStop.split(':').map(Number);
-      const stopMin=sh*60+sm+Math.round(remaining*60);
-      const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
-      const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
-      existing.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
-      saveEntries(dk,existing);
-    }
-  }
+  recalcSpecial(dk);
   render();
   const msgs={syg:'🤒 Sygedag',barnsyg:'👶 Barn syg',p56:'§56',hjemme:'🏠 Hjemme',kontor:'🏢 Kontor',ferie:'🌴 Ferie'};
   toast((msgs[type]||type)+' registreret','ok');
@@ -816,30 +801,31 @@ function updateTlSel(){
   if(hint&&s&&e) hint.textContent=`${s} → ${e}`;
 }
 
-let tlEdDragging=false, tlEdStartPct=0;
+let tlEdDragging=false, tlEdAnchorHM='';
 function tlEditorGetPct(ev,track){
   const rect=track.getBoundingClientRect();
   const x=ev.clientX??ev.touches?.[0]?.clientX??0;
   return Math.max(0,Math.min(100,(x-rect.left)/rect.width*100));
 }
+function tlEditorApply(anchorHM, currentHM){
+  // Sørg for at start altid er < stop
+  const aH=hmToH(anchorHM), cH=hmToH(currentHM);
+  const startHM=aH<=cH?anchorHM:currentHM;
+  const stopHM =aH<=cH?currentHM:anchorHM;
+  tilfoejStart=startHM; tilfoejStop=stopHM;
+  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
+  if(ms)ms.value=startHM; if(me)me.value=stopHM;
+  updateTlSel();
+}
 function tlEditorDown(ev){
   const track=document.getElementById('tlTrack'); if(!track)return;
   tlEdDragging=true;
-  tlEdStartPct=tlEditorGetPct(ev,track);
-  const startHM=tlHHMM(tlEdStartPct);
-  tilfoejStart=startHM; tilfoejStop=startHM;
-  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
-  if(ms)ms.value=startHM; if(me)me.value=startHM;
-  updateTlSel();
+  tlEdAnchorHM=tlHHMM(tlEditorGetPct(ev,track));
+  tlEditorApply(tlEdAnchorHM,tlEdAnchorHM);
   const onMove=ev2=>{
     if(!tlEdDragging)return;
-    const pct=tlEditorGetPct(ev2,track);
-    const endHM=tlHHMM(pct);
-    if(hmToH(endHM)>hmToH(tilfoejStart)){
-      tilfoejStop=endHM;
-      const me2=document.getElementById('mStop'); if(me2)me2.value=endHM;
-      updateTlSel();
-    }
+    const currentHM=tlHHMM(tlEditorGetPct(ev2,track));
+    tlEditorApply(tlEdAnchorHM,currentHM);
   };
   const onUp=()=>{ tlEdDragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
   document.addEventListener('mousemove',onMove);
@@ -848,18 +834,11 @@ function tlEditorDown(ev){
 function tlEditorTouchStart(ev){
   ev.preventDefault();
   const track=document.getElementById('tlTrack'); if(!track)return;
-  const startHM=tlHHMM(tlEditorGetPct(ev,track));
-  tilfoejStart=startHM; tilfoejStop=startHM;
-  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
-  if(ms)ms.value=startHM; if(me)me.value=startHM;
-  updateTlSel();
+  tlEdAnchorHM=tlHHMM(tlEditorGetPct(ev,track));
+  tlEditorApply(tlEdAnchorHM,tlEdAnchorHM);
   const onMove=ev2=>{ ev2.preventDefault();
-    const pct=tlEditorGetPct(ev2,track),endHM=tlHHMM(pct);
-    if(hmToH(endHM)>hmToH(tilfoejStart)){
-      tilfoejStop=endHM;
-      const me2=document.getElementById('mStop'); if(me2)me2.value=endHM;
-      updateTlSel();
-    }
+    const currentHM=tlHHMM(tlEditorGetPct(ev2,track));
+    tlEditorApply(tlEdAnchorHM,currentHM);
   };
   const onEnd=()=>{ track.removeEventListener('touchmove',onMove); track.removeEventListener('touchend',onEnd); };
   track.addEventListener('touchmove',onMove,{passive:false});
