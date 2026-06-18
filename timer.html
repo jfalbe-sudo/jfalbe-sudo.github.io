@@ -464,7 +464,7 @@ function dagHTML(){
 
   // Totaler
   const onTotals={};
-  entries.forEach(e=>{ if(!e.special) onTotals[e.on]=(onTotals[e.on]||0)+e.hours; });
+  entries.forEach(e=>{ if(!e.special&&!e.auto_special) onTotals[e.on]=(onTotals[e.on]||0)+e.hours; });
   const onKeys=Object.keys(onTotals);
   const summaryHTML=entries.length>0?`
   <div class="card">
@@ -532,8 +532,30 @@ function dagHTML(){
 
 function setDT(dk,type){
   setDayType(dk,type);
+  if(['syg','barnsyg','p56'].includes(type)){
+    const d=new Date(dk), di=(d.getDay()+6)%7;
+    const target=DAY_TARGET[di]||7.5;
+    // Fjern tidligere auto-entries
+    const existing=getEntries(dk).filter(e=>!e.auto_special);
+    const workedH=existing.reduce((s,e)=>s+e.hours,0);
+    const remaining=Math.max(0,target-workedH);
+    if(remaining>0.1){
+      // Find seneste stop-tidspunkt
+      let lastStop='08:00';
+      if(existing.length>0){
+        const stops=existing.map(e=>e.stop).filter(Boolean).sort();
+        if(stops.length>0) lastStop=stops[stops.length-1];
+      }
+      const [sh,sm]=lastStop.split(':').map(Number);
+      const stopMin=sh*60+sm+Math.round(remaining*60);
+      const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
+      const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
+      existing.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
+      saveEntries(dk,existing);
+    }
+  }
   render();
-  const msgs={syg:'🤒 Sygedag',barnsyg:'👶 Barn syg',p56:'§56',hjemme:'🏠 Hjemme',kontor:'🏢 Kontor'};
+  const msgs={syg:'🤒 Sygedag',barnsyg:'👶 Barn syg',p56:'§56',hjemme:'🏠 Hjemme',kontor:'🏢 Kontor',ferie:'🌴 Ferie'};
   toast((msgs[type]||type)+' registreret','ok');
 }
 function startEdit(i){editingIdx=i;render();}
@@ -624,12 +646,31 @@ function stopTimer(){
   clearInterval(timerIv);
   const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
   const dk=dateKey(new Date());
+  // Tjek overlap
+  const overlap = checkOverlap(dk, activeTimer.startHM, stop);
+  if(overlap){
+    toast('⚠️ '+overlap,'err');
+    activeTimer=null; localStorage.removeItem('vct_activeTimer');
+    render(); return;
+  }
   const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
   if(activeTimer.special)entry.special=activeTimer.special;
   addEntry(dk,entry);
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   toast('✓ Gemt','ok'); tab('dag');
 }
+function checkOverlap(dk, newStart, newStop){
+  const entries = getEntries(dk);
+  const ns = hmToH(newStart), ne = hmToH(newStop);
+  for(const e of entries){
+    const es = hmToH(e.start), ee = hmToH(e.stop);
+    if(ns < ee && ne > es){
+      return `Overlapper med ${e.on} (${e.start}–${e.stop})`;
+    }
+  }
+  return null;
+}
+
 function saveManual(){
   const start=document.getElementById('mStart').value,stop=document.getElementById('mStop').value;
   if(!start||!stop){toast('Udfyld start og stop','err');return;}
@@ -638,6 +679,9 @@ function saveManual(){
   const on=selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):(customOn||selOn||selCat);
   if(!on){toast('Vælg kategori eller ON-nummer','err');return;}
   const dk=dateKey(new Date());
+  // Tjek overlap
+  const overlap = checkOverlap(dk, start, stop);
+  if(overlap){toast('⚠️ '+overlap,'err');return;}
   const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
   if(selSpecial)entry.special=selSpecial;
   addEntry(dk,entry); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
