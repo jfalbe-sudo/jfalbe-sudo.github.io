@@ -153,7 +153,8 @@ select option{background:#081828}
 .kal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .kal-title{font-size:16px;font-weight:800}
 .kal-nav{background:var(--ink4);border:none;color:var(--gold);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.kal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.kal-grid{display:grid;grid-template-columns:24px repeat(7,1fr);gap:3px}
+.kal-week-num{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(107,143,168,.5);padding:2px}
 .kal-day-name{text-align:center;font-size:10px;font-weight:700;color:var(--slate);padding:4px 0;text-transform:uppercase;letter-spacing:.5px}
 .kal-cell{border-radius:8px;padding:4px 2px;min-height:42px;position:relative;cursor:pointer;transition:background .15s}
 .kal-cell:active{opacity:.7}
@@ -826,21 +827,28 @@ function toggleWeek(id){const el=document.getElementById(id);if(el)el.classList.
 const OUTLOOK_ICS = 'https://outlook.office365.com/owa/calendar/e56d83353543442bb9b3f286e4efc118@vestergaardcompany.com/bf3e9209c7c04724995694304cd2bb209642795787987125204/calendar.ics';
 
 async function importOutlook(){
-  toast('Henter kalender fra Outlook...','');
-  try {
-    // Brug en CORS proxy til at hente ICS filen
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(OUTLOOK_ICS);
-    const r = await fetch(proxyUrl);
-    if(!r.ok) throw new Error('Kunne ikke hente kalender');
-    const icsText = await r.text();
+  toast('Henter kalender...','');
+  // Prøv flere CORS proxies
+  const proxies = [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+    'https://proxy.cors.sh/',
+  ];
+  let icsText = null;
+  for(const proxy of proxies){
+    try {
+      const r = await fetch(proxy + encodeURIComponent(OUTLOOK_ICS), {signal: AbortSignal.timeout(8000)});
+      if(r.ok){ icsText = await r.text(); break; }
+    } catch{}
+  }
+  if(icsText && icsText.includes('VCALENDAR')){
     const result = parseICS(icsText);
-    toast(`✓ ${result.ferie} feriedage, ${result.helligdag} helligdage importeret`,'ok');
+    toast(`✓ ${result.ferie} feriedage importeret`,'ok');
     scheduleSave();
     render();
-  } catch(e) {
-    // Fallback: bed brugeren uploade filen
-    toast('Automatisk hentning fejlede — prøv manuel upload','err');
-    setTimeout(()=>uploadICS(), 1500);
+  } else {
+    toast('Prøv manuel upload i stedet','err');
+    setTimeout(()=>uploadICS(), 1000);
   }
 }
 
@@ -859,38 +867,47 @@ function uploadICS(){
 }
 
 function parseICS(text){
-  // Parse ICS format
+  // Unfold wrapped lines (ICS linjeskift med mellemrum/tab)
+  text = text.replace(/\r?\n[ \t]/g, '');
   const lines = text.split(/\r?\n/);
   let inEvent=false, current={};
-  let ferieCount=0, helligdagCount=0;
+  let ferieCount=0;
 
-  for(const line of lines){
+  for(let i=0; i<lines.length; i++){
+    const line = lines[i];
     if(line==='BEGIN:VEVENT'){ inEvent=true; current={}; continue; }
     if(line==='END:VEVENT'){
       inEvent=false;
-      if(current.start && current.summary){
+      if(current.start){
+        const before = ferieCount;
         processICSEvent(current);
-        const s=current.summary.toLowerCase();
-        if(s.includes('ferie')) ferieCount++;
-        else if(s.includes('helligdag')||s.includes('fridag')) helligdagCount++;
+        // Tæl kun hvis processICSEvent faktisk satte noget
+        const s=(current.summary||'').toLowerCase();
+        if(s.includes('ferie')||s.includes('fravær')) ferieCount++;
       }
       continue;
     }
     if(!inEvent) continue;
 
-    if(line.startsWith('DTSTART;VALUE=DATE:') || line.startsWith('DTSTART:')){
-      const val=line.split(':')[1]?.trim();
-      if(val) current.start=val;
+    // DTSTART - håndter både DATE og DATETIME format
+    if(line.startsWith('DTSTART')){
+      const val = line.includes(':') ? line.split(':').slice(1).join(':').trim() : '';
+      if(val) current.start = val.substring(0,8); // Tag kun YYYYMMDD
     }
-    if(line.startsWith('DTEND;VALUE=DATE:') || line.startsWith('DTEND:')){
-      const val=line.split(':')[1]?.trim();
-      if(val) current.end=val;
+    if(line.startsWith('DTEND')){
+      const val = line.includes(':') ? line.split(':').slice(1).join(':').trim() : '';
+      if(val) current.end = val.substring(0,8);
     }
     if(line.startsWith('SUMMARY:')){
-      current.summary=line.substring(8).trim();
+      current.summary = line.substring(8).trim();
+    }
+    // Håndter encoded tegn
+    if(line.startsWith('SUMMARY;')){
+      const idx = line.indexOf(':');
+      if(idx>-1) current.summary = line.substring(idx+1).trim();
     }
   }
-  return {ferie:ferieCount, helligdag:helligdagCount};
+  return {ferie: ferieCount};
 }
 
 function processICSEvent(evt){
@@ -1055,13 +1072,20 @@ function kalenderHTML(){
   const DAY_LABELS = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 
   // Dag-navne header
-  const dayNames = DAY_LABELS.map(d=>`<div class="kal-day-name">${d}</div>`).join('');
+  const dayNames = '<div class="kal-day-name" style="opacity:0">U</div>' + DAY_LABELS.map(d=>`<div class="kal-day-name">${d}</div>`).join('');
 
   // Tomme celler før første dag
   let cells = '';
+  let currentWeekDay = 0; // 0=Man
+
+  // Første uge-nummer
+  const firstWeekDate = new Date(kalYear, kalMonth, 1-startDow);
+  cells += `<div class="kal-week-num">${weekNum(firstWeekDate)}</div>`;
+
   for(let i=0;i<startDow;i++){
     const prevDate = new Date(kalYear,kalMonth,1-startDow+i);
     cells += `<div class="kal-cell other-month"><div class="kal-date" style="color:var(--slate)">${prevDate.getDate()}</div></div>`;
+    currentWeekDay++;
   }
 
   // Dage i måneden
@@ -1101,6 +1125,12 @@ function kalenderHTML(){
       ? `<div style="font-size:9px;text-align:center;color:var(--gold);font-family:var(--mono)">${fmtH(workedH)}</div>`
       : '';
 
+    // Ny uge?
+    const cellDow = (date.getDay()+6)%7;
+    if(cellDow===0 && d>1){
+      cells += `<div class="kal-week-num">${weekNum(date)}</div>`;
+    }
+
     cells += `<div class="${cls}" onclick="kalDayClick('${dk}')">
       <div class="kal-date" style="${isToday?'color:var(--gold)':''}">${d}</div>
       ${icon?`<div style="text-align:center;font-size:13px;line-height:1">${icon}</div>`:''}
@@ -1110,8 +1140,12 @@ function kalenderHTML(){
 
   // Tomme celler efter sidste dag
   const remaining = (7 - (startDow + lastDay.getDate()) % 7) % 7;
-  for(let i=1;i<=remaining;i++){
-    cells += `<div class="kal-cell other-month"><div class="kal-date" style="color:var(--slate)">${i}</div></div>`;
+  if(remaining > 0){
+    const nextWeekDate = new Date(kalYear, kalMonth+1, 1);
+    cells += `<div class="kal-week-num">${weekNum(nextWeekDate)}</div>`;
+    for(let i=1;i<=remaining;i++){
+      cells += `<div class="kal-cell other-month"><div class="kal-date" style="color:var(--slate)">${i}</div></div>`;
+    }
   }
 
   // Måneds-statistik
