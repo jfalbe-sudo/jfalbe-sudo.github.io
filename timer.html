@@ -149,6 +149,28 @@ select option{background:#081828}
 .toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
 .toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
 .save-bar{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:200;transition:width .3s}
+/* KALENDER */
+.kal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kal-title{font-size:16px;font-weight:800}
+.kal-nav{background:var(--ink4);border:none;color:var(--gold);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.kal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.kal-day-name{text-align:center;font-size:10px;font-weight:700;color:var(--slate);padding:4px 0;text-transform:uppercase;letter-spacing:.5px}
+.kal-cell{border-radius:8px;padding:4px 2px;min-height:42px;position:relative;cursor:pointer;transition:background .15s}
+.kal-cell:active{opacity:.7}
+.kal-cell.other-month{opacity:.25}
+.kal-cell.today{border:1.5px solid var(--gold)}
+.kal-date{font-size:12px;font-weight:700;text-align:center;margin-bottom:2px}
+.kal-dot{width:5px;height:5px;border-radius:50%;margin:1px auto}
+.kal-cell.has-kontor{background:rgba(61,220,151,.08)}
+.kal-cell.has-hjemme{background:rgba(245,172,0,.08)}
+.kal-cell.has-syg{background:rgba(255,92,92,.15)}
+.kal-cell.has-barnsyg{background:rgba(77,166,255,.15)}
+.kal-cell.has-ferie{background:rgba(61,220,151,.15)}
+.kal-cell.has-fri{background:rgba(176,110,255,.1)}
+.kal-cell.weekend{opacity:.4}
+.kal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.kal-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--slate)}
+.kal-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -175,6 +197,9 @@ select option{background:#081828}
   </button>
   <button class="nav-btn" onclick="tab('rapport')" id="tab-rapport">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Rapport
+  </button>
+  <button class="nav-btn" onclick="tab('kalender')" id="tab-kalender">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="14" r="1" fill="currentColor"/><circle cx="12" cy="14" r="1" fill="currentColor"/><circle cx="16" cy="14" r="1" fill="currentColor"/></svg>Kalender
   </button>
 </nav>
 <main id="main"></main>
@@ -272,9 +297,21 @@ async function ghSave(){
 
 function scheduleSave(){
   isDirty=true;
-  localStorage.setItem('vct_db', JSON.stringify(db)); // Gem straks lokalt
+  localStorage.setItem('vct_db', JSON.stringify(db));
   clearTimeout(syncTimer);
-  syncTimer=setTimeout(ghSave, 2000); // Gem til GitHub efter 2 sek
+  syncTimer=setTimeout(ghSave, 2000);
+}
+
+function checkDailyBackup(){
+  const today = dateKey(new Date());
+  const lastBackup = localStorage.getItem('vct_last_backup');
+  if(lastBackup === today) return; // Allerede taget backup i dag
+  // Vent 5 sekunder efter app åbner så data er loadet
+  setTimeout(()=>{
+    if(Object.keys(db.days).length === 0) return; // Ingen data endnu
+    downloadBackup();
+    localStorage.setItem('vct_last_backup', today);
+  }, 5000);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -333,6 +370,7 @@ async function init(){
   // Load fra GitHub i baggrunden
   await ghLoad();
   render(); // Genrender med GitHub data
+  checkDailyBackup(); // Auto-backup én gang om dagen
   // Auto-sync hvert 30 sek (henter andres ændringer)
   setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 30000);
 }
@@ -376,7 +414,7 @@ function updateHeader(){
 // ═══════════════════════════════════════════════════════
 function tab(name){
   currentTab=name; editingIdx=-1;
-  ['dag','tilfoej','uge','rapport'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
+  ['dag','tilfoej','uge','rapport','kalender'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
 function render(){
@@ -384,7 +422,8 @@ function render(){
   if(currentTab==='dag')          m.innerHTML=dagHTML();
   else if(currentTab==='tilfoej') m.innerHTML=tilfoejHTML();
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
-  else                            m.innerHTML=rapportHTML();
+  else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
+  else                            m.innerHTML=kalenderHTML();
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
@@ -1001,6 +1040,139 @@ function savePulse(){
   const b=document.getElementById('saveBar');
   b.style.width='65%';
   setTimeout(()=>{b.style.width='100%';setTimeout(()=>b.style.width='0',350)},350);
+}
+
+let kalMonth = new Date().getMonth();
+let kalYear  = new Date().getFullYear();
+
+function kalenderHTML(){
+  const now   = new Date();
+  const today = dateKey(now);
+  const firstDay = new Date(kalYear, kalMonth, 1);
+  const lastDay  = new Date(kalYear, kalMonth+1, 0);
+  const startDow = (firstDay.getDay()+6)%7; // 0=Man
+  const MONTHS_L = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
+  const DAY_LABELS = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+
+  // Dag-navne header
+  const dayNames = DAY_LABELS.map(d=>`<div class="kal-day-name">${d}</div>`).join('');
+
+  // Tomme celler før første dag
+  let cells = '';
+  for(let i=0;i<startDow;i++){
+    const prevDate = new Date(kalYear,kalMonth,1-startDow+i);
+    cells += `<div class="kal-cell other-month"><div class="kal-date" style="color:var(--slate)">${prevDate.getDate()}</div></div>`;
+  }
+
+  // Dage i måneden
+  for(let d=1;d<=lastDay.getDate();d++){
+    const date = new Date(kalYear,kalMonth,d);
+    const dk   = dateKey(date);
+    const dow  = (date.getDay()+6)%7; // 0=Man
+    const isWeekend = dow>=5;
+    const isToday   = dk===today;
+    const type = getDayType(dk);
+    const entries = getEntries(dk);
+    const hasWork = entries.length>0;
+    const workedH = entries.reduce((s,e)=>s+e.hours,0);
+
+    let cls = 'kal-cell';
+    if(isWeekend) cls+=' weekend';
+    if(isToday)   cls+=' today';
+    if(type==='ferie')    cls+=' has-ferie';
+    else if(type==='syg'||type==='p56') cls+=' has-syg';
+    else if(type==='barnsyg') cls+=' has-barnsyg';
+    else if(type==='fri') cls+=' has-fri';
+    else if(hasWork && type==='hjemme') cls+=' has-hjemme';
+    else if(hasWork) cls+=' has-kontor';
+
+    // Ikon
+    let icon = '';
+    if(type==='ferie')         icon = '🌴';
+    else if(type==='syg')      icon = '🤒';
+    else if(type==='p56')      icon = '§';
+    else if(type==='barnsyg')  icon = '👶';
+    else if(type==='fri')      icon = '🎉';
+    else if(hasWork && type==='hjemme') icon = '🏠';
+    else if(hasWork)           icon = '🏢';
+
+    // Timer tekst
+    const hoursText = hasWork && !['ferie','syg','barnsyg','fri','p56'].includes(type)
+      ? `<div style="font-size:9px;text-align:center;color:var(--gold);font-family:var(--mono)">${fmtH(workedH)}</div>`
+      : '';
+
+    cells += `<div class="${cls}" onclick="kalDayClick('${dk}')">
+      <div class="kal-date" style="${isToday?'color:var(--gold)':''}">${d}</div>
+      ${icon?`<div style="text-align:center;font-size:13px;line-height:1">${icon}</div>`:''}
+      ${hoursText}
+    </div>`;
+  }
+
+  // Tomme celler efter sidste dag
+  const remaining = (7 - (startDow + lastDay.getDate()) % 7) % 7;
+  for(let i=1;i<=remaining;i++){
+    cells += `<div class="kal-cell other-month"><div class="kal-date" style="color:var(--slate)">${i}</div></div>`;
+  }
+
+  // Måneds-statistik
+  let mFerie=0,mSyg=0,mBarnSyg=0,mKontor=0,mHjemme=0,mTimer=0;
+  for(let d=1;d<=lastDay.getDate();d++){
+    const date=new Date(kalYear,kalMonth,d);
+    const dow=(date.getDay()+6)%7;
+    if(dow>=5) continue;
+    const dk=dateKey(date);
+    const type=getDayType(dk);
+    const h=getEntries(dk).reduce((s,e)=>s+e.hours,0);
+    if(type==='ferie') mFerie++;
+    else if(type==='syg'||type==='p56') mSyg++;
+    else if(type==='barnsyg') mBarnSyg++;
+    else if(h>0){ mTimer+=h; type==='hjemme'?mHjemme++:mKontor++; }
+  }
+
+  return`
+  <div class="card">
+    <div class="kal-header">
+      <button class="kal-nav" onclick="kalPrev()">‹</button>
+      <div class="kal-title">${MONTHS_L[kalMonth]} ${kalYear}</div>
+      <button class="kal-nav" onclick="kalNext()">›</button>
+    </div>
+    <div class="kal-grid">
+      ${dayNames}
+      ${cells}
+    </div>
+    <div class="kal-legend">
+      <div class="kal-leg-item"><div class="kal-leg-dot" style="background:rgba(61,220,151,.4)"></div>Kontor</div>
+      <div class="kal-leg-item"><div class="kal-leg-dot" style="background:rgba(245,172,0,.3)"></div>Hjemme</div>
+      <div class="kal-leg-item"><div class="kal-leg-dot" style="background:rgba(61,220,151,.4);opacity:.6"></div>Ferie</div>
+      <div class="kal-leg-item"><div class="kal-leg-dot" style="background:rgba(255,92,92,.4)"></div>Syg</div>
+      <div class="kal-leg-item"><div class="kal-leg-dot" style="background:rgba(77,166,255,.4)"></div>Barn syg</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-label">${MONTHS_L[kalMonth]} · Statistik</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+      <div class="stat-box"><div class="stat-num white">${fmtH(mTimer)}</div><div class="stat-lbl">Timer</div></div>
+      <div class="stat-box"><div class="stat-num white">🏢 ${mKontor}</div><div class="stat-lbl">Kontor</div></div>
+      <div class="stat-box"><div class="stat-num white">🏠 ${mHjemme}</div><div class="stat-lbl">Hjemme</div></div>
+      ${mFerie>0?`<div class="stat-box"><div class="stat-num good">🌴 ${mFerie}</div><div class="stat-lbl">Ferie</div></div>`:''}
+      ${mSyg>0?`<div class="stat-box"><div class="stat-num bad">🤒 ${mSyg}</div><div class="stat-lbl">Syg</div></div>`:''}
+      ${mBarnSyg>0?`<div class="stat-box"><div class="stat-num blue">👶 ${mBarnSyg}</div><div class="stat-lbl">Barn syg</div></div>`:''}
+    </div>
+  </div>`;
+}
+
+function kalPrev(){ kalMonth--; if(kalMonth<0){kalMonth=11;kalYear--;} render(); }
+function kalNext(){ kalMonth++; if(kalMonth>11){kalMonth=0;kalYear++;} render(); }
+function kalDayClick(dk){
+  // Naviger til dag og skift til I dag view
+  // Vis dag-detaljer som toast
+  const type=getDayType(dk);
+  const entries=getEntries(dk);
+  const h=entries.reduce((s,e)=>s+e.hours,0);
+  const icons={kontor:'🏢',hjemme:'🏠',ferie:'🌴',syg:'🤒',barnsyg:'👶',p56:'§56',fri:'🎉'};
+  const icon=icons[type]||'🏢';
+  const msg = h>0 ? `${icon} ${dk}: ${fmtH(h)}` : `${icon} ${dk}: ${type}`;
+  toast(msg,'ok');
 }
 
 init();
