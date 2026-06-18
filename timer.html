@@ -782,6 +782,10 @@ function rapportHTML(){
     if(w.sygDays)badges.push(`🤒${w.sygDays}`);
     if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
     if(w.ferieDays)badges.push(`🌴${w.ferieDays}`);
+    // Skip uger der er helt tomme (ingen timer OG ingen special dage)
+    const hasContent = w.totalH > 0 || w.officeDays > 0 || w.homeDays > 0 ||
+                       w.sygDays > 0 || w.barnSygDays > 0 || (w.ferieDays||0) > 0;
+    if(!hasContent) return '';
     return`<div class="report-week">
       <div class="report-week-hdr" onclick="toggleWeek('rwb-${wk}')">
         <div>
