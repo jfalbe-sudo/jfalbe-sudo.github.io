@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.5</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.6</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -457,7 +457,6 @@ function render(){
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
   if(currentTab==='dag'&&activeTimer) startDisp();
-  if(currentTab==='tilfoej') setTimeout(initTlTouch, 50);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -545,7 +544,7 @@ function dagHTML(){
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-num white">${fmtH(worked)}</div><div class="stat-lbl">Arbejdet</div></div>
       <div class="stat-box"><div class="stat-num white">${fmtH(target)}</div><div class="stat-lbl">Mål</div></div>
-      <div class="stat-box"><div class="stat-num ${sc}">${isSyg||isBarnSyg?'—':ss2+fmtH(Math.abs(diff))}</div><div class="stat-lbl">${isSyg?'Syg':isBarnSyg?'Barn syg':diff>0.05?'Overarb.':diff<-0.05?'Mangler':'OK ✓'}</div></div>
+      <div class="stat-box"><div class="stat-num ${sc}">${isSyg?'🤒':isBarnSyg?'👶':ss2+fmtH(Math.abs(diff))}</div><div class="stat-lbl">${isSyg?'Syg':isBarnSyg?'Barn syg':diff>0.05?'Overarb.':diff<-0.05?'Mangler':'OK ✓'}</div></div>
     </div>
     ${target>0?`<div class="prog-wrap"><div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div></div>`:''}
   </div>
@@ -681,22 +680,7 @@ function tilfoejHTML(){
       <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
     </div>
   </div>
-  <div class="card">
-    <div class="section-label">Dag-tidslinje</div>
-    <div class="timeline-wrap" id="tlWrap">
-      <div class="timeline-track" id="tlTrack"
-           onmousedown="tlMouseDown(event)"
-           id="tlTrackTouch">
-        ${buildTimeline()}
-      </div>
-      <div class="timeline-hours">
-        ${[6,8,10,12,14,16,18,20].map(h=>`<div class="timeline-hour">${h}:00</div>`).join('')}
-      </div>
-    </div>
-    <div id="tlHint" style="font-size:11px;color:var(--slate);margin-top:4px;text-align:center">
-      Klik og træk på tidslinjen for at sætte start/stop
-    </div>
-  </div>`;
+`;
 }
 
 function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();tab('tilfoej');}
