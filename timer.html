@@ -178,7 +178,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.1</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.2</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -574,6 +574,13 @@ function startDisp(){
 // ═══════════════════════════════════════════════════════
 function tilfoejHTML(){
   const now=nowHM();
+  // Find næste ledige starttid baseret på eksisterende entries
+  const todayEntries=getEntries(dateKey(new Date()));
+  let smartStart=now;
+  if(todayEntries.length>0){
+    const stops=todayEntries.map(e=>e.stop).filter(Boolean).sort();
+    if(stops.length>0) smartStart=stops[stops.length-1];
+  }
   const catBtns=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
   const chips=QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
   return`
@@ -604,7 +611,7 @@ function tilfoejHTML(){
     <div class="section-label">Tilføj manuelt</div>
     <div class="form-col">
       <div class="form-row">
-        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${now}"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
+        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${smartStart}"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
         <div><label class="field-label">Stop</label><input type="time" id="mStop" value="${now}"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
       </div>
       <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
