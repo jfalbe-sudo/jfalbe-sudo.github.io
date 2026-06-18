@@ -208,7 +208,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.7</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v1.8</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -256,8 +256,7 @@ const QUICK_ON= ['Beta M','My M','2613','2965','2973','3179','3200','3201'];
 const CATS    = [
   {label:'Admin',icon:'📋'},{label:'Beta M',icon:'🔧'},
   {label:'My M',icon:'🔩'},{label:'Møde',icon:'💬'},
-  {label:'Kørsel',icon:'🚗'},{label:'Service',icon:'⚙️'},
-  {label:'Andet',icon:'📌'},
+  {label:'Service',icon:'⚙️'},{label:'Andet',icon:'📌'},
 ];
 const DAY_TYPES=[
   {id:'kontor',label:'🏢 Kontor',cls:'sel-kontor'},
@@ -274,6 +273,7 @@ const DAY_TYPES=[
 let db = { version:3, days:{} }; // master database
 let activeTimer=null, timerIv=null, currentTab='dag';
 let selCat='', selOn='', customOn='', selSpecial='';
+let tilfoejStart='', tilfoejStop='';
 let editingIdx=-1;
 let syncTimer=null, isDirty=false;
 
@@ -445,7 +445,7 @@ function updateHeader(){
 // ═══════════════════════════════════════════════════════
 function tab(name){
   currentTab=name; editingIdx=-1;
-  if(name==='tilfoej'){ selCat=''; selOn=''; customOn=''; selSpecial=''; }
+  if(name==='tilfoej'){ selCat=''; selOn=''; customOn=''; selSpecial=''; tilfoejStart=''; tilfoejStop=''; }
   ['dag','tilfoej','uge','rapport','kalender'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
@@ -638,16 +638,25 @@ function startDisp(){
 function tilfoejHTML(){
   const now=nowHM();
   // Find næste ledige starttid baseret på eksisterende entries
-  const todayEntries=getEntries(dateKey(new Date()));
-  let smartStart=now;
+  const dk=dateKey(new Date());
+  const todayEntries=getEntries(dk);
+  let smartStart='07:00';
   if(todayEntries.length>0){
     const stops=todayEntries.map(e=>e.stop).filter(Boolean).sort();
     if(stops.length>0) smartStart=stops[stops.length-1];
   }
-  const catBtns=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
+  // Bevar valgte tider hvis de allerede er sat
+  if(!tilfoejStart) tilfoejStart=smartStart;
+  if(!tilfoejStop)  tilfoejStop=now;
+
+  const catBtns2=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
   const chips=QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
+
+  // Byg tidslinje
+  const tlHtml=buildTimelineEditor(dk);
+
   return`
-  <div class="card"><div class="section-label">Kategori</div><div class="cat-grid">${catBtns}</div></div>
+  <div class="card"><div class="section-label">Kategori</div><div class="cat-grid">${catBtns2}</div></div>
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
@@ -662,7 +671,7 @@ function tilfoejHTML(){
     <div class="special-grid" style="margin-top:5px">
       <button class="special-btn" style="border-color:rgba(176,110,255,.4);color:var(--purple);${selSpecial==='p56'?'background:rgba(176,110,255,.15)':''}" onclick="toggleSpecial('p56')">§ Paragraf 56</button>
     </div>
-    <div style="font-size:11px;color:var(--slate);margin-top:6px">For hel dag: brug Dag-type på "I dag" siden</div>
+    <div style="font-size:11px;color:var(--slate);margin-top:6px">Syg kan kombineres med kategori/ON. For hel dag: brug Dag-type på "I dag" siden</div>
   </div>
   <div class="card">
     <div class="section-label">▶ Start timer</div>
@@ -673,9 +682,10 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">Tilføj manuelt</div>
     <div class="form-col">
-      <div class="form-row">
-        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${smartStart}"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
-        <div><label class="field-label">Stop</label><input type="time" id="mStop" value="${now}"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
+      ${tlHtml}
+      <div class="form-row" style="margin-top:8px">
+        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${tilfoejStart}" oninput="tilfoejStart=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
+        <div><label class="field-label">Stop</label><input type="time" id="mStop" value="${tilfoejStop}" oninput="tilfoejStop=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
       </div>
       <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
     </div>
@@ -683,16 +693,38 @@ function tilfoejHTML(){
 `;
 }
 
-function pickCat(cat){selCat=cat;if(!selOn&&!customOn)selOn=cat;render();}
-function pickOn(on){selOn=on;customOn='';render();}
-function toggleSpecial(s){selSpecial=selSpecial===s?'':s;render();}
-function setNow(id){document.getElementById(id).value=nowHM();}
+function pickCat(cat){
+  selCat=cat;
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  render();
+}
+function pickOn(on){
+  selOn=on;customOn='';
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  render();
+}
+function toggleSpecial(sp){
+  selSpecial=selSpecial===sp?'':sp;
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  render();
+}
+function setNow(id){
+  const v=nowHM();
+  const el=document.getElementById(id);
+  if(el)el.value=v;
+  if(id==='mStart')tilfoejStart=v; else tilfoejStop=v;
+  updateTlSel();
+}
 function getLabel(){const on=customOn||selOn||selCat||'?';return(selCat&&selCat!==on)?`${on} / ${selCat}`:on;}
 
 function startTimer(){
-  if(!selCat&&!selOn&&!customOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return;}
-  const on=selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):(customOn||selOn||selCat);
-  const label=selSpecial?(selSpecial==='syg'?'🤒 Syg':selSpecial==='barnsyg'?'👶 Barn syg':'§56'):getLabel();
+  const baseOn=customOn||selOn||selCat;
+  if(!baseOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return;}
+  const on=baseOn||(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56');
+  const label=selSpecial?`${selSpecial==='syg'?'🤒':selSpecial==='barnsyg'?'👶':'§'} ${on}`:getLabel();
   activeTimer={on,cat:selCat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
   toast(`▶ ${label} startet`,'ok'); tab('dag');
@@ -715,133 +747,130 @@ function stopTimer(){
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   toast('✓ Gemt','ok'); tab('dag');
 }
-// ── TIDSLINJE ────────────────────────────────────────────────────────
-const TL_START = 6;  // 06:00
-const TL_END   = 20; // 20:00
+// ── TIDSLINJE EDITOR (Tilføj-siden) ─────────────────────────────────
+const TL_START = 6;   // 06:00
+const TL_END   = 20;  // 20:00
 const TL_SPAN  = TL_END - TL_START;
 
 function tlPct(hhmm){
-  const h = hmToH(hhmm);
-  return Math.max(0, Math.min(100, (h - TL_START) / TL_SPAN * 100));
+  const h=hmToH(hhmm);
+  return Math.max(0,Math.min(100,(h-TL_START)/TL_SPAN*100));
 }
-
 function tlHHMM(pct){
-  const h = TL_START + (pct / 100) * TL_SPAN;
-  const totalMin = Math.round(h * 60 / 15) * 15; // Snap til 15 min
-  return `${String(Math.floor(totalMin/60)).padStart(2,'0')}:${String(totalMin%60).padStart(2,'0')}`;
+  const h=TL_START+(pct/100)*TL_SPAN;
+  const totalMin=Math.round(h*60/15)*15;
+  return`${String(Math.floor(totalMin/60)).padStart(2,'0')}:${String(totalMin%60).padStart(2,'0')}`;
 }
 
-function buildTimeline(){
-  const dk = dateKey(new Date());
-  const entries = getEntries(dk);
-  const now = nowHM();
-  const nowPct = tlPct(now);
+function buildTimelineEditor(dk){
+  const entries=getEntries(dk);
+  const now=nowHM();
+  const nowPct=tlPct(now);
 
-  const blocks = entries.map(e => {
-    const left = tlPct(e.start);
-    const right = tlPct(e.stop);
-    const width = right - left;
-    if(width <= 0) return '';
-    const cls = e.special ? e.special : 'normal';
-    const label = e.on.length > 8 ? e.on.slice(0,7)+'…' : e.on;
-    return `<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%"
-      onclick="tlClickBlock('${e.start}','${e.stop}')" title="${e.on} ${e.start}–${e.stop}">
-      ${width > 8 ? label : ''}
-    </div>`;
+  // Eksisterende blokke
+  const blocks=entries.map(e=>{
+    const left=tlPct(e.start), right=tlPct(e.stop), width=right-left;
+    if(width<=0)return'';
+    const cls=e.special?e.special:'normal';
+    const lbl=e.on.length>8?e.on.slice(0,7)+'…':e.on;
+    return`<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%" title="${e.on} ${e.start}–${e.stop}" onclick="tlEditorClickBlock('${e.start}','${e.stop}')">${width>8?lbl:''}</div>`;
   }).join('');
 
-  const nowLine = `<div class="timeline-now" style="left:${nowPct}%"></div>`;
-  return blocks + nowLine;
+  // Nuværende selektion
+  const s=tilfoejStart||'07:00', e2=tilfoejStop||now;
+  const sl=tlPct(s), sr=tlPct(e2), sw=Math.max(0,sr-sl);
+  const selBlock=sw>0.5?`<div class="timeline-selector" id="tlSel" style="left:${sl}%;width:${sw}%"></div>`:'';
+  const nowLine=`<div class="timeline-now" style="left:${nowPct}%"></div>`;
+
+  // Timemærker 06–20
+  const hours=[];
+  for(let h=TL_START;h<=TL_END;h+=2)hours.push(h);
+  const hourMarks=hours.map(h=>`<div class="timeline-hour" style="left:${(h-TL_START)/TL_SPAN*100}%;position:absolute;transform:translateX(-50%)">${h}</div>`).join('');
+
+  return`
+  <div style="margin-bottom:4px">
+    <div class="section-label" style="margin-bottom:6px">Tidslinje — træk for at vælge tid</div>
+    <div class="timeline-wrap">
+      <div class="timeline-track" id="tlTrack"
+           onmousedown="tlEditorDown(event)"
+           ontouchstart="tlEditorTouchStart(event)">
+        ${blocks}${selBlock}${nowLine}
+      </div>
+      <div style="position:relative;height:16px;margin-top:2px">${hourMarks}</div>
+    </div>
+    <div id="tlHint" style="font-size:11px;color:var(--gold);text-align:center;margin-top:4px;min-height:16px">${s!==e2?s+' → '+e2:''}</div>
+  </div>`;
 }
 
-let tlDragging = false, tlStartX = 0, tlStartPct = 0;
-
-function tlGetPct(e, track){
-  const rect = track.getBoundingClientRect();
-  const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
-  return Math.max(0, Math.min(100, (x - rect.left) / rect.width * 100));
-}
-
-function tlMouseDown(e){
-  const track = document.getElementById('tlTrack');
+function updateTlSel(){
+  // Opdater selektion uden fuld render
+  const s=tilfoejStart||(document.getElementById('mStart')||{}).value||'07:00';
+  const e=tilfoejStop||(document.getElementById('mStop')||{}).value||'';
+  const sl=tlPct(s),sr=tlPct(e),sw=Math.max(0,sr-sl);
+  let sel=document.getElementById('tlSel');
+  const track=document.getElementById('tlTrack');
   if(!track) return;
-  tlDragging = true;
-  tlStartPct = tlGetPct(e, track);
-  const startHM = tlHHMM(tlStartPct);
-  document.getElementById('mStart').value = startHM;
-  document.getElementById('mStop').value = startHM;
+  if(!sel){ sel=document.createElement('div'); sel.id='tlSel'; sel.className='timeline-selector'; track.appendChild(sel); }
+  sel.style.left=sl+'%'; sel.style.width=sw+'%';
+  const hint=document.getElementById('tlHint');
+  if(hint&&s&&e) hint.textContent=`${s} → ${e}`;
+}
 
-  const onMove = ev => {
-    if(!tlDragging) return;
-    const pct = tlGetPct(ev, track);
-    const endHM = tlHHMM(pct);
-    if(hmToH(endHM) > hmToH(document.getElementById('mStart').value)){
-      document.getElementById('mStop').value = endHM;
+let tlEdDragging=false, tlEdStartPct=0;
+function tlEditorGetPct(ev,track){
+  const rect=track.getBoundingClientRect();
+  const x=ev.clientX??ev.touches?.[0]?.clientX??0;
+  return Math.max(0,Math.min(100,(x-rect.left)/rect.width*100));
+}
+function tlEditorDown(ev){
+  const track=document.getElementById('tlTrack'); if(!track)return;
+  tlEdDragging=true;
+  tlEdStartPct=tlEditorGetPct(ev,track);
+  const startHM=tlHHMM(tlEdStartPct);
+  tilfoejStart=startHM; tilfoejStop=startHM;
+  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
+  if(ms)ms.value=startHM; if(me)me.value=startHM;
+  updateTlSel();
+  const onMove=ev2=>{
+    if(!tlEdDragging)return;
+    const pct=tlEditorGetPct(ev2,track);
+    const endHM=tlHHMM(pct);
+    if(hmToH(endHM)>hmToH(tilfoejStart)){
+      tilfoejStop=endHM;
+      const me2=document.getElementById('mStop'); if(me2)me2.value=endHM;
+      updateTlSel();
     }
-    // Vis selektion
-    const sp = Math.min(tlStartPct, pct);
-    const ep = Math.max(tlStartPct, pct);
-    let sel = document.getElementById('tlSel');
-    if(!sel){ sel=document.createElement('div'); sel.id='tlSel'; sel.className='timeline-selector'; track.appendChild(sel); }
-    sel.style.left = sp+'%';
-    sel.style.width = (ep-sp)+'%';
-    // Opdater hint
-    const hint = document.getElementById('tlHint');
-    if(hint) hint.textContent = `${document.getElementById('mStart').value} → ${document.getElementById('mStop').value}`;
   };
-  const onUp = () => {
-    tlDragging = false;
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('mouseup', onUp);
-    const sel = document.getElementById('tlSel');
-    if(sel) sel.remove();
-  };
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onUp);
+  const onUp=()=>{ tlEdDragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
 }
-
-function initTlTouch(){
-  const t=document.getElementById('tlTrackTouch');
-  if(t) t.addEventListener('touchstart',tlTouchStart,{passive:false});
-}
-
-function tlTouchStart(e){
-  e.preventDefault();
-  const track = document.getElementById('tlTrack');
-  if(!track) return;
-  tlStartPct = tlGetPct(e, track);
-  document.getElementById('mStart').value = tlHHMM(tlStartPct);
-  document.getElementById('mStop').value = tlHHMM(tlStartPct);
-
-  const onMove = ev => {
-    ev.preventDefault();
-    const pct = tlGetPct(ev, track);
-    const endHM = tlHHMM(pct);
-    if(hmToH(endHM) > hmToH(document.getElementById('mStart').value)){
-      document.getElementById('mStop').value = endHM;
+function tlEditorTouchStart(ev){
+  ev.preventDefault();
+  const track=document.getElementById('tlTrack'); if(!track)return;
+  const startHM=tlHHMM(tlEditorGetPct(ev,track));
+  tilfoejStart=startHM; tilfoejStop=startHM;
+  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
+  if(ms)ms.value=startHM; if(me)me.value=startHM;
+  updateTlSel();
+  const onMove=ev2=>{ ev2.preventDefault();
+    const pct=tlEditorGetPct(ev2,track),endHM=tlHHMM(pct);
+    if(hmToH(endHM)>hmToH(tilfoejStart)){
+      tilfoejStop=endHM;
+      const me2=document.getElementById('mStop'); if(me2)me2.value=endHM;
+      updateTlSel();
     }
-    let sel = document.getElementById('tlSel');
-    if(!sel){ sel=document.createElement('div'); sel.id='tlSel'; sel.className='timeline-selector'; track.appendChild(sel); }
-    const sp = Math.min(tlStartPct, pct), ep = Math.max(tlStartPct, pct);
-    sel.style.left = sp+'%'; sel.style.width = (ep-sp)+'%';
-    const hint = document.getElementById('tlHint');
-    if(hint) hint.textContent = `${document.getElementById('mStart').value} → ${document.getElementById('mStop').value}`;
   };
-  const onEnd = () => {
-    const sel = document.getElementById('tlSel');
-    if(sel) sel.remove();
-    track.removeEventListener('touchmove', onMove);
-    track.removeEventListener('touchend', onEnd);
-  };
-  track.addEventListener('touchmove', onMove, {passive:false});
-  track.addEventListener('touchend', onEnd);
+  const onEnd=()=>{ track.removeEventListener('touchmove',onMove); track.removeEventListener('touchend',onEnd); };
+  track.addEventListener('touchmove',onMove,{passive:false});
+  track.addEventListener('touchend',onEnd);
 }
-
-function tlClickBlock(start, stop){
-  document.getElementById('mStart').value = start;
-  document.getElementById('mStop').value = stop;
-  const hint = document.getElementById('tlHint');
-  if(hint) hint.textContent = `Valgt: ${start} – ${stop}`;
+function tlEditorClickBlock(start,stop){
+  tilfoejStart=start; tilfoejStop=stop;
+  const ms=document.getElementById('mStart'),me=document.getElementById('mStop');
+  if(ms)ms.value=start; if(me)me.value=stop;
+  updateTlSel();
+  const hint=document.getElementById('tlHint'); if(hint)hint.textContent=`Valgt: ${start} – ${stop}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -862,10 +891,11 @@ function saveManual(){
   if(!start||!stop){toast('Udfyld start og stop','err');return;}
   const sh=hmToH(start),eh=hmToH(stop);
   if(eh<=sh){toast('Stop skal være efter start','err');return;}
-  const on=selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):(customOn||selOn||selCat);
+  // Bestem ON: kategori/ON kan kombineres med syg
+  const baseOn=customOn||selOn||selCat;
+  const on=baseOn||( selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):null);
   if(!on){toast('Vælg kategori eller ON-nummer','err');return;}
   const dk=dateKey(new Date());
-  // Tjek overlap
   const overlap = checkOverlap(dk, start, stop);
   if(overlap){toast('⚠️ '+overlap,'err');return;}
   const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
