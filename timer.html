@@ -167,24 +167,23 @@ select option{background:#081828}
 .tl-handle.right{right:0;border-radius:2px 5px 5px 2px}
 .tl-body{position:absolute;left:18px;right:18px;top:0;bottom:0;cursor:grab;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);overflow:hidden;white-space:nowrap}
 .tl-body:active{cursor:grabbing}
-/* ── DAG TIDSLINJE ─────────────────────────────────── */
+/* ── DAG TIDSLINJE — smart kombi ───────────────────── */
 .dag-tl-wrap{position:relative;margin:4px 0;user-select:none;touch-action:none}
-.dag-tl-track{position:relative;height:56px;background:var(--ink3);border-radius:10px;cursor:default;overflow:visible}
-.dag-tl-block{position:absolute;top:4px;bottom:4px;border-radius:7px;display:flex;align-items:center;overflow:hidden;cursor:grab;touch-action:none;box-sizing:border-box}
-.dag-tl-block:active{cursor:grabbing}
-.dag-tl-block .dtl-body{flex:1;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;overflow:hidden;white-space:nowrap;pointer-events:none;min-width:0}
-.dag-tl-block .dtl-lh,.dag-tl-block .dtl-rh{width:12px;flex-shrink:0;height:100%;display:flex;align-items:center;justify-content:center;cursor:ew-resize;background:rgba(0,0,0,.25)}
-.dag-tl-block .dtl-lh{border-radius:7px 0 0 7px}
-.dag-tl-block .dtl-rh{border-radius:0 7px 7px 0}
-.dag-tl-block .dtl-lh::after,.dag-tl-block .dtl-rh::after{content:'';width:2px;height:14px;background:rgba(255,255,255,.35);border-radius:2px}
-.dag-tl-block.normal{background:rgba(245,172,0,.75);color:var(--ink)}
-.dag-tl-block.syg{background:rgba(255,92,92,.8);color:#fff}
-.dag-tl-block.barnsyg{background:rgba(77,166,255,.8);color:#fff}
-.dag-tl-block.p56{background:rgba(176,110,255,.8);color:#fff}
-.dag-tl-block.auto_s{background:rgba(255,92,92,.4);color:rgba(255,255,255,.6);border:1.5px dashed rgba(255,92,92,.5)}
-.dag-tl-now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);opacity:.9;pointer-events:none;border-radius:2px}
-.dag-tl-tooltip{position:absolute;bottom:calc(100% + 6px);background:var(--ink4);border:1px solid rgba(245,172,0,.3);color:var(--snow);font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:10;transform:translateX(-50%);transition:opacity .1s}
-.dag-tl-hour{position:absolute;font-size:9px;color:var(--slate);transform:translateX(-50%);bottom:-18px}
+.dag-tl-track{position:relative;background:var(--ink3);border-radius:10px;overflow:visible}
+.dag-tl-row{position:relative;height:48px}
+.dag-tl-row+.dag-tl-row{margin-top:3px}
+.dag-tl-block{position:absolute;top:4px;bottom:4px;border-radius:7px;display:flex;align-items:stretch;overflow:hidden;cursor:grab;touch-action:none;box-sizing:border-box;transition:filter .1s}
+.dag-tl-block:active{cursor:grabbing;filter:brightness(1.15)}
+.dtl-lh,.dtl-rh{width:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.2);cursor:ew-resize}
+.dtl-lh{border-radius:7px 0 0 7px}.dtl-rh{border-radius:0 7px 7px 0}
+.dtl-lh::after,.dtl-rh::after{content:'';width:2px;height:13px;background:rgba(255,255,255,.4);border-radius:2px}
+.dtl-inner{flex:1;display:flex;flex-direction:column;justify-content:center;padding:2px 5px;overflow:hidden;min-width:0;pointer-events:none}
+.dtl-name{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.dtl-time{font-size:9px;opacity:.75;white-space:nowrap;line-height:1.2}
+.dag-tl-now{position:absolute;top:-3px;width:2.5px;background:var(--gold);opacity:.95;border-radius:2px;pointer-events:none;z-index:5}
+.dag-tl-tooltip{position:absolute;background:var(--ink4);border:1px solid rgba(245,172,0,.4);color:var(--snow);font-size:11px;font-weight:700;padding:4px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:20;transform:translateX(-50%);bottom:calc(100% + 8px);transition:opacity .1s;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.dag-tl-hour{position:absolute;font-size:9px;color:var(--slate);transform:translateX(-50%);top:3px}
+.dag-tl-hours-row{position:relative;height:18px}
 /* ── FAB KNAPPER ──────────────────────────────────────── */
 .fab-group{position:fixed;bottom:76px;right:14px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .fab{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .12s}
@@ -255,7 +254,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.3</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.4</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -669,43 +668,107 @@ function dagHTML(){
 }
 
 // ═══════════════════════════════════════════════════════
-//  DAG TIDSLINJE — redigér entries direkte
+//  DAG TIDSLINJE — smart kombi
 // ═══════════════════════════════════════════════════════
 const DTL_START=6, DTL_END=22, DTL_SPAN=DTL_END-DTL_START;
 function dtlPct(hm){ return Math.max(0,Math.min(100,(hmToH(hm)-DTL_START)/DTL_SPAN*100)); }
 function dtlSnap(pct){
   const totalMin=Math.round((DTL_START+(pct/100)*DTL_SPAN)*60/15)*15;
-  const h=Math.floor(totalMin/60), m=totalMin%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  const h=Math.floor(totalMin/60),m=totalMin%60;
+  return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 }
 function dtlGetX(ev){ return ev.clientX??ev.touches?.[0]?.clientX??0; }
 
-function buildDagTimeline(dk, entries){
+// Farve-palette — hash af ON-navn → fast farve
+const DTL_COLORS=[
+  {bg:'#4DA6FF',fg:'#fff'},  // blå
+  {bg:'#3DDC97',fg:'#071a10'}, // grøn
+  {bg:'#B06EFF',fg:'#fff'},  // lilla
+  {bg:'#FF9F43',fg:'#2a1500'}, // orange
+  {bg:'#4CD4D4',fg:'#071a1a'}, // teal
+  {bg:'#FF7EB6',fg:'#2a0015'}, // rosa
+  {bg:'#A8E063',fg:'#1a2a00'}, // lime
+  {bg:'#778CA8',fg:'#fff'},  // blågrå
+];
+const DTL_SPECIAL={
+  syg:    {bg:'rgba(255,92,92,.85)',fg:'#fff'},
+  barnsyg:{bg:'rgba(77,166,255,.85)',fg:'#fff'},
+  p56:    {bg:'rgba(176,110,255,.85)',fg:'#fff'},
+  auto_s: {bg:'rgba(255,92,92,.35)',fg:'rgba(255,255,255,.7)',dash:true},
+};
+// Husk ON→farve så samme ON altid får samme farve på tværs af dage
+const _onColorCache={};
+function dtlColor(e){
+  if(e.special||e.auto_special){
+    const k=e.auto_special?'auto_s':e.special;
+    return DTL_SPECIAL[k]||DTL_SPECIAL.syg;
+  }
+  const key=e.on;
+  if(!_onColorCache[key]){
+    let hash=0; for(const c of key) hash=(hash*31+c.charCodeAt(0))&0xffff;
+    _onColorCache[key]=DTL_COLORS[hash%DTL_COLORS.length];
+  }
+  return _onColorCache[key];
+}
+
+// Layout: fordel entries på rækker, undgå overlap
+function dtlLayout(entries){
+  const rows=[]; // array af arrays
+  entries.forEach((e,i)=>{
+    if(!e.start||!e.stop)return;
+    const l=dtlPct(e.start), r=dtlPct(e.stop);
+    if(r-l<0.15)return;
+    let placed=false;
+    for(const row of rows){
+      const last=row[row.length-1];
+      if(dtlPct(last.e.stop)<=l+0.5){ row.push({e,i,l,r}); placed=true; break; }
+    }
+    if(!placed) rows.push([{e,i,l,r}]);
+  });
+  return rows;
+}
+
+function buildDagTimeline(dk,entries){
   const nowPct=dtlPct(nowHM());
+  const rows=dtlLayout(entries);
+  const trackH=Math.max(1,rows.length)*51; // 48px pr. række + 3px gap
+
+  // Byg blokke per række
+  const rowsHTML=rows.map((row,ri)=>{
+    const blocksHTML=row.map(({e,i,l,r})=>{
+      const w=r-l;
+      const col=dtlColor(e);
+      const border=col.dash?`border:1.5px dashed ${col.bg};background:rgba(255,92,92,.18)`:`background:${col.bg}`;
+      const lbl=e.on.length>12?e.on.slice(0,11)+'…':e.on;
+      // Vis tid i blokken hvis bred nok (>8%)
+      const showTime=w>8;
+      // Vis kun navn hvis <5%, ingenting hvis <2%
+      const showName=w>2;
+      return`<div class="dag-tl-block" id="dtlb-${i}" data-i="${i}"
+        style="left:${l}%;width:${w}%;${border};color:${col.fg}">
+        <div class="dtl-lh" data-role="L"></div>
+        <div class="dtl-inner">
+          ${showName?`<div class="dtl-name">${lbl}</div>`:''}
+          ${showTime?`<div class="dtl-time">${e.start}–${e.stop}</div>`:''}
+        </div>
+        <div class="dtl-rh" data-role="R"></div>
+      </div>`;
+    }).join('');
+    return`<div class="dag-tl-row">${blocksHTML}</div>`;
+  }).join('');
+
+  // Timemærker — tilpas tæthed til skærmbredde
   const hours=[];
   for(let h=DTL_START;h<=DTL_END;h+=2)hours.push(h);
   const hourMarks=hours.map(h=>`<div class="dag-tl-hour" style="left:${(h-DTL_START)/DTL_SPAN*100}%">${h}</div>`).join('');
 
-  const blocks=entries.map((e,i)=>{
-    if(!e.start||!e.stop)return'';
-    const left=dtlPct(e.start), right=dtlPct(e.stop), width=right-left;
-    if(width<=0.2)return'';
-    const cls=e.auto_special?'auto_s':(e.special?e.special:'normal');
-    const lbl=e.on.length>10?e.on.slice(0,9)+'…':e.on;
-    return`<div class="dag-tl-block ${cls}" id="dtlb-${i}" data-i="${i}" style="left:${left}%;width:${width}%">
-      <div class="dtl-lh" data-i="${i}" data-role="L"></div>
-      <div class="dtl-body">${width>6?lbl:''}</div>
-      <div class="dtl-rh" data-i="${i}" data-role="R"></div>
-    </div>`;
-  }).join('');
-
-  return`<div class="dag-tl-wrap" style="padding-bottom:22px">
-    <div class="dag-tl-track" id="dtlTrack">
-      ${blocks}
-      <div class="dag-tl-now" style="left:${nowPct}%"></div>
+  return`<div class="dag-tl-wrap">
+    <div class="dag-tl-track" id="dtlTrack" style="height:${trackH}px">
+      ${rowsHTML}
+      <div class="dag-tl-now" style="left:${nowPct}%;top:0;bottom:0"></div>
     </div>
-    <div id="dtlTooltip" class="dag-tl-tooltip" style="opacity:0;left:50%">—</div>
-    <div style="position:relative;height:0">${hourMarks}</div>
+    <div id="dtlTooltip" class="dag-tl-tooltip" style="opacity:0;left:50%;top:0">—</div>
+    <div class="dag-tl-hours-row" style="margin-top:4px;position:relative">${hourMarks}</div>
   </div>`;
 }
 
@@ -714,111 +777,88 @@ function bindDagTimelineHandlers(){
   if(!track)return;
   const dk=dateKey(new Date());
 
-  function showTooltip(pct,text){
+  function showTooltip(blk,text){
     const tip=document.getElementById('dtlTooltip');
-    if(!tip)return;
-    tip.textContent=text; tip.style.left=`calc(${pct}% )`; tip.style.opacity='1';
+    const trackRect=track.getBoundingClientRect();
+    const blkRect=blk.getBoundingClientRect();
+    const midPct=((blkRect.left+blkRect.width/2)-trackRect.left)/trackRect.width*100;
+    if(tip){
+      tip.textContent=text;
+      tip.style.left=Math.max(10,Math.min(90,midPct))+'%';
+      tip.style.top=(blk.closest('.dag-tl-row').offsetTop-34)+'px';
+      tip.style.opacity='1';
+    }
   }
   function hideTooltip(){ const t=document.getElementById('dtlTooltip'); if(t)t.style.opacity='0'; }
 
-  function dtlDragHandler(i, role, startX){
-    const entries=getEntries(dk);
-    const e=entries[i];
-    if(!e)return;
-    const origStart=e.start, origStop=e.stop;
-    const trackW=track.getBoundingClientRect().width;
-    const spanPct=dtlPct(origStop)-dtlPct(origStart);
-
-    function applyDrag(curX){
-      const dPct=(curX-startX)/trackW*100;
-      let ns=origStart, ne=origStop;
-      if(role==='M'){
-        // Flyt hele blokken
-        const newL=Math.max(0, Math.min(100-spanPct, dtlPct(origStart)+dPct));
-        ns=dtlSnap(newL); ne=dtlSnap(newL+spanPct);
-      } else if(role==='L'){
-        const newL=Math.max(0, Math.min(dtlPct(origStop)-2, dtlPct(origStart)+dPct));
-        ns=dtlSnap(newL); ne=origStop;
-      } else {
-        const newR=Math.max(dtlPct(origStart)+2, Math.min(100, dtlPct(origStop)+dPct));
-        ns=origStart; ne=dtlSnap(newR);
-      }
-      if(hmToH(ne)<=hmToH(ns))return;
-      // Opdater DOM direkte (ingen re-render under drag)
-      const blk=document.getElementById(`dtlb-${i}`);
-      if(blk){
-        const l=dtlPct(ns), w=dtlPct(ne)-l;
-        blk.style.left=l+'%'; blk.style.width=w+'%';
-      }
-      showTooltip(dtlPct(ns)+((dtlPct(ne)-dtlPct(ns))/2), `${ns} – ${ne}`);
-      return {ns,ne};
-    }
-
-    function commitDrag(ns,ne){
-      if(!ns||!ne)return;
-      const arr=getEntries(dk);
-      arr[i]={...arr[i],start:ns,stop:ne,hours:hmToH(ne)-hmToH(ns)};
-      saveEntries(dk,arr); recalcSpecial(dk); scheduleSave();
-      hideTooltip();
-      render();
-    }
-
-    return {applyDrag, commitDrag};
-  }
-
-  // Bind mouse events to blocks
   track.querySelectorAll('.dag-tl-block').forEach(blk=>{
     const i=parseInt(blk.dataset.i);
 
-    function onMouseDown(ev, role){
-      ev.preventDefault(); ev.stopPropagation();
-      const startX=dtlGetX(ev);
-      const h=dtlDragHandler(i,role,startX);
-      let last=null;
-      const onMove=ev2=>{ last=h.applyDrag(dtlGetX(ev2)); };
-      const onUp=()=>{
-        document.removeEventListener('mousemove',onMove);
-        document.removeEventListener('mouseup',onUp);
-        if(last) h.commitDrag(last.ns,last.ne); else hideTooltip();
-      };
-      document.addEventListener('mousemove',onMove);
-      document.addEventListener('mouseup',onUp);
+    function makeDrag(role,startX){
+      const entries=getEntries(dk);
+      const e=entries[i]; if(!e)return null;
+      const origStart=e.start, origStop=e.stop;
+      const trackW=track.getBoundingClientRect().width;
+      const spanPct=dtlPct(origStop)-dtlPct(origStart);
+      let lastResult=null;
+
+      function applyDrag(curX){
+        const dPct=(curX-startX)/trackW*100;
+        let ns=origStart,ne=origStop;
+        if(role==='M'){
+          const newL=Math.max(0,Math.min(100-spanPct,dtlPct(origStart)+dPct));
+          ns=dtlSnap(newL); ne=dtlSnap(newL+spanPct);
+        } else if(role==='L'){
+          const newL=Math.max(0,Math.min(dtlPct(origStop)-2,dtlPct(origStart)+dPct));
+          ns=dtlSnap(newL); ne=origStop;
+        } else {
+          const newR=Math.max(dtlPct(origStart)+2,Math.min(100,dtlPct(origStop)+dPct));
+          ns=origStart; ne=dtlSnap(newR);
+        }
+        if(hmToH(ne)<=hmToH(ns))return null;
+        // Live DOM-opdatering
+        const l=dtlPct(ns),w=dtlPct(ne)-l;
+        blk.style.left=l+'%'; blk.style.width=w+'%';
+        // Opdater tid-label inde i blokken
+        const timeEl=blk.querySelector('.dtl-time');
+        if(timeEl)timeEl.textContent=`${ns}–${ne}`;
+        showTooltip(blk,`${ns} → ${ne}  (${fmtH(hmToH(ne)-hmToH(ns))})`);
+        return lastResult={ns,ne};
+      }
+
+      function commit(){
+        if(!lastResult){hideTooltip();return;}
+        const arr=getEntries(dk);
+        arr[i]={...arr[i],start:lastResult.ns,stop:lastResult.ne,hours:hmToH(lastResult.ne)-hmToH(lastResult.ns)};
+        saveEntries(dk,arr); recalcSpecial(dk); scheduleSave();
+        hideTooltip(); render();
+      }
+      return{applyDrag,commit};
     }
 
-    function onTouchStart(ev, role){
+    // Mouse
+    function onMD(ev,role){
       ev.preventDefault(); ev.stopPropagation();
-      const startX=dtlGetX(ev);
-      const h=dtlDragHandler(i,role,startX);
-      let last=null;
-      const onMove=ev2=>{ ev2.preventDefault(); last=h.applyDrag(dtlGetX(ev2)); };
-      const onUp=()=>{
-        blk.removeEventListener('touchmove',onMove);
-        blk.removeEventListener('touchend',onUp);
-        if(last) h.commitDrag(last.ns,last.ne); else hideTooltip();
-      };
-      blk.addEventListener('touchmove',onMove,{passive:false});
-      blk.addEventListener('touchend',onUp);
+      const drag=makeDrag(role,dtlGetX(ev)); if(!drag)return;
+      const mv=ev2=>drag.applyDrag(dtlGetX(ev2));
+      const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); drag.commit(); };
+      document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+    }
+    // Touch
+    function onTS(ev,role){
+      ev.preventDefault(); ev.stopPropagation();
+      const drag=makeDrag(role,dtlGetX(ev)); if(!drag)return;
+      const mv=ev2=>{ ev2.preventDefault(); drag.applyDrag(dtlGetX(ev2)); };
+      const up=()=>{ document.removeEventListener('touchmove',mv); document.removeEventListener('touchend',up); drag.commit(); };
+      document.addEventListener('touchmove',mv,{passive:false}); document.addEventListener('touchend',up);
     }
 
-    // Venstre håndtag
     const lh=blk.querySelector('.dtl-lh');
-    if(lh){
-      lh.addEventListener('mousedown', ev=>onMouseDown(ev,'L'));
-      lh.addEventListener('touchstart', ev=>onTouchStart(ev,'L'),{passive:false});
-    }
-    // Højre håndtag
     const rh=blk.querySelector('.dtl-rh');
-    if(rh){
-      rh.addEventListener('mousedown', ev=>onMouseDown(ev,'R'));
-      rh.addEventListener('touchstart', ev=>onTouchStart(ev,'R'),{passive:false});
-    }
-    // Midte = flyt
-    const body=blk.querySelector('.dtl-body');
-    if(body){
-      body.style.pointerEvents='auto';
-      body.addEventListener('mousedown', ev=>onMouseDown(ev,'M'));
-      body.addEventListener('touchstart', ev=>onTouchStart(ev,'M'),{passive:false});
-    }
+    const inn=blk.querySelector('.dtl-inner');
+    if(lh){ lh.addEventListener('mousedown',ev=>onMD(ev,'L')); lh.addEventListener('touchstart',ev=>onTS(ev,'L'),{passive:false}); }
+    if(rh){ rh.addEventListener('mousedown',ev=>onMD(ev,'R')); rh.addEventListener('touchstart',ev=>onTS(ev,'R'),{passive:false}); }
+    if(inn){ inn.style.pointerEvents='auto'; inn.addEventListener('mousedown',ev=>onMD(ev,'M')); inn.addEventListener('touchstart',ev=>onTS(ev,'M'),{passive:false}); }
   });
 }
 
