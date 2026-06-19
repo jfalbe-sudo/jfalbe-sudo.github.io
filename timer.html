@@ -167,7 +167,34 @@ select option{background:#081828}
 .tl-handle.right{right:0;border-radius:2px 5px 5px 2px}
 .tl-body{position:absolute;left:18px;right:18px;top:0;bottom:0;cursor:grab;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);overflow:hidden;white-space:nowrap}
 .tl-body:active{cursor:grabbing}
-/* KALENDER */
+/* ── SCAN FAB ─────────────────────────────────────────── */
+.scan-fab{position:fixed;bottom:80px;right:16px;z-index:200;width:58px;height:58px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .15s}
+.scan-fab:active{transform:scale(.92)}
+.scan-fab svg{width:26px;height:26px;stroke:#0d1b2a;stroke-width:2.2;fill:none}
+.scan-fab.active-scan{background:var(--red);animation:fabPulse 1.2s infinite}
+@keyframes fabPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,92,.5)}60%{box-shadow:0 0 0 12px rgba(255,92,92,0)}}
+/* Scan overlay */
+.scan-overlay{position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column}
+.scan-overlay.hidden{display:none}
+.scan-overlay video{flex:1;width:100%;object-fit:cover}
+.scan-viewfinder{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:240px;height:160px;border:2px solid var(--gold);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.55)}
+.scan-line{position:absolute;left:8px;right:8px;top:0;height:2px;background:var(--gold);animation:scanLine 1.8s ease-in-out infinite;opacity:.85}
+@keyframes scanLine{0%,100%{top:8px}50%{top:calc(100% - 10px)}}
+.scan-toolbar{background:rgba(13,27,42,.95);padding:14px 20px 28px;display:flex;flex-direction:column;gap:10px}
+.scan-cancel{background:var(--ink4);border:none;color:var(--slate);padding:11px;border-radius:10px;font-size:14px;cursor:pointer}
+.scan-hint{font-size:12px;color:var(--slate);text-align:center}
+/* Scan result popup */
+.scan-popup{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center}
+.scan-popup.hidden{display:none}
+.scan-popup-inner{background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:500px}
+.scan-popup-on{font-size:28px;font-weight:900;color:var(--gold);text-align:center;margin-bottom:6px;letter-spacing:1px}
+.scan-popup-sub{font-size:12px;color:var(--slate);text-align:center;margin-bottom:18px}
+.scan-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.scan-cat-btn{background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:13px 10px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .12s,border-color .12s}
+.scan-cat-btn.sel{background:rgba(245,172,0,.18);border-color:var(--gold);color:var(--gold)}
+.scan-confirm{width:100%;padding:15px;background:var(--gold);color:var(--ink);font-size:16px;font-weight:900;border:none;border-radius:12px;cursor:pointer;margin-top:4px}
+.scan-dismiss{width:100%;padding:11px;background:transparent;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:6px}
+
 .kal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .kal-title{font-size:16px;font-weight:800}
 .kal-nav{background:var(--ink4);border:none;color:var(--gold);width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -196,7 +223,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.0</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.1</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -223,6 +250,34 @@ select option{background:#081828}
 </nav>
 <main id="main"></main>
 <div class="toast" id="toast"></div>
+
+<!-- ── SCAN FAB ── -->
+<button class="scan-fab" id="scanFab" onclick="scanOpen()" title="Scan stregkode">
+  <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="16" y1="8" x2="16" y2="12"/></svg>
+</button>
+
+<!-- ── SCAN OVERLAY ── -->
+<div class="scan-overlay hidden" id="scanOverlay">
+  <video id="scanVideo" autoplay playsinline muted></video>
+  <div class="scan-viewfinder">
+    <div class="scan-line"></div>
+  </div>
+  <div class="scan-toolbar">
+    <div class="scan-hint" id="scanHint">Hold stregkoden inden for rammen</div>
+    <button class="scan-cancel" onclick="scanClose()">✕ Annuller</button>
+  </div>
+</div>
+
+<!-- ── SCAN RESULT POPUP ── -->
+<div class="scan-popup hidden" id="scanPopup">
+  <div class="scan-popup-inner">
+    <div class="scan-popup-on" id="scanPopupON">—</div>
+    <div class="scan-popup-sub" id="scanPopupSub">Vælg kategori og bekræft</div>
+    <div class="scan-cat-grid" id="scanCatGrid"></div>
+    <button class="scan-confirm" onclick="scanConfirm()">▶ Start job</button>
+    <button class="scan-dismiss" onclick="scanDismiss()">Annuller</button>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════
@@ -1535,6 +1590,140 @@ function kalDayClick(dk){
   toast(msg,'ok');
 }
 
+// ═══════════════════════════════════════════════════════
+//  BARCODE SCANNER
+// ═══════════════════════════════════════════════════════
+let scanStream=null, scanDetector=null, scanRafId=null;
+let scanPendingON='', scanSelCat='';
+const SCAN_CATS=CATS.map(c=>c.label); // Brug samme kategorier som appen
+
+function scanOpen(){
+  const overlay=document.getElementById('scanOverlay');
+  overlay.classList.remove('hidden');
+  document.getElementById('scanFab').classList.add('active-scan');
+
+  // BarcodeDetector API — native, offline, ingen bibliotek nødvendigt
+  if(!('BarcodeDetector' in window)){
+    // Fallback: manuel indtastning
+    scanClose();
+    const on=prompt('BarcodeDetector ikke understøttet.\nIndtast ON-nummer manuelt (fx 3200):');
+    if(on&&on.trim()) scanShowPopup(on.trim().replace(/^ON\s*/i,'').trim());
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}})
+    .then(stream=>{
+      scanStream=stream;
+      const video=document.getElementById('scanVideo');
+      video.srcObject=stream;
+      video.play();
+      scanDetector=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8','upc_a','upc_e','data_matrix']});
+      scanLoop();
+    })
+    .catch(err=>{
+      scanClose();
+      toast('Kamera-adgang nægtet','err');
+    });
+}
+
+function scanLoop(){
+  const video=document.getElementById('scanVideo');
+  if(!video||!scanDetector)return;
+  scanDetector.detect(video).then(results=>{
+    if(results.length>0){
+      const raw=results[0].rawValue;
+      // Udtræk ON-nummer: "ON 3200" → "3200", "ON 3009-2" → "3009-2"
+      const match=raw.match(/ON[\s\-]?(\d[\w\-]*)/i);
+      const on=match?match[1]:raw.trim();
+      scanClose();
+      scanShowPopup(on);
+    } else {
+      scanRafId=requestAnimationFrame(scanLoop);
+    }
+  }).catch(()=>{
+    scanRafId=requestAnimationFrame(scanLoop);
+  });
+}
+
+function scanClose(){
+  document.getElementById('scanOverlay').classList.add('hidden');
+  document.getElementById('scanFab').classList.remove('active-scan');
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  if(scanRafId){ cancelAnimationFrame(scanRafId); scanRafId=null; }
+  scanDetector=null;
+}
+
+function scanShowPopup(on){
+  scanPendingON=on;
+  scanSelCat='Service'; // Default — kan overskrives af sidst brugte
+
+  // Husk seneste kategori for dette ON
+  const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
+  if(history[on]) scanSelCat=history[on];
+
+  document.getElementById('scanPopupON').textContent='ON '+on;
+
+  // Vis om der kører et aktivt job der stoppes
+  const sub=activeTimer
+    ? `Stopper aktivt job: ${activeTimer.label} — vælg ny kategori`
+    : 'Vælg kategori og bekræft';
+  document.getElementById('scanPopupSub').textContent=sub;
+
+  // Byg kategori-grid
+  const grid=document.getElementById('scanCatGrid');
+  grid.innerHTML=CATS.map(c=>`
+    <button class="scan-cat-btn${scanSelCat===c.label?' sel':''}"
+      onclick="scanPickCat('${c.label}',this)">
+      ${c.icon} ${c.label}
+    </button>`).join('');
+
+  document.getElementById('scanPopup').classList.remove('hidden');
+}
+
+function scanPickCat(cat,btn){
+  scanSelCat=cat;
+  document.querySelectorAll('.scan-cat-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function scanConfirm(){
+  if(!scanPendingON){scanDismiss();return;}
+  const now=nowHM();
+  const dk=dateKey(new Date());
+
+  // Stop aktivt job hvis der er et
+  if(activeTimer){
+    const sh=hmToH(activeTimer.startHM), eh=hmToH(now);
+    if(eh>sh){
+      const entry={on:activeTimer.on,cat:activeTimer.cat||'',start:activeTimer.startHM,stop:now,hours:eh-sh,date:dk};
+      if(activeTimer.special)entry.special=activeTimer.special;
+      addEntry(dk,entry); recalcSpecial(dk);
+    }
+    activeTimer=null; localStorage.removeItem('vct_activeTimer');
+  }
+
+  // Start nyt job
+  const label=`${scanSelCat} · ${scanPendingON}`;
+  activeTimer={on:scanPendingON,cat:scanSelCat,label,t0:Date.now(),startHM:now};
+  localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+
+  // Husk kategori-valg for dette ON-nummer
+  const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
+  history[scanPendingON]=scanSelCat;
+  localStorage.setItem('vct_scan_cat_history',JSON.stringify(history));
+
+  savePulse();
+  toast(`▶ ${label}  ${now}`,'ok');
+  scanDismiss();
+  if(currentTab!=='dag') tab('dag'); else render();
+}
+
+function scanDismiss(){
+  document.getElementById('scanPopup').classList.add('hidden');
+  scanPendingON=''; scanSelCat='';
+}
+
+// ─────────────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
