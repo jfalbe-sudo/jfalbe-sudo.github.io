@@ -167,12 +167,20 @@ select option{background:#081828}
 .tl-handle.right{right:0;border-radius:2px 5px 5px 2px}
 .tl-body{position:absolute;left:18px;right:18px;top:0;bottom:0;cursor:grab;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);overflow:hidden;white-space:nowrap}
 .tl-body:active{cursor:grabbing}
-/* ── SCAN FAB ─────────────────────────────────────────── */
-.scan-fab{position:fixed;bottom:80px;right:16px;z-index:200;width:58px;height:58px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .15s}
-.scan-fab:active{transform:scale(.92)}
-.scan-fab svg{width:26px;height:26px;stroke:#0d1b2a;stroke-width:2.2;fill:none}
-.scan-fab.active-scan{background:var(--red);animation:fabPulse 1.2s infinite}
+/* ── FAB KNAPPER ──────────────────────────────────────── */
+.fab-group{position:fixed;bottom:76px;right:14px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.fab{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .12s}
+.fab:active{transform:scale(.9)}
+.fab-start{background:var(--gold)}
+.fab-scan{background:var(--ink4);border:2px solid rgba(245,172,0,.3)}
+.fab svg{width:24px;height:24px;stroke-width:2.2;fill:none}
+.fab-start svg{stroke:#0d1b2a}
+.fab-scan svg{stroke:var(--gold)}
+.fab.active-scan{background:var(--red);animation:fabPulse 1.2s infinite}
 @keyframes fabPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,92,92,.5)}60%{box-shadow:0 0 0 12px rgba(255,92,92,0)}}
+.fab-label{position:absolute;right:62px;background:var(--ink3);color:var(--snow);font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s}
+.fab-wrap{position:relative;display:flex;align-items:center}
+.fab-wrap:hover .fab-label{opacity:1}
 /* Scan overlay */
 .scan-overlay{position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column}
 .scan-overlay.hidden{display:none}
@@ -183,17 +191,23 @@ select option{background:#081828}
 .scan-toolbar{background:rgba(13,27,42,.95);padding:14px 20px 28px;display:flex;flex-direction:column;gap:10px}
 .scan-cancel{background:var(--ink4);border:none;color:var(--slate);padding:11px;border-radius:10px;font-size:14px;cursor:pointer}
 .scan-hint{font-size:12px;color:var(--slate);text-align:center}
-/* Scan result popup */
+/* Quick-start + Scan result popup (delt design) */
 .scan-popup{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center}
 .scan-popup.hidden{display:none}
-.scan-popup-inner{background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:500px}
-.scan-popup-on{font-size:28px;font-weight:900;color:var(--gold);text-align:center;margin-bottom:6px;letter-spacing:1px}
-.scan-popup-sub{font-size:12px;color:var(--slate);text-align:center;margin-bottom:18px}
-.scan-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.scan-cat-btn{background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:13px 10px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .12s,border-color .12s}
+.scan-popup-inner{background:var(--ink2);border-radius:20px 20px 0 0;padding:20px 20px 32px;width:100%;max-width:500px}
+.scan-popup-on{font-size:26px;font-weight:900;color:var(--gold);text-align:center;margin-bottom:4px;letter-spacing:1px}
+.scan-popup-sub{font-size:12px;color:var(--slate);text-align:center;margin-bottom:14px}
+.scan-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.scan-cat-btn{background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:12px 10px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;transition:background .12s,border-color .12s}
 .scan-cat-btn.sel{background:rgba(245,172,0,.18);border-color:var(--gold);color:var(--gold)}
-.scan-confirm{width:100%;padding:15px;background:var(--gold);color:var(--ink);font-size:16px;font-weight:900;border:none;border-radius:12px;cursor:pointer;margin-top:4px}
-.scan-dismiss{width:100%;padding:11px;background:transparent;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:6px}
+/* ON-chips i popup */
+.scan-on-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.scan-on-chip{background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer}
+.scan-on-chip.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
+.scan-on-custom{width:100%;background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:10px;box-sizing:border-box}
+.scan-on-custom:focus{outline:none;border-color:var(--gold)}
+.scan-confirm{width:100%;padding:14px;background:var(--gold);color:var(--ink);font-size:15px;font-weight:900;border:none;border-radius:12px;cursor:pointer}
+.scan-dismiss{width:100%;padding:10px;background:transparent;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:4px}
 
 .kal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .kal-title{font-size:16px;font-weight:800}
@@ -223,7 +237,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.1</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.2</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -251,10 +265,21 @@ select option{background:#081828}
 <main id="main"></main>
 <div class="toast" id="toast"></div>
 
-<!-- ── SCAN FAB ── -->
-<button class="scan-fab" id="scanFab" onclick="scanOpen()" title="Scan stregkode">
-  <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="16" y1="8" x2="16" y2="12"/></svg>
-</button>
+<!-- ── FAB KNAPPER ── -->
+<div class="fab-group">
+  <div class="fab-wrap">
+    <span class="fab-label">Scan stregkode</span>
+    <button class="fab fab-scan" id="scanFab" title="Hold nede for scan">
+      <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="9" x2="7" y2="15"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="9" x2="13" y2="15"/><line x1="16" y1="8" x2="16" y2="12"/></svg>
+    </button>
+  </div>
+  <div class="fab-wrap">
+    <span class="fab-label">Hurtig start</span>
+    <button class="fab fab-start" id="quickFab" title="Hurtig start">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#0d1b2a"/></svg>
+    </button>
+  </div>
+</div>
 
 <!-- ── SCAN OVERLAY ── -->
 <div class="scan-overlay hidden" id="scanOverlay">
@@ -268,13 +293,15 @@ select option{background:#081828}
   </div>
 </div>
 
-<!-- ── SCAN RESULT POPUP ── -->
+<!-- ── HURTIG-START / SCAN POPUP ── -->
 <div class="scan-popup hidden" id="scanPopup">
   <div class="scan-popup-inner">
-    <div class="scan-popup-on" id="scanPopupON">—</div>
-    <div class="scan-popup-sub" id="scanPopupSub">Vælg kategori og bekræft</div>
+    <div class="scan-popup-on" id="scanPopupON">Hurtig start</div>
+    <div class="scan-popup-sub" id="scanPopupSub">Vælg kategori og ON-nummer</div>
     <div class="scan-cat-grid" id="scanCatGrid"></div>
-    <button class="scan-confirm" onclick="scanConfirm()">▶ Start job</button>
+    <div class="scan-on-chips" id="scanOnChips"></div>
+    <input class="scan-on-custom" id="scanOnCustom" placeholder="Eller skriv ON-nummer (fx 3052)" oninput="scanCustomOnInput(this.value)">
+    <button class="scan-confirm" id="scanConfirmBtn" onclick="scanConfirm()">▶ Start job</button>
     <button class="scan-dismiss" onclick="scanDismiss()">Annuller</button>
   </div>
 </div>
@@ -339,6 +366,21 @@ async function ghLoad(){
     const decoded=JSON.parse(fileContent);
     db=decoded;
     localStorage.setItem('vct_db', JSON.stringify(db));
+    // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
+    if(db.activeTimer){
+      const remote=db.activeTimer;
+      // Genberegn t0 fra startHM så live-timer er korrekt
+      const [sh,sm]=remote.startHM.split(':').map(Number);
+      const now=new Date();
+      const startMs=new Date(now.getFullYear(),now.getMonth(),now.getDate(),sh,sm,0).getTime();
+      remote.t0=startMs;
+      activeTimer=remote;
+      localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+    } else if(db.hasOwnProperty('activeTimer') && db.activeTimer===null){
+      // Anden enhed har stoppet timeren
+      activeTimer=null;
+      localStorage.removeItem('vct_activeTimer');
+    }
     setSyncStatus('ok');
   } catch(e){
     console.error('ghLoad',e);
@@ -352,6 +394,14 @@ async function ghSave(){
   if(!isDirty) return;
   setSyncStatus('syncing');
   try {
+    // Inkluder activeTimer i Gist-data så andre enheder ser den
+    db.activeTimer = activeTimer ? {
+      on: activeTimer.on,
+      cat: activeTimer.cat,
+      label: activeTimer.label,
+      startHM: activeTimer.startHM,
+      special: activeTimer.special||null,
+    } : null;
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
     const r=await fetch(GIST_API,{
       method:'PATCH',
@@ -755,6 +805,7 @@ function startTimer(){
   const label=selSpecial?`${selSpecial==='syg'?'🤒':selSpecial==='barnsyg'?'👶':'§'} ${on}`:getLabel();
   activeTimer={on,cat:selCat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+  scheduleSave(); // Sync activeTimer til Gist så den vises på anden enhed
   toast(`▶ ${label} startet`,'ok'); tab('dag');
 }
 function stopTimer(){
@@ -762,17 +813,18 @@ function stopTimer(){
   clearInterval(timerIv);
   const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
   const dk=dateKey(new Date());
-  // Tjek overlap
   const overlap = checkOverlap(dk, activeTimer.startHM, stop);
   if(overlap){
     toast('⚠️ '+overlap,'err');
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
+    scheduleSave(); // Ryd activeTimer i Gist
     render(); return;
   }
   const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
   if(activeTimer.special)entry.special=activeTimer.special;
   addEntry(dk,entry);
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
+  scheduleSave(); // Gem entry + ryd activeTimer i Gist
   toast('✓ Gemt','ok'); tab('dag');
 }
 // ── TIDSLINJE EDITOR (Tilføj-siden) ─────────────────────────────────
@@ -1591,60 +1643,112 @@ function kalDayClick(dk){
 }
 
 // ═══════════════════════════════════════════════════════
-//  BARCODE SCANNER
+//  BARCODE SCANNER + HURTIG START
 // ═══════════════════════════════════════════════════════
 let scanStream=null, scanDetector=null, scanRafId=null;
-let scanPendingON='', scanSelCat='';
-const SCAN_CATS=CATS.map(c=>c.label); // Brug samme kategorier som appen
+let scanPendingON='', scanSelCat='', scanCustomOnVal='';
 
+// ── FAB binding ──────────────────────────────────────
+(function bindFABs(){
+  // Hurtig-start: tryk
+  const qf=document.getElementById('quickFab');
+  if(qf) qf.addEventListener('click', ()=>quickStartOpen());
+
+  // Scan: tryk = scan
+  const sf=document.getElementById('scanFab');
+  if(!sf) return;
+  sf.addEventListener('click', ()=>scanOpen());
+})();
+
+// ── Hurtig-start popup ───────────────────────────────
+function quickStartOpen(){
+  scanPendingON=''; scanSelCat=''; scanCustomOnVal='';
+  // Husk senest brugte kategori globalt
+  const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
+  const lastCat=history['__last__']||'Service';
+  scanSelCat=lastCat;
+  document.getElementById('scanPopupON').textContent='▶ Hurtig start';
+  const sub=activeTimer
+    ? `Stopper: ${activeTimer.label} — vælg nyt job`
+    : 'Vælg kategori og ON-nummer';
+  document.getElementById('scanPopupSub').textContent=sub;
+  document.getElementById('scanConfirmBtn').textContent='▶ Start job';
+  document.getElementById('scanOnCustom').value='';
+  buildScanCatGrid(scanSelCat);
+  buildScanOnChips('');
+  document.getElementById('scanPopup').classList.remove('hidden');
+}
+
+function buildScanCatGrid(selCat){
+  document.getElementById('scanCatGrid').innerHTML=CATS.map(c=>`
+    <button class="scan-cat-btn${selCat===c.label?' sel':''}"
+      onclick="scanPickCat('${c.label}',this)">${c.icon} ${c.label}</button>`).join('');
+}
+function buildScanOnChips(selOn){
+  document.getElementById('scanOnChips').innerHTML=QUICK_ON.map(o=>`
+    <button class="scan-on-chip${selOn===o?' sel':''}"
+      onclick="scanPickOn('${o}',this)">${o}</button>`).join('');
+}
+function scanPickCat(cat,btn){
+  scanSelCat=cat;
+  document.querySelectorAll('.scan-cat-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  updateScanConfirmBtn();
+}
+function scanPickOn(on,btn){
+  scanPendingON=on; scanCustomOnVal='';
+  document.getElementById('scanOnCustom').value='';
+  document.querySelectorAll('.scan-on-chip').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  updateScanConfirmBtn();
+}
+function scanCustomOnInput(val){
+  scanCustomOnVal=val;
+  if(val) { scanPendingON=''; document.querySelectorAll('.scan-on-chip').forEach(b=>b.classList.remove('sel')); }
+  updateScanConfirmBtn();
+}
+function updateScanConfirmBtn(){
+  const on=scanCustomOnVal||scanPendingON;
+  const btn=document.getElementById('scanConfirmBtn');
+  if(btn) btn.textContent=on
+    ? `▶ Start ${scanSelCat} · ${on}`
+    : `▶ Start ${scanSelCat||'…'}`;
+}
+
+// ── Scan via kamera ──────────────────────────────────
 function scanOpen(){
   const overlay=document.getElementById('scanOverlay');
   overlay.classList.remove('hidden');
   document.getElementById('scanFab').classList.add('active-scan');
-
-  // BarcodeDetector API — native, offline, ingen bibliotek nødvendigt
   if(!('BarcodeDetector' in window)){
-    // Fallback: manuel indtastning
     scanClose();
-    const on=prompt('BarcodeDetector ikke understøttet.\nIndtast ON-nummer manuelt (fx 3200):');
-    if(on&&on.trim()) scanShowPopup(on.trim().replace(/^ON\s*/i,'').trim());
+    const on=prompt('BarcodeDetector ikke understøttet i denne browser.\nIndtast ON-nummer manuelt (fx 3200):');
+    if(on&&on.trim()) scanShowFromBarcode(on.trim().replace(/^ON\s*/i,'').trim());
     return;
   }
-
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}})
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}}})
     .then(stream=>{
       scanStream=stream;
       const video=document.getElementById('scanVideo');
-      video.srcObject=stream;
-      video.play();
-      scanDetector=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','ean_8','upc_a','upc_e','data_matrix']});
+      video.srcObject=stream; video.play();
+      scanDetector=new BarcodeDetector({formats:['code_128','code_39','qr_code','ean_13','upc_a']});
       scanLoop();
     })
-    .catch(err=>{
-      scanClose();
-      toast('Kamera-adgang nægtet','err');
-    });
+    .catch(()=>{ scanClose(); toast('Kamera-adgang nægtet','err'); });
 }
-
 function scanLoop(){
   const video=document.getElementById('scanVideo');
   if(!video||!scanDetector)return;
   scanDetector.detect(video).then(results=>{
     if(results.length>0){
       const raw=results[0].rawValue;
-      // Udtræk ON-nummer: "ON 3200" → "3200", "ON 3009-2" → "3009-2"
       const match=raw.match(/ON[\s\-]?(\d[\w\-]*)/i);
       const on=match?match[1]:raw.trim();
       scanClose();
-      scanShowPopup(on);
-    } else {
-      scanRafId=requestAnimationFrame(scanLoop);
-    }
-  }).catch(()=>{
-    scanRafId=requestAnimationFrame(scanLoop);
-  });
+      scanShowFromBarcode(on);
+    } else { scanRafId=requestAnimationFrame(scanLoop); }
+  }).catch(()=>{ scanRafId=requestAnimationFrame(scanLoop); });
 }
-
 function scanClose(){
   document.getElementById('scanOverlay').classList.add('hidden');
   document.getElementById('scanFab').classList.remove('active-scan');
@@ -1653,45 +1757,31 @@ function scanClose(){
   scanDetector=null;
 }
 
-function scanShowPopup(on){
-  scanPendingON=on;
-  scanSelCat='Service'; // Default — kan overskrives af sidst brugte
-
-  // Husk seneste kategori for dette ON
+// Åbn popup med scannet ON-nummer
+function scanShowFromBarcode(on){
+  scanPendingON=on; scanCustomOnVal='';
   const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
-  if(history[on]) scanSelCat=history[on];
-
+  scanSelCat=history[on]||history['__last__']||'Service';
   document.getElementById('scanPopupON').textContent='ON '+on;
-
-  // Vis om der kører et aktivt job der stoppes
   const sub=activeTimer
-    ? `Stopper aktivt job: ${activeTimer.label} — vælg ny kategori`
-    : 'Vælg kategori og bekræft';
+    ? `Stopper: ${activeTimer.label} — vælg kategori`
+    : 'Bekræft kategori';
   document.getElementById('scanPopupSub').textContent=sub;
-
-  // Byg kategori-grid
-  const grid=document.getElementById('scanCatGrid');
-  grid.innerHTML=CATS.map(c=>`
-    <button class="scan-cat-btn${scanSelCat===c.label?' sel':''}"
-      onclick="scanPickCat('${c.label}',this)">
-      ${c.icon} ${c.label}
-    </button>`).join('');
-
+  document.getElementById('scanConfirmBtn').textContent=`▶ Start ${scanSelCat} · ${on}`;
+  document.getElementById('scanOnCustom').value='';
+  buildScanCatGrid(scanSelCat);
+  buildScanOnChips(on);
   document.getElementById('scanPopup').classList.remove('hidden');
 }
 
-function scanPickCat(cat,btn){
-  scanSelCat=cat;
-  document.querySelectorAll('.scan-cat-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-}
-
+// ── Bekræft og start job ─────────────────────────────
 function scanConfirm(){
-  if(!scanPendingON){scanDismiss();return;}
+  const on=scanCustomOnVal.trim()||scanPendingON;
+  if(!on){ toast('Vælg eller skriv ON-nummer','err'); return; }
+  if(!scanSelCat){ toast('Vælg kategori','err'); return; }
   const now=nowHM();
   const dk=dateKey(new Date());
-
-  // Stop aktivt job hvis der er et
+  // Stop aktivt job
   if(activeTimer){
     const sh=hmToH(activeTimer.startHM), eh=hmToH(now);
     if(eh>sh){
@@ -1701,27 +1791,24 @@ function scanConfirm(){
     }
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
   }
-
-  // Start nyt job
-  const label=`${scanSelCat} · ${scanPendingON}`;
-  activeTimer={on:scanPendingON,cat:scanSelCat,label,t0:Date.now(),startHM:now};
+  // Start nyt
+  const label=`${scanSelCat} · ${on}`;
+  activeTimer={on,cat:scanSelCat,label,t0:Date.now(),startHM:now};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
-
-  // Husk kategori-valg for dette ON-nummer
+  // Husk kategori-valg
   const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
-  history[scanPendingON]=scanSelCat;
+  history[on]=scanSelCat; history['__last__']=scanSelCat;
   localStorage.setItem('vct_scan_cat_history',JSON.stringify(history));
-
-  savePulse();
+  scheduleSave(); // Sync til Gist
   toast(`▶ ${label}  ${now}`,'ok');
   scanDismiss();
   if(currentTab!=='dag') tab('dag'); else render();
 }
-
 function scanDismiss(){
   document.getElementById('scanPopup').classList.add('hidden');
-  scanPendingON=''; scanSelCat='';
+  scanPendingON=''; scanSelCat=''; scanCustomOnVal='';
 }
+
 
 // ─────────────────────────────────────────────────────────────────────
 init();
