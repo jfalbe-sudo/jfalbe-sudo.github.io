@@ -756,32 +756,50 @@ function dtlLayout(entries){
 
 function frokostBarHTML(dk){
   const d=new Date(dk), dow=d.getDay();
-  if(dow===0||dow===6) return ''; // Ingen frokost i weekend
-  const fr=getFrokost(dk);
-  const skipped=!(db.frokostSkip||{})[dk]===false||(db.frokostSkip||{})[dk];
+  if(dow===0||dow===6) return '';
+  const skipped=(db.frokostSkip||{})[dk];
   if(skipped){
     return`<div class="card">
       <div class="frokost-bar">
         <div class="frokost-icon">🍽️</div>
-        <div class="frokost-info"><div class="frokost-title">Ingen frokost i dag</div><div class="frokost-time">Frokost er sprunget over</div></div>
+        <div class="frokost-info"><div class="frokost-title">Ingen frokost i dag</div></div>
         <button class="frokost-skip skipped" onclick="setFrokostSkip('${dk}',false)">↩ Fortryd</button>
       </div>
     </div>`;
   }
+  const fr=getFrokost(dk);
   const start=fr?fr.start:FROKOST_DEFAULT_START;
   const stop =fr?fr.stop :FROKOST_DEFAULT_STOP;
   const mins=Math.round((hmToH(stop)-hmToH(start))*60);
+  const inputStyle=`background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;width:88px;font-family:var(--mono)`;
   return`<div class="card">
     <div class="frokost-bar">
       <div class="frokost-icon">🍽️</div>
       <div class="frokost-info">
-        <div class="frokost-title">Frokost</div>
-        <div class="frokost-time">${start} – ${stop} · ${mins} min · Tæller ikke med i timer</div>
+        <div class="frokost-title">Frokost · <span id="frMins">${mins}</span> min</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
+          <input type="time" id="frStart" value="${start}" style="${inputStyle}"
+            oninput="updateFrokost('${dk}')">
+          <span style="color:var(--slate)">→</span>
+          <input type="time" id="frStop" value="${stop}" style="${inputStyle}"
+            oninput="updateFrokost('${dk}')">
+        </div>
       </div>
-      <button class="frokost-skip" onclick="setFrokostSkip('${dk}',true)">Ingen frokost</button>
+      <button class="frokost-skip" onclick="setFrokostSkip('${dk}',true)">Ingen<br>frokost</button>
     </div>
   </div>`;
 }
+
+function updateFrokost(dk){
+  const s=document.getElementById('frStart')?.value;
+  const e=document.getElementById('frStop')?.value;
+  if(!s||!e) return;
+  const mins=Math.round((hmToH(e)-hmToH(s))*60);
+  const mEl=document.getElementById('frMins');
+  if(mEl) mEl.textContent=mins>0?mins:'?';
+  if(mins>0) setFrokostTime(dk,s,e);
+}
+
 
 function buildDagTimeline(dk,entries){
   const nowPct=dtlPct(nowHM());
@@ -1018,7 +1036,16 @@ function setFrokostSkip(dk,skip){
 function setFrokostTime(dk,start,stop){
   if(!db.frokostCustom) db.frokostCustom={};
   db.frokostCustom[dk]={start,stop};
-  scheduleSave(); render();
+  // Opdater tidslinje-blok direkte uden fuld re-render
+  const frBlk=document.getElementById('dtlFrokost');
+  if(frBlk){
+    const fl=dtlPct(start), fw=dtlPct(stop)-fl;
+    frBlk.style.left=fl+'%'; frBlk.style.width=fw+'%';
+    const body=document.getElementById('dtlFrBody');
+    const mins=Math.round((hmToH(stop)-hmToH(start))*60);
+    if(body) body.textContent=`🍽️ ${mins}m`;
+  }
+  scheduleSave();
 }
 
 // Kaldes fra bindDagTimelineHandlers efter frokost-drag
