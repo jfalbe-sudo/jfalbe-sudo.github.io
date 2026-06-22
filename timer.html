@@ -184,6 +184,17 @@ select option{background:#081828}
 .dag-tl-tooltip{position:absolute;background:var(--ink4);border:1px solid rgba(245,172,0,.4);color:var(--snow);font-size:11px;font-weight:700;padding:4px 10px;border-radius:7px;white-space:nowrap;pointer-events:none;z-index:20;transform:translateX(-50%);bottom:calc(100% + 8px);transition:opacity .1s;box-shadow:0 2px 10px rgba(0,0,0,.4)}
 .dag-tl-hour{position:absolute;font-size:9px;color:var(--slate);transform:translateX(-50%);top:3px}
 .dag-tl-hours-row{position:relative;height:18px}
+/* ── FROKOST ───────────────────────────────────────── */
+.frokost-bar{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 13px;margin-bottom:4px}
+.frokost-icon{font-size:20px;flex-shrink:0}
+.frokost-info{flex:1;min-width:0}
+.frokost-title{font-size:12px;font-weight:700;color:var(--mist)}
+.frokost-time{font-size:11px;color:var(--slate)}
+.frokost-skip{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--slate);font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.frokost-skip:hover{border-color:var(--red);color:var(--red)}
+.frokost-skip.skipped{border-color:rgba(61,220,151,.4);color:var(--green)}
+/* Frokost blok på tidslinje */
+.dag-tl-frokost{position:absolute;top:2px;bottom:2px;border-radius:5px;background:repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0px,rgba(255,255,255,.07) 4px,transparent 4px,transparent 8px);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.3);font-weight:700;overflow:hidden;pointer-events:none}
 /* ── FAB KNAPPER ──────────────────────────────────────── */
 .fab-group{position:fixed;bottom:76px;right:14px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .fab{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .12s}
@@ -254,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.7</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.8</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -582,7 +593,17 @@ function dagHTML(){
   const dayType=getDayType(dk);
   const target=DAY_TARGET[di];
   const isSyg=dayType==='syg'||dayType==='p56', isBarnSyg=dayType==='barnsyg', isP56=dayType==='p56';
-  const worked=entries.filter(e=>!e.special&&!e.auto_special).reduce((s,e)=>s+e.hours,0);
+  const fr=getFrokost(dk);
+  // Timer der overlapper frokost tæller kun den del der IKKE er frokost
+  function effectiveHours(e){
+    if(e.special||e.auto_special||e.frokost) return 0;
+    if(!fr||!e.start||!e.stop) return e.hours;
+    const es=hmToH(e.start),ee=hmToH(e.stop);
+    const fs=hmToH(fr.start),fe=hmToH(fr.stop);
+    const overlap=Math.max(0,Math.min(ee,fe)-Math.max(es,fs));
+    return Math.max(0,e.hours-overlap);
+  }
+  const worked=entries.reduce((s,e)=>s+effectiveHours(e),0);
   const diff=worked-target;
   const pct=target>0?Math.min(100,(worked/target)*100):0;
   const sc=isSyg||isBarnSyg?'blue':diff>0.05?'good':diff<-0.05?'bad':'amber';
@@ -663,6 +684,7 @@ function dagHTML(){
     ${target>0?`<div class="prog-wrap"><div class="prog-meta"><span>Fremdrift</span><span style="color:var(--snow)">${Math.round(pct)}%</span></div><div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${barClr}"></div></div></div>`:''}
   </div>
   <div class="card"><div class="section-label">Dag-type</div><div class="daytype-row">${dtBtns}</div></div>
+  ${frokostBarHTML(dk)}
   <div class="card">
     <div class="section-label">Tidslinje</div>
     ${buildDagTimeline(dk,entries)}
@@ -732,6 +754,35 @@ function dtlLayout(entries){
   return rows;
 }
 
+function frokostBarHTML(dk){
+  const d=new Date(dk), dow=d.getDay();
+  if(dow===0||dow===6) return ''; // Ingen frokost i weekend
+  const fr=getFrokost(dk);
+  const skipped=!(db.frokostSkip||{})[dk]===false||(db.frokostSkip||{})[dk];
+  if(skipped){
+    return`<div class="card">
+      <div class="frokost-bar">
+        <div class="frokost-icon">🍽️</div>
+        <div class="frokost-info"><div class="frokost-title">Ingen frokost i dag</div><div class="frokost-time">Frokost er sprunget over</div></div>
+        <button class="frokost-skip skipped" onclick="setFrokostSkip('${dk}',false)">↩ Fortryd</button>
+      </div>
+    </div>`;
+  }
+  const start=fr?fr.start:FROKOST_DEFAULT_START;
+  const stop =fr?fr.stop :FROKOST_DEFAULT_STOP;
+  const mins=Math.round((hmToH(stop)-hmToH(start))*60);
+  return`<div class="card">
+    <div class="frokost-bar">
+      <div class="frokost-icon">🍽️</div>
+      <div class="frokost-info">
+        <div class="frokost-title">Frokost</div>
+        <div class="frokost-time">${start} – ${stop} · ${mins} min · Tæller ikke med i timer</div>
+      </div>
+      <button class="frokost-skip" onclick="setFrokostSkip('${dk}',true)">Ingen frokost</button>
+    </div>
+  </div>`;
+}
+
 function buildDagTimeline(dk,entries){
   const nowPct=dtlPct(nowHM());
   const rows=dtlLayout(entries);
@@ -766,9 +817,15 @@ function buildDagTimeline(dk,entries){
   for(let h=DTL_START;h<=DTL_END;h+=2)hours.push(h);
   const hourMarks=hours.map(h=>`<div class="dag-tl-hour" style="left:${(h-DTL_START)/DTL_SPAN*100}%">${h}</div>`).join('');
 
+  // Frokost-blok på tidslinje
+  const fr=getFrokost(dk);
+  const frBlock=fr?`<div class="dag-tl-frokost" id="dtlFrokost"
+    style="left:${dtlPct(fr.start)}%;width:${dtlPct(fr.stop)-dtlPct(fr.start)}%">🍽️</div>`:'';
+
   return`<div class="dag-tl-wrap">
     <div class="dag-tl-track" id="dtlTrack" style="height:${trackH}px">
       ${rowsHTML}
+      ${frBlock}
       <div class="dag-tl-now" style="left:${nowPct}%;top:0;bottom:0"></div>
     </div>
     <div id="dtlTooltip" class="dag-tl-tooltip" style="opacity:0;left:50%;top:0">—</div>
@@ -864,7 +921,124 @@ function bindDagTimelineHandlers(){
     if(rh){ rh.addEventListener('mousedown',ev=>onMD(ev,'R')); rh.addEventListener('touchstart',ev=>onTS(ev,'R'),{passive:false}); }
     if(inn){ inn.style.pointerEvents='auto'; inn.addEventListener('mousedown',ev=>onMD(ev,'M')); inn.addEventListener('touchstart',ev=>onTS(ev,'M'),{passive:false}); }
   });
+
+  // ── Frokost-blok er selv draggable (flyt = juster tid) ──
+  const frBlk=document.getElementById('dtlFrokost');
+  if(frBlk){
+    frBlk.style.pointerEvents='auto';
+    frBlk.style.cursor='ew-resize';
+    function frDrag(startX, origFr){
+      const trackW=track.getBoundingClientRect().width;
+      const spanPct=dtlPct(origFr.stop)-dtlPct(origFr.start);
+      let last=null;
+      function apply(curX){
+        const dPct=(curX-startX)/trackW*100;
+        const newL=Math.max(0,Math.min(100-spanPct,dtlPct(origFr.start)+dPct));
+        const ns=dtlSnap(newL), ne=dtlSnap(newL+spanPct);
+        frBlk.style.left=newL+'%';
+        const tip=document.getElementById('dtlTooltip');
+        if(tip){tip.textContent=`🍽️ ${ns} – ${ne}`;tip.style.left=(newL+spanPct/2)+'%';tip.style.opacity='1';tip.style.top='-34px';}
+        return last={ns,ne};
+      }
+      function commit(){
+        if(last) commitFrokostDrag(dk,last.ns,last.ne);
+        const tip=document.getElementById('dtlTooltip'); if(tip)tip.style.opacity='0';
+        render();
+      }
+      return{apply,commit};
+    }
+    const origFr=getFrokost(dk);
+    if(origFr){
+      frBlk.addEventListener('mousedown',ev=>{
+        ev.preventDefault();
+        const drag=frDrag(dtlGetX(ev),origFr);
+        const mv=ev2=>drag.apply(dtlGetX(ev2));
+        const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); drag.commit(); };
+        document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+      });
+      frBlk.addEventListener('touchstart',ev=>{
+        ev.preventDefault();
+        const drag=frDrag(dtlGetX(ev),origFr);
+        const mv=ev2=>{ev2.preventDefault();drag.apply(dtlGetX(ev2));};
+        const up=()=>{ document.removeEventListener('touchmove',mv); document.removeEventListener('touchend',up); drag.commit(); };
+        document.addEventListener('touchmove',mv,{passive:false}); document.addEventListener('touchend',up);
+      },{passive:false});
+    }
+  }
 }
+
+// ═══════════════════════════════════════════════════════
+//  FROKOST
+// ═══════════════════════════════════════════════════════
+const FROKOST_DEFAULT_START='12:00';
+const FROKOST_DEFAULT_STOP ='12:30';
+
+function getFrokost(dk){
+  // Returnerer {start,stop} eller null hvis sprunget over
+  const d=new Date(dk);
+  const dow=d.getDay(); // 0=sun,6=sat
+  if(dow===0||dow===6) return null; // Ingen frokost i weekend
+  const skipped=(db.frokostSkip||{})[dk];
+  if(skipped) return null;
+  const custom=(db.frokostCustom||{})[dk];
+  return custom||{start:FROKOST_DEFAULT_START,stop:FROKOST_DEFAULT_STOP};
+}
+
+function setFrokostSkip(dk,skip){
+  if(!db.frokostSkip) db.frokostSkip={};
+  if(skip) db.frokostSkip[dk]=true;
+  else delete db.frokostSkip[dk];
+  scheduleSave(); render();
+}
+
+function setFrokostTime(dk,start,stop){
+  if(!db.frokostCustom) db.frokostCustom={};
+  db.frokostCustom[dk]={start,stop};
+  scheduleSave(); render();
+}
+
+// Kaldes fra bindDagTimelineHandlers efter frokost-drag
+function commitFrokostDrag(dk,ns,ne){
+  if(!db.frokostCustom) db.frokostCustom={};
+  db.frokostCustom[dk]={start:ns,stop:ne};
+  scheduleSave();
+}
+
+// Tjek om en aktiv timer overlapper frokost og split den
+function checkSplitForFrokost(dk){
+  if(!activeTimer) return;
+  const fr=getFrokost(dk);
+  if(!fr) return;
+  const timerStart=hmToH(activeTimer.startHM);
+  const frStart=hmToH(fr.start);
+  const frStop =hmToH(fr.stop);
+  const nowH=hmToH(nowHM());
+  // Timeren er startet INDEN frokost og nu ER vi forbi frokost
+  if(timerStart<frStart && nowH>frStop){
+    // Split: gem entry frem til frokost, genstart efter frokost
+    const entryBefore={
+      on:activeTimer.on, cat:activeTimer.cat||'',
+      start:activeTimer.startHM, stop:fr.start,
+      hours:frStart-timerStart, date:dk
+    };
+    if(activeTimer.special) entryBefore.special=activeTimer.special;
+    addEntry(dk,entryBefore);
+    // Genstart timeren fra frokostslut
+    activeTimer={...activeTimer, startHM:fr.stop, t0:Date.now()-(nowH-frStop)*3600000};
+    localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+    scheduleSave();
+    toast(`🍽️ Frokost trukket fra — ${activeTimer.on} fortsætter fra ${fr.stop}`,'ok');
+    render();
+  }
+}
+
+// Kør frokost-split-tjek hvert minut
+setInterval(()=>{
+  if(activeTimer){
+    const dk=dateKey(new Date());
+    checkSplitForFrokost(dk);
+  }
+},60000);
 
 // ═══════════════════════════════════════════════════════
 function recalcSpecial(dk){
@@ -1032,21 +1206,31 @@ function startTimer(){
 function stopTimer(){
   if(!activeTimer)return;
   clearInterval(timerIv);
-  const stop=nowHM(),hours=(Date.now()-activeTimer.t0)/3600000;
+  const stop=nowHM();
   const dk=dateKey(new Date());
+  const fr=getFrokost(dk);
   const overlap = checkOverlap(dk, activeTimer.startHM, stop);
   if(overlap){
     toast('⚠️ '+overlap,'err');
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
-    scheduleSave(); // Ryd activeTimer i Gist
-    render(); return;
+    scheduleSave(); render(); return;
   }
-  const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
-  if(activeTimer.special)entry.special=activeTimer.special;
-  addEntry(dk,entry);
+  // Split rundt om frokost hvis relevant
+  if(fr && hmToH(activeTimer.startHM)<hmToH(fr.start) && hmToH(stop)>hmToH(fr.stop)){
+    const e1={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop:fr.start,hours:hmToH(fr.start)-hmToH(activeTimer.startHM),date:dk};
+    const e2={on:activeTimer.on,cat:activeTimer.cat,start:fr.stop,stop,hours:hmToH(stop)-hmToH(fr.stop),date:dk};
+    if(activeTimer.special){e1.special=activeTimer.special;e2.special=activeTimer.special;}
+    addEntry(dk,e1); addEntry(dk,e2);
+    toast(`✓ Gemt — frokost 🍽️ trukket fra`,'ok');
+  } else {
+    const hours=(Date.now()-activeTimer.t0)/3600000;
+    const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
+    if(activeTimer.special)entry.special=activeTimer.special;
+    addEntry(dk,entry);
+    toast('✓ Gemt','ok');
+  }
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
-  scheduleSave(); // Gem entry + ryd activeTimer i Gist
-  toast('✓ Gemt','ok'); tab('dag');
+  scheduleSave(); tab('dag');
 }
 // ── TIDSLINJE EDITOR (Tilføj-siden) ─────────────────────────────────
 const TL_START = 6;   // 06:00
