@@ -587,6 +587,39 @@ function render(){
 // ═══════════════════════════════════════════════════════
 //  DAG
 // ═══════════════════════════════════════════════════════
+function buildEntryHTML(e,i,dk){
+  const isEditing=editingIdx===i;
+  const editPanel=isEditing?`
+    <div class="edit-panel">
+      <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
+      <div style="margin-bottom:7px"><label class="field-label">ON / Projekt</label><input type="text" class="edit-input" id="editOn" value="${e.on}"></div>
+      <div class="edit-row">
+        <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${e.start}"></div>
+        <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${e.stop}"></div>
+      </div>
+      <div class="edit-btns">
+        <button class="btn-cancel-edit" onclick="cancelEdit()">Annuller</button>
+        <button class="btn-save-edit" onclick="saveEdit('${dk}',${i})">Gem ✓</button>
+      </div>
+    </div>`:'';
+  const col=dtlColor(e);
+  const dot=`<div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0;margin-top:3px"></div>`;
+  return`<div class="entry">
+    <div class="entry-main-row">
+      <div class="entry-time-col"><div class="entry-time">${e.start}</div><div class="entry-time">${e.stop}</div></div>
+      <div class="entry-divider"></div>
+      <div class="entry-body" style="display:flex;align-items:flex-start;gap:7px">${dot}<div><div class="entry-on">${e.on}</div>${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}</div></div>
+      <div class="entry-dur">${fmtH(e.hours)}</div>
+    </div>
+    <div class="entry-actions">
+      <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
+      <div class="entry-btn-sep"></div>
+      <button class="entry-btn del" onclick="doDelEntry('${dk}',${i})">✕ Slet</button>
+    </div>
+    ${editPanel}
+  </div>`;
+}
+
 function dagHTML(){
   const today=new Date(), dk=dateKey(today), di=todayIdx();
   const entries=getEntries(dk);
@@ -615,9 +648,16 @@ function dagHTML(){
   let specialBanner=''; // Fjernet - auto-beregning klarer det
 
   // Totaler
-  // Normale timer til Promak
+  // Normale timer til Promak — gruppér per ON + kategori
   const onTotals={};
-  entries.forEach(e=>{ if(!e.special&&!e.auto_special) onTotals[e.on]=(onTotals[e.on]||0)+e.hours; });
+  const onCats={};
+  entries.forEach(e=>{
+    if(e.special||e.auto_special) return;
+    onTotals[e.on]=(onTotals[e.on]||0)+e.hours;
+    if(!onCats[e.on]) onCats[e.on]={};
+    const cat=e.cat||'';  // Vis kategori uanset om den matcher ON
+    if(cat) onCats[e.on][cat]=(onCats[e.on][cat]||0)+e.hours;
+  });
   // Special timer (syg/barnsyg/§56)
   const specialTotals={};
   entries.forEach(e=>{ if(e.special||e.auto_special) specialTotals[e.on]=(specialTotals[e.on]||0)+e.hours; });
@@ -627,7 +667,20 @@ function dagHTML(){
   <div class="card">
     <div class="section-label">Totaler til Promak</div>
     <div class="promak-box">
-      ${onKeys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+      ${onKeys.map(k=>{
+        const cats=Object.entries(onCats[k]||{});
+        const catRows=cats.map(([cat,h])=>`
+          <div style="display:flex;justify-content:space-between;padding:2px 0 2px 16px;font-size:11px;color:var(--slate)">
+            <span>${cat}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
+          </div>`).join('');
+        return`<div class="promak-row" style="flex-direction:column;align-items:stretch;gap:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700">${k}</span>
+            <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span>
+          </div>
+          ${catRows}
+        </div>`;
+      }).join('')}
       ${spKeys.length>0?`<div style="border-top:1px solid rgba(255,255,255,.06);margin:6px 0"></div>`:''}
       ${spKeys.map(k=>`<div class="promak-row"><span style="font-weight:600;color:var(--slate)">${k}</span><span style="color:var(--slate);font-family:var(--mono);font-weight:700">${fmtH(specialTotals[k])}</span></div>`).join('')}
     </div>
@@ -642,36 +695,29 @@ function dagHTML(){
       <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
 
-  const listHTML=entries.length?entries.map((e,i)=>{
-    const isEditing=editingIdx===i;
-    const editPanel=isEditing?`
-      <div class="edit-panel">
-        <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
-        <div style="margin-bottom:7px"><label class="field-label">ON / Projekt</label><input type="text" class="edit-input" id="editOn" value="${e.on}"></div>
-        <div class="edit-row">
-          <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${e.start}"></div>
-          <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${e.stop}"></div>
-        </div>
-        <div class="edit-btns">
-          <button class="btn-cancel-edit" onclick="cancelEdit()">Annuller</button>
-          <button class="btn-save-edit" onclick="saveEdit('${dk}',${i})">Gem ✓</button>
-        </div>
-      </div>`:'';
-    return`<div class="entry">
-      <div class="entry-main-row">
-        <div class="entry-time-col"><div class="entry-time">${e.start}</div><div class="entry-time">${e.stop}</div></div>
-        <div class="entry-divider"></div>
-        <div class="entry-body"><div class="entry-on">${e.on}</div>${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}</div>
-        <div class="entry-dur">${fmtH(e.hours)}</div>
+  // Byg liste med frokost indsat på rette tidspunkt
+  const frokostRow=fr?`<div class="entry" style="opacity:.65;border-left:3px solid rgba(255,255,255,.12)">
+    <div class="entry-main-row">
+      <div class="entry-time-col"><div class="entry-time">${fr.start}</div><div class="entry-time">${fr.stop}</div></div>
+      <div class="entry-divider"></div>
+      <div class="entry-body">
+        <div class="entry-on" style="color:var(--slate)">🍽️ Frokost</div>
+        <div class="entry-cat" style="color:var(--slate)">${Math.round((hmToH(fr.stop)-hmToH(fr.start))*60)} min · tæller ikke med</div>
       </div>
-      <div class="entry-actions">
-        <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
-        <div class="entry-btn-sep"></div>
-        <button class="entry-btn del" onclick="doDelEntry('${dk}',${i})">✕ Slet</button>
-      </div>
-      ${editPanel}
-    </div>`;}).join('')
-    :`<div class="empty">Ingen timer registreret endnu.<br>Gå til <b>Tilføj</b> for at starte.</div>`;
+      <div class="entry-dur" style="color:var(--slate)">—</div>
+    </div>
+  </div>`:null;
+
+  // Sorter entries + frokost-row sammen efter starttid
+  const allRows=[];
+  entries.forEach((e,i)=>allRows.push({t:hmToH(e.start),html:buildEntryHTML(e,i,dk)}));
+  if(frokostRow && fr) allRows.push({t:hmToH(fr.start),html:frokostRow});
+  allRows.sort((a,b)=>a.t-b.t);
+
+  const listHTML=allRows.length
+    ? allRows.map(r=>r.html).join('')
+    : `<div class="empty">Ingen timer registreret endnu.<br>Gå til <b>Tilføj</b> for at starte.</div>`;
+
 
   return`${timerHTML}
   <div class="card">
