@@ -1317,14 +1317,33 @@ function ugeHTML(){
       const dc=diff>=0?'color:var(--green)':'color:var(--amber)';
       diffHTML=`<div class="wr-diff" style="${dc}">${diff>=0?'+':'-'}${fmtH(Math.abs(diff))}</div>`;
     }
-    // Dag-totaler per ON
+    // Dag-totaler per ON med farver
     const ugeTotals={};
-    entries.forEach(e=>{ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours;});
-    const entryRows=Object.keys(ugeTotals).map(k=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px">
-        <span style="flex:1;font-weight:600">${k}</span>
-        <span style="color:var(--gold);font-family:var(--mono);font-weight:700">${fmtH(ugeTotals[k])}</span>
-      </div>`).join('');
+    entries.forEach(e=>{
+      if(!e.auto_special) ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours;
+    });
+    const entryRows=Object.entries(ugeTotals).map(([k,v])=>{
+      const col=dtlColor({on:k,special:null});
+      return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0"></div>
+        <span style="flex:1;font-size:12px;font-weight:600">${k}</span>
+        <span style="color:var(--gold);font-family:var(--mono);font-size:12px;font-weight:700">${fmtH(v)}</span>
+      </div>`;
+    }).join('');
+
+    // Mini tidslinje for dagen (06-20, kun farveblokke)
+    const miniBlocks=entries.map(e=>{
+      if(!e.start||!e.stop)return'';
+      const l=dtlPct(e.start),w2=dtlPct(e.stop)-l;
+      if(w2<0.5)return'';
+      const col=dtlColor(e);
+      return`<div style="position:absolute;top:2px;bottom:2px;left:${l}%;width:${w2}%;background:${col.bg};border-radius:3px"></div>`;
+    }).join('');
+    const miniTl=entries.length>0?`
+      <div style="position:relative;height:14px;background:rgba(255,255,255,.04);border-radius:4px;margin:6px 0 2px;overflow:hidden">
+        ${miniBlocks}
+      </div>`:'';
+
     return`<div class="week-row ${rowCls}">
       <div class="wr-hdr" onclick="toggleDay('wd-${dk}')">
         <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
@@ -1335,7 +1354,7 @@ function ugeHTML(){
         </div>
         <div class="wr-right">${isToday?'<div class="wr-badge">I dag</div>':''}${entries.length>0?`<div style="font-size:10px;color:var(--slate);margin-top:2px">▼ ${entries.length}</div>`:''}</div>
       </div>
-      ${entries.length>0?`<div class="wr-body" id="wd-${dk}">${entryRows}</div>`:''}
+      ${entries.length>0?`<div class="wr-body" id="wd-${dk}">${miniTl}${entryRows}</div>`:''}
     </div>`;
   }).join('');
   const wDiff=totalH-(7.5*4+6.5);
@@ -1418,30 +1437,77 @@ function rapportHTML(){
     const mon=w.mon;
     const fri=new Date(mon);fri.setDate(mon.getDate()+4);
     const wNum=weekNum(mon);
-    const onTotals={};
-    Object.values(w.days).forEach(({entries=[]})=>{
-      entries.forEach(e=>{if(!e.special)onTotals[e.on]=(onTotals[e.on]||0)+e.hours;});
-    });
     const badges=[];
     if(w.officeDays)badges.push(`🏢${w.officeDays}`);
     if(w.homeDays)badges.push(`🏠${w.homeDays}`);
     if(w.sygDays)badges.push(`🤒${w.sygDays}`);
     if(w.barnSygDays)badges.push(`👶${w.barnSygDays}`);
     if(w.ferieDays)badges.push(`🌴${w.ferieDays}`);
-    // Skip uger der er helt tomme (ingen timer OG ingen special dage)
     const hasContent = w.totalH > 0 || w.officeDays > 0 || w.homeDays > 0 ||
                        w.sygDays > 0 || w.barnSygDays > 0 || (w.ferieDays||0) > 0;
     if(!hasContent) return '';
+
+    // Dag-for-dag breakdown
+    const daysBreakdown=DAY_S.map((dayName,di)=>{
+      const d=new Date(mon); d.setDate(mon.getDate()+di);
+      const dk=dateKey(d);
+      const dayData=w.days[dk];
+      if(!dayData) return'';
+      const {entries=[],type='kontor'}=dayData;
+      const target=DAY_TARGET[di]||7.5;
+      const h=entries.reduce((s,e)=>s+e.hours,0);
+      if(h===0&&type==='kontor') return''; // Spring tomme kontordage over
+      // ON-totaler for denne dag
+      const onT={};
+      entries.forEach(e=>{ if(!e.special) onT[e.on]=(onT[e.on]||0)+e.hours; });
+      const onRows=Object.entries(onT).map(([k,v])=>`
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0 2px 12px;color:var(--mist)">
+          <span>${k}</span><span style="font-family:var(--mono);color:var(--gold)">${fmtH(v)}</span>
+        </div>`).join('');
+      const typeIcon=type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':type==='ferie'?'🌴':'🏢';
+      const diff=h-target;
+      const diffStr=h>0?(diff>=0?`<span style="color:var(--green);font-size:10px">+${fmtH(diff)}</span>`:`<span style="color:var(--amber);font-size:10px">${fmtH(diff)}</span>`):'';
+      // Mini progress bar
+      const pct=target>0?Math.min(100,(h/target)*100):0;
+      const barClr=h>=target?'var(--green)':h>0?'var(--gold)':'transparent';
+      return`<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--slate);width:26px;flex-shrink:0">${dayName.slice(0,3)}</span>
+          <span style="font-size:11px;color:var(--mist);width:32px;flex-shrink:0">${typeIcon}</span>
+          <div style="flex:1;background:rgba(255,255,255,.06);border-radius:99px;height:4px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${barClr};border-radius:99px"></div>
+          </div>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--snow);width:38px;text-align:right;flex-shrink:0">${h>0?fmtH(h):'—'}</span>
+          <span style="width:36px;text-align:right;flex-shrink:0">${diffStr}</span>
+        </div>
+        ${onRows}
+      </div>`;
+    }).join('');
+
+    // Uge ON-totaler
+    const onTotals={};
+    Object.values(w.days).forEach(({entries=[]})=>{
+      entries.forEach(e=>{if(!e.special)onTotals[e.on]=(onTotals[e.on]||0)+e.hours;});
+    });
+
     return`<div class="report-week">
       <div class="report-week-hdr" onclick="toggleWeek('rwb-${wk}')">
         <div>
           <div class="report-week-title">Uge ${wNum}</div>
           <div class="report-week-meta">${mon.getDate()}. ${MONTHS_S[mon.getMonth()]} – ${fri.getDate()}. ${MONTHS_S[fri.getMonth()]} · ${badges.join(' ')}</div>
         </div>
-        <div class="report-week-hours">${fmtH(w.totalH)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="report-week-hours">${fmtH(w.totalH)}</div>
+          <div style="font-size:11px;color:var(--slate)">▼</div>
+        </div>
       </div>
       <div class="report-week-body" id="rwb-${wk}">
-        ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span>${k}</span><span style="color:var(--gold);font-family:var(--mono)">${fmtH(onTotals[k])}</span></div>`).join('')||'<div style="color:var(--slate);font-size:12px;padding:4px 0">Ingen registreringer</div>'}
+        <div style="padding:4px 0 8px">${daysBreakdown||'<div style="color:var(--slate);font-size:12px;padding:4px 0">Ingen registreringer</div>'}</div>
+        ${Object.keys(onTotals).length?`
+        <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:4px">
+          <div style="font-size:9px;color:var(--slate);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Ugetotal pr. ON</div>
+          ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span style="font-weight:700">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+        </div>`:''}
       </div>
     </div>`;
   }).join('');
