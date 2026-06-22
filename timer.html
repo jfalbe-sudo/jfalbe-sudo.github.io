@@ -560,12 +560,16 @@ function tab(name){
   render();
 }
 function render(){
+  // Gem hvilke panels der er åbne inden re-render
+  const openIds=new Set([...document.querySelectorAll('.wr-body.open,.report-week-body.open')].map(el=>el.id));
   const m=document.getElementById('main');
   if(currentTab==='dag')          { m.innerHTML=dagHTML(); setTimeout(bindDagTimelineHandlers,0); }
   else if(currentTab==='tilfoej') { m.innerHTML=tilfoejHTML(); setTimeout(bindSelHandlers,0); }
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
+  // Gendan åbne panels efter render
+  openIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
