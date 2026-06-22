@@ -817,10 +817,17 @@ function buildDagTimeline(dk,entries){
   for(let h=DTL_START;h<=DTL_END;h+=2)hours.push(h);
   const hourMarks=hours.map(h=>`<div class="dag-tl-hour" style="left:${(h-DTL_START)/DTL_SPAN*100}%">${h}</div>`).join('');
 
-  // Frokost-blok på tidslinje
+  // Frokost-blok på tidslinje — resize + flyt
   const fr=getFrokost(dk);
-  const frBlock=fr?`<div class="dag-tl-frokost" id="dtlFrokost"
-    style="left:${dtlPct(fr.start)}%;width:${dtlPct(fr.stop)-dtlPct(fr.start)}%">🍽️</div>`:'';
+  const frBlock=fr?(()=>{
+    const fl=dtlPct(fr.start), fw=dtlPct(fr.stop)-fl;
+    const mins=Math.round((hmToH(fr.stop)-hmToH(fr.start))*60);
+    return`<div class="dag-tl-frokost" id="dtlFrokost" style="left:${fl}%;width:${fw}%;pointer-events:auto;display:flex;align-items:stretch;top:2px;bottom:2px">
+      <div id="dtlFrL" style="width:10px;flex-shrink:0;background:rgba(255,255,255,.1);cursor:ew-resize;border-radius:5px 0 0 5px;display:flex;align-items:center;justify-content:center"><div style="width:2px;height:12px;background:rgba(255,255,255,.3);border-radius:2px"></div></div>
+      <div id="dtlFrBody" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.4);font-weight:700;cursor:grab;user-select:none">🍽️ ${mins}m</div>
+      <div id="dtlFrR" style="width:10px;flex-shrink:0;background:rgba(255,255,255,.1);cursor:ew-resize;border-radius:0 5px 5px 0;display:flex;align-items:center;justify-content:center"><div style="width:2px;height:12px;background:rgba(255,255,255,.3);border-radius:2px"></div></div>
+    </div>`;
+  })():'';
 
   return`<div class="dag-tl-wrap">
     <div class="dag-tl-track" id="dtlTrack" style="height:${trackH}px">
@@ -922,47 +929,64 @@ function bindDagTimelineHandlers(){
     if(inn){ inn.style.pointerEvents='auto'; inn.addEventListener('mousedown',ev=>onMD(ev,'M')); inn.addEventListener('touchstart',ev=>onTS(ev,'M'),{passive:false}); }
   });
 
-  // ── Frokost-blok er selv draggable (flyt = juster tid) ──
+  // ── Frokost-blok: resize (L/R) + flyt (midte) ──
   const frBlk=document.getElementById('dtlFrokost');
   if(frBlk){
-    frBlk.style.pointerEvents='auto';
-    frBlk.style.cursor='ew-resize';
-    function frDrag(startX, origFr){
-      const trackW=track.getBoundingClientRect().width;
-      const spanPct=dtlPct(origFr.stop)-dtlPct(origFr.start);
-      let last=null;
-      function apply(curX){
-        const dPct=(curX-startX)/trackW*100;
-        const newL=Math.max(0,Math.min(100-spanPct,dtlPct(origFr.start)+dPct));
-        const ns=dtlSnap(newL), ne=dtlSnap(newL+spanPct);
-        frBlk.style.left=newL+'%';
-        const tip=document.getElementById('dtlTooltip');
-        if(tip){tip.textContent=`🍽️ ${ns} – ${ne}`;tip.style.left=(newL+spanPct/2)+'%';tip.style.opacity='1';tip.style.top='-34px';}
-        return last={ns,ne};
-      }
-      function commit(){
-        if(last) commitFrokostDrag(dk,last.ns,last.ne);
-        const tip=document.getElementById('dtlTooltip'); if(tip)tip.style.opacity='0';
-        render();
-      }
-      return{apply,commit};
-    }
     const origFr=getFrokost(dk);
     if(origFr){
-      frBlk.addEventListener('mousedown',ev=>{
-        ev.preventDefault();
-        const drag=frDrag(dtlGetX(ev),origFr);
-        const mv=ev2=>drag.apply(dtlGetX(ev2));
-        const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); drag.commit(); };
-        document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
-      });
-      frBlk.addEventListener('touchstart',ev=>{
-        ev.preventDefault();
-        const drag=frDrag(dtlGetX(ev),origFr);
-        const mv=ev2=>{ev2.preventDefault();drag.apply(dtlGetX(ev2));};
-        const up=()=>{ document.removeEventListener('touchmove',mv); document.removeEventListener('touchend',up); drag.commit(); };
-        document.addEventListener('touchmove',mv,{passive:false}); document.addEventListener('touchend',up);
-      },{passive:false});
+      function frDrag(role, startX){
+        const trackW=track.getBoundingClientRect().width;
+        const spanPct=dtlPct(origFr.stop)-dtlPct(origFr.start);
+        let last=null;
+        function apply(curX){
+          const dPct=(curX-startX)/trackW*100;
+          let ns=origFr.start, ne=origFr.stop;
+          if(role==='M'){
+            const newL=Math.max(0,Math.min(100-spanPct,dtlPct(origFr.start)+dPct));
+            ns=dtlSnap(newL); ne=dtlSnap(newL+spanPct);
+          } else if(role==='L'){
+            const newL=Math.max(0,Math.min(dtlPct(origFr.stop)-1,dtlPct(origFr.start)+dPct));
+            ns=dtlSnap(newL); ne=origFr.stop;
+          } else {
+            const newR=Math.max(dtlPct(origFr.start)+1,Math.min(100,dtlPct(origFr.stop)+dPct));
+            ns=origFr.start; ne=dtlSnap(newR);
+          }
+          const newL2=dtlPct(ns), newW=dtlPct(ne)-newL2;
+          frBlk.style.left=newL2+'%'; frBlk.style.width=newW+'%';
+          const mins=Math.round((hmToH(ne)-hmToH(ns))*60);
+          const body=document.getElementById('dtlFrBody');
+          if(body) body.textContent=`🍽️ ${mins}m`;
+          const tip=document.getElementById('dtlTooltip');
+          if(tip){tip.textContent=`🍽️ ${ns} – ${ne}`;tip.style.left=(newL2+newW/2)+'%';tip.style.opacity='1';tip.style.top='-34px';}
+          return last={ns,ne};
+        }
+        function commit(){
+          if(last) commitFrokostDrag(dk,last.ns,last.ne);
+          const tip=document.getElementById('dtlTooltip'); if(tip)tip.style.opacity='0';
+          render();
+        }
+        return{apply,commit};
+      }
+      function bindFrEl(el, role){
+        if(!el) return;
+        el.addEventListener('mousedown',ev=>{
+          ev.preventDefault(); ev.stopPropagation();
+          const drag=frDrag(role,dtlGetX(ev));
+          const mv=ev2=>drag.apply(dtlGetX(ev2));
+          const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); drag.commit(); };
+          document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+        });
+        el.addEventListener('touchstart',ev=>{
+          ev.preventDefault(); ev.stopPropagation();
+          const drag=frDrag(role,dtlGetX(ev));
+          const mv=ev2=>{ev2.preventDefault();drag.apply(dtlGetX(ev2));};
+          const up=()=>{ document.removeEventListener('touchmove',mv); document.removeEventListener('touchend',up); drag.commit(); };
+          document.addEventListener('touchmove',mv,{passive:false}); document.addEventListener('touchend',up);
+        },{passive:false});
+      }
+      bindFrEl(document.getElementById('dtlFrL'),'L');
+      bindFrEl(document.getElementById('dtlFrR'),'R');
+      bindFrEl(document.getElementById('dtlFrBody'),'M');
     }
   }
 }
