@@ -1604,15 +1604,28 @@ function ugeHTML(){
     }
     // Dag-totaler per ON med farver
     const ugeTotals={};
+    const ugeCats={};
     entries.forEach(e=>{
-      if(!e.auto_special) ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours;
+      if(e.auto_special) return;
+      ugeTotals[e.on]=(ugeTotals[e.on]||0)+e.hours;
+      if(!ugeCats[e.on]) ugeCats[e.on]={};
+      const cat=e.cat||'';
+      if(cat) ugeCats[e.on][cat]=(ugeCats[e.on][cat]||0)+e.hours;
     });
     const entryRows=Object.entries(ugeTotals).map(([k,v])=>{
       const col=dtlColor({on:k,special:null});
-      return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-        <div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0"></div>
-        <span style="flex:1;font-size:12px;font-weight:600">${k}</span>
-        <span style="color:var(--gold);font-family:var(--mono);font-size:12px;font-weight:700">${fmtH(v)}</span>
+      const cats=Object.entries(ugeCats[k]||{});
+      const catRows=cats.map(([cat,h])=>`
+        <div style="padding:1px 0 1px 20px;font-size:11px;color:var(--slate);display:flex;justify-content:space-between">
+          <span>${cat}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
+        </div>`).join('');
+      return`<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0"></div>
+          <span style="flex:1;font-size:12px;font-weight:600">${k}</span>
+          <span style="color:var(--gold);font-family:var(--mono);font-size:12px;font-weight:700">${fmtH(v)}</span>
+        </div>
+        ${catRows}
       </div>`;
     }).join('');
 
