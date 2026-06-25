@@ -582,8 +582,19 @@ function render(){
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
-  // Gendan åbne panels efter render
-  openIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
+  // Gendan åbne panels efter render (PC: accordion – maks. én pr. type)
+  const pc=window.innerWidth>=768;
+  let wrOpened=false, rwbOpened=false;
+  openIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const isWr=id.startsWith('wd-'), isRwb=id.startsWith('rwb-');
+    if(pc && isWr  && wrOpened)  return;
+    if(pc && isRwb && rwbOpened) return;
+    el.classList.add('open');
+    if(isWr)  wrOpened=true;
+    if(isRwb) rwbOpened=true;
+  });
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
@@ -1677,7 +1688,17 @@ function ugeHTML(){
   ${exportHTML}`;
 }
 
-function toggleDay(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+function isMobile(){return window.innerWidth<768;}
+function toggleDay(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const isOpen=el.classList.contains('open');
+  // PC: accordion – luk alle andre før åbning
+  if(!isMobile()){
+    document.querySelectorAll('.wr-body.open').forEach(b=>{ if(b!==el) b.classList.remove('open'); });
+  }
+  el.classList.toggle('open',!isOpen);
+}
 
 function buildUgeExport(mon){
   const totals={};
@@ -1839,7 +1860,16 @@ function rapportHTML(){
   <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
 }
 
-function toggleWeek(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+function toggleWeek(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const isOpen=el.classList.contains('open');
+  // PC: accordion – luk alle andre før åbning
+  if(!isMobile()){
+    document.querySelectorAll('.report-week-body.open').forEach(b=>{ if(b!==el) b.classList.remove('open'); });
+  }
+  el.classList.toggle('open',!isOpen);
+}
 
 const OUTLOOK_ICS = 'https://outlook.office365.com/owa/calendar/e56d83353543442bb9b3f286e4efc118@vestergaardcompany.com/bf3e9209c7c04724995694304cd2bb209642795787987125204/calendar.ics';
 
