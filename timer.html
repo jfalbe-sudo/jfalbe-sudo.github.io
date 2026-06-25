@@ -412,6 +412,10 @@ async function ghLoad(){
       activeTimer=null;
       localStorage.removeItem('vct_activeTimer');
     }
+    // Sync åben panel fra anden enhed
+    if(typeof db.openPanelId !== 'undefined'){
+      localStorage.setItem('vct_openPanelId', db.openPanelId || '');
+    }
     setSyncStatus('ok');
   } catch(e){
     console.error('ghLoad',e);
@@ -582,19 +586,22 @@ function render(){
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else if(currentTab==='rapport')  m.innerHTML=rapportHTML();
   else                            m.innerHTML=kalenderHTML();
-  // Gendan åbne panels efter render (PC: accordion – maks. én pr. type)
+  // Gendan åbne panels efter render
+  // PC: brug synkroniseret openPanelId fra Gist; mobil: åbn alle gemte
   const pc=window.innerWidth>=768;
-  let wrOpened=false, rwbOpened=false;
-  openIds.forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el) return;
-    const isWr=id.startsWith('wd-'), isRwb=id.startsWith('rwb-');
-    if(pc && isWr  && wrOpened)  return;
-    if(pc && isRwb && rwbOpened) return;
-    el.classList.add('open');
-    if(isWr)  wrOpened=true;
-    if(isRwb) rwbOpened=true;
-  });
+  if(pc){
+    // Foretruk Gist-synkroniseret id, fallback til lokalt åbne panel
+    const syncedId = (typeof db.openPanelId !== 'undefined')
+      ? db.openPanelId
+      : (localStorage.getItem('vct_openPanelId')||null);
+    if(syncedId){
+      const el=document.getElementById(syncedId);
+      if(el) el.classList.add('open');
+    }
+  } else {
+    // Mobil: gendan alle åbne panels
+    openIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
+  }
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
@@ -1693,11 +1700,13 @@ function toggleDay(id){
   const el=document.getElementById(id);
   if(!el) return;
   const isOpen=el.classList.contains('open');
-  // PC: accordion – luk alle andre før åbning
   if(!isMobile()){
     document.querySelectorAll('.wr-body.open').forEach(b=>{ if(b!==el) b.classList.remove('open'); });
   }
-  el.classList.toggle('open',!isOpen);
+  const willOpen=!isOpen;
+  el.classList.toggle('open',willOpen);
+  db.openPanelId = willOpen ? id : null;
+  scheduleSave();
 }
 
 function buildUgeExport(mon){
@@ -1864,11 +1873,13 @@ function toggleWeek(id){
   const el=document.getElementById(id);
   if(!el) return;
   const isOpen=el.classList.contains('open');
-  // PC: accordion – luk alle andre før åbning
   if(!isMobile()){
     document.querySelectorAll('.report-week-body.open').forEach(b=>{ if(b!==el) b.classList.remove('open'); });
   }
-  el.classList.toggle('open',!isOpen);
+  const willOpen=!isOpen;
+  el.classList.toggle('open',willOpen);
+  db.openPanelId = willOpen ? id : null;
+  scheduleSave();
 }
 
 const OUTLOOK_ICS = 'https://outlook.office365.com/owa/calendar/e56d83353543442bb9b3f286e4efc118@vestergaardcompany.com/bf3e9209c7c04724995694304cd2bb209642795787987125204/calendar.ics';
