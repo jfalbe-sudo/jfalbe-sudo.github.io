@@ -578,6 +578,9 @@ function tab(name){
   render();
 }
 function render(){
+  // Skjul FAB når edit-panel er åbent (undgå overlap på mobil)
+  const fabGroup = document.querySelector('.fab-group');
+  if(fabGroup) fabGroup.style.display = (editingIdx >= 0) ? 'none' : '';
   // Gem hvilke panels der er åbne inden re-render
   const openIds=new Set([...document.querySelectorAll('.wr-body.open,.report-week-body.open')].map(el=>el.id));
   const m=document.getElementById('main');
