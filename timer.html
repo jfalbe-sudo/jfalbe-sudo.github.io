@@ -1821,6 +1821,10 @@ function rapportHTML(){
         <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:4px">
           <div style="font-size:9px;color:var(--slate);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Ugetotal pr. ON</div>
           ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span style="font-weight:700">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+          <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;font-weight:800;color:var(--snow)">I alt</span>
+            <span style="font-family:var(--mono);font-weight:900;font-size:14px;color:var(--gold)">${fmtH(Object.values(onTotals).reduce((s,v)=>s+v,0))}</span>
+          </div>
         </div>`:''}
       </div>
     </div>`;
