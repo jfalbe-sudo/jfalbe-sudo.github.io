@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v2.9</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.0</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -623,8 +623,33 @@ function buildEntryHTML(e,i,dk){
   </div>`;
 }
 
+// Split eksisterende entries der dækker frokost-perioden (retroaktiv oprydning)
+function splitExistingForFrokost(dk){
+  const fr=getFrokost(dk);
+  if(!fr) return false;
+  const fs=hmToH(fr.start), fe=hmToH(fr.stop);
+  const arr=getEntries(dk);
+  let changed=false;
+  const result=[];
+  arr.forEach(e=>{
+    if(e.special||e.auto_special||!e.start||!e.stop){ result.push(e); return; }
+    const es=hmToH(e.start), ee=hmToH(e.stop);
+    if(es<fs && ee>fe){
+      // Split
+      result.push({...e,stop:fr.start,hours:fs-es});
+      result.push({...e,start:fr.stop,hours:ee-fe});
+      changed=true;
+    } else {
+      result.push(e);
+    }
+  });
+  if(changed) saveEntries(dk,result);
+  return changed;
+}
+
 function dagHTML(){
   const today=new Date(), dk=dateKey(today), di=todayIdx();
+  if(splitExistingForFrokost(dk)) scheduleSave(); // Ret op på gamle entries der dækker frokost
   const entries=getEntries(dk);
   const dayType=getDayType(dk);
   const target=DAY_TARGET[di];
@@ -1567,6 +1592,17 @@ function saveManual(){
   const dk=dateKey(new Date());
   const overlap = checkOverlap(dk, start, stop);
   if(overlap){toast('⚠️ '+overlap,'err');return;}
+  // Split rundt om frokost hvis perioden dækker den
+  const fr=getFrokost(dk);
+  if(fr && sh<hmToH(fr.start) && eh>hmToH(fr.stop)){
+    const e1={on,cat:selCat,start,stop:fr.start,hours:hmToH(fr.start)-sh,date:dk};
+    const e2={on,cat:selCat,start:fr.stop,stop,hours:eh-hmToH(fr.stop),date:dk};
+    if(selSpecial){e1.special=selSpecial;e2.special=selSpecial;}
+    addEntry(dk,e1); addEntry(dk,e2);
+    recalcSpecial(dk); savePulse();
+    toast(`✓ ${on} — frokost 🍽️ trukket fra`,'ok'); tab('dag');
+    return;
+  }
   const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
   if(selSpecial)entry.special=selSpecial;
   addEntry(dk,entry); recalcSpecial(dk); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
@@ -2398,9 +2434,17 @@ function scanConfirm(){
   if(activeTimer){
     const sh=hmToH(activeTimer.startHM), eh=hmToH(now);
     if(eh>sh){
-      const entry={on:activeTimer.on,cat:activeTimer.cat||'',start:activeTimer.startHM,stop:now,hours:eh-sh,date:dk};
-      if(activeTimer.special)entry.special=activeTimer.special;
-      addEntry(dk,entry); recalcSpecial(dk);
+      const fr=getFrokost(dk);
+      if(fr && sh<hmToH(fr.start) && eh>hmToH(fr.stop)){
+        const e1={on:activeTimer.on,cat:activeTimer.cat||'',start:activeTimer.startHM,stop:fr.start,hours:hmToH(fr.start)-sh,date:dk};
+        const e2={on:activeTimer.on,cat:activeTimer.cat||'',start:fr.stop,stop:now,hours:eh-hmToH(fr.stop),date:dk};
+        if(activeTimer.special){e1.special=activeTimer.special;e2.special=activeTimer.special;}
+        addEntry(dk,e1); addEntry(dk,e2); recalcSpecial(dk);
+      } else {
+        const entry={on:activeTimer.on,cat:activeTimer.cat||'',start:activeTimer.startHM,stop:now,hours:eh-sh,date:dk};
+        if(activeTimer.special)entry.special=activeTimer.special;
+        addEntry(dk,entry); recalcSpecial(dk);
+      }
     }
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
   }
