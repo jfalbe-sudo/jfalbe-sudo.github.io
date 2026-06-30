@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.1</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.2</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -1111,23 +1111,27 @@ function setFrokostSkip(dk,skip){
   scheduleSave(); render();
 }
 
-// Saml entries der ligger ende-mod-ende med samme ON/kategori (efter frokost er fjernet/flyttet)
+// Saml entries der ligger ende-mod-ende ELLER har et hul på op til 90 min
+// (dækker tilfælde hvor frokosttiden er ændret siden splittet skete)
 function mergeEntriesAcrossFrokost(dk){
   const arr=getEntries(dk);
   if(arr.length<2) return;
-  // Sorter efter starttid
   const sorted=[...arr].sort((a,b)=>hmToH(a.start)-hmToH(b.start));
+  const MAX_GAP_H=1.5; // Maks 90 min hul accepteres som "frokost-hul"
   const merged=[];
   sorted.forEach(e=>{
     const last=merged[merged.length-1];
     if(last && !last.special && !e.special && !last.auto_special && !e.auto_special &&
-       last.on===e.on && (last.cat||'')===(e.cat||'') && last.stop===e.start){
-      // Sammenflet: udvid sidste entry
-      last.stop=e.stop;
-      last.hours=hmToH(last.stop)-hmToH(last.start);
-    } else {
-      merged.push({...e});
+       last.on===e.on && (last.cat||'')===(e.cat||'')){
+      const gap=hmToH(e.start)-hmToH(last.stop);
+      if(gap>=0 && gap<=MAX_GAP_H){
+        // Sammenflet: udvid sidste entry, "spis" hullet
+        last.stop=e.stop;
+        last.hours=hmToH(last.stop)-hmToH(last.start);
+        return;
+      }
     }
+    merged.push({...e});
   });
   if(merged.length!==sorted.length) saveEntries(dk,merged);
 }
