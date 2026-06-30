@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.3</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.4</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -865,10 +865,10 @@ function frokostBarHTML(dk){
         <div class="frokost-title">Frokost · <span id="frMins">${mins}</span> min</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
           <input type="time" id="frStart" value="${start}" style="${inputStyle}"
-            oninput="updateFrokost('${dk}')">
+            oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
           <span style="color:var(--slate)">→</span>
           <input type="time" id="frStop" value="${stop}" style="${inputStyle}"
-            oninput="updateFrokost('${dk}')">
+            oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
         </div>
       </div>
       <button class="frokost-skip" onclick="setFrokostSkip('${dk}',true)">Ingen<br>frokost</button>
@@ -883,7 +883,25 @@ function updateFrokost(dk){
   const mins=Math.round((hmToH(e)-hmToH(s))*60);
   const mEl=document.getElementById('frMins');
   if(mEl) mEl.textContent=mins>0?mins:'?';
-  if(mins>0) setFrokostTime(dk,s,e);
+  if(mins<=0) return;
+  // Live opdatering af tidslinje-blok uden fuld re-render (bevarer fokus i inputfelt)
+  if(!db.frokostCustom) db.frokostCustom={};
+  db.frokostCustom[dk]={start:s,stop:e};
+  const frBlk=document.getElementById('dtlFrokost');
+  if(frBlk){
+    const fl=dtlPct(s), fw=dtlPct(e)-fl;
+    frBlk.style.left=fl+'%'; frBlk.style.width=fw+'%';
+    const body=document.getElementById('dtlFrBody');
+    if(body) body.textContent=`🍽️ ${mins}m`;
+  }
+  scheduleSave();
+}
+// Fuld re-render når feltet forlades (onchange) — opdaterer STATUS I DAG korrekt
+function commitFrokostInput(dk){
+  const s=document.getElementById('frStart')?.value;
+  const e=document.getElementById('frStop')?.value;
+  if(!s||!e||hmToH(e)<=hmToH(s)) return;
+  setFrokostTime(dk,s,e);
 }
 
 
@@ -1151,16 +1169,8 @@ function mergeEntriesAcrossFrokost(dk){
 function setFrokostTime(dk,start,stop){
   if(!db.frokostCustom) db.frokostCustom={};
   db.frokostCustom[dk]={start,stop};
-  // Opdater tidslinje-blok direkte uden fuld re-render
-  const frBlk=document.getElementById('dtlFrokost');
-  if(frBlk){
-    const fl=dtlPct(start), fw=dtlPct(stop)-fl;
-    frBlk.style.left=fl+'%'; frBlk.style.width=fw+'%';
-    const body=document.getElementById('dtlFrBody');
-    const mins=Math.round((hmToH(stop)-hmToH(start))*60);
-    if(body) body.textContent=`🍽️ ${mins}m`;
-  }
   scheduleSave();
+  render(); // Genberegn STATUS I DAG (ARBEJDET/MANGLER) når frokosttid ændres
 }
 
 // Kaldes fra bindDagTimelineHandlers efter frokost-drag
