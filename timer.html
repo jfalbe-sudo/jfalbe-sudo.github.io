@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.0</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.1</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -1102,9 +1102,34 @@ function getFrokost(dk){
 
 function setFrokostSkip(dk,skip){
   if(!db.frokostSkip) db.frokostSkip={};
-  if(skip) db.frokostSkip[dk]=true;
-  else delete db.frokostSkip[dk];
+  if(skip){
+    db.frokostSkip[dk]=true;
+  } else {
+    delete db.frokostSkip[dk];
+    mergeEntriesAcrossFrokost(dk); // Saml entries der blev splittet pga. frokost
+  }
   scheduleSave(); render();
+}
+
+// Saml entries der ligger ende-mod-ende med samme ON/kategori (efter frokost er fjernet/flyttet)
+function mergeEntriesAcrossFrokost(dk){
+  const arr=getEntries(dk);
+  if(arr.length<2) return;
+  // Sorter efter starttid
+  const sorted=[...arr].sort((a,b)=>hmToH(a.start)-hmToH(b.start));
+  const merged=[];
+  sorted.forEach(e=>{
+    const last=merged[merged.length-1];
+    if(last && !last.special && !e.special && !last.auto_special && !e.auto_special &&
+       last.on===e.on && (last.cat||'')===(e.cat||'') && last.stop===e.start){
+      // Sammenflet: udvid sidste entry
+      last.stop=e.stop;
+      last.hours=hmToH(last.stop)-hmToH(last.start);
+    } else {
+      merged.push({...e});
+    }
+  });
+  if(merged.length!==sorted.length) saveEntries(dk,merged);
 }
 
 function setFrokostTime(dk,start,stop){
