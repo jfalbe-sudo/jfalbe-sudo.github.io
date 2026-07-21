@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.4</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.5</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -400,13 +400,23 @@ async function ghLoad(){
     // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
     if(db.activeTimer){
       const remote=db.activeTimer;
-      // Genberegn t0 fra startHM så live-timer er korrekt
-      const [sh,sm]=remote.startHM.split(':').map(Number);
-      const now=new Date();
-      const startMs=new Date(now.getFullYear(),now.getMonth(),now.getDate(),sh,sm,0).getTime();
-      remote.t0=startMs;
-      activeTimer=remote;
-      localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+      const today=dateKey(new Date());
+      if(remote.date && remote.date!==today){
+        // Timer er en rest fra en tidligere dag (blev aldrig stoppet) — genopliv den IKKE på dagens dato
+        activeTimer=null;
+        localStorage.removeItem('vct_activeTimer');
+        db.activeTimer=null;
+        isDirty=true; ghSave();
+        toast(`⚠️ Gammel kørende timer fra ${remote.date} blev fundet og nulstillet — husk evt. at registrere den manuelt`,'err');
+      } else {
+        // Genberegn t0 fra startHM så live-timer er korrekt
+        const [sh,sm]=remote.startHM.split(':').map(Number);
+        const now=new Date();
+        const startMs=new Date(now.getFullYear(),now.getMonth(),now.getDate(),sh,sm,0).getTime();
+        remote.t0=startMs;
+        activeTimer=remote;
+        localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
+      }
     } else if(db.hasOwnProperty('activeTimer') && db.activeTimer===null){
       // Anden enhed har stoppet timeren
       activeTimer=null;
@@ -432,6 +442,7 @@ async function ghSave(){
       label: activeTimer.label,
       startHM: activeTimer.startHM,
       special: activeTimer.special||null,
+      date: activeTimer.date||dateKey(new Date()),
     } : null;
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
     const r=await fetch(GIST_API,{
@@ -515,7 +526,16 @@ async function init(){
   if(local) { try{ db=JSON.parse(local); }catch{} }
   // Gist behøver ikke SHA
   const saved=localStorage.getItem('vct_activeTimer');
-  if(saved) try{ activeTimer=JSON.parse(saved); }catch{}
+  if(saved) try{
+    const parsed=JSON.parse(saved);
+    if(parsed.date && parsed.date!==dateKey(new Date())){
+      localStorage.removeItem('vct_activeTimer');
+      activeTimer=null;
+      toast(`⚠️ Gammel kørende timer fra ${parsed.date} blev fundet og nulstillet — husk evt. at registrere den manuelt`,'err');
+    } else {
+      activeTimer=parsed;
+    }
+  }catch{}
   tab('dag');
   // Tjek om token er sat
   if(!getToken()){
@@ -1378,7 +1398,7 @@ function startTimer(){
   if(!baseOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return;}
   const on=baseOn||(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56');
   const label=selSpecial?`${selSpecial==='syg'?'🤒':selSpecial==='barnsyg'?'👶':'§'} ${on}`:getLabel();
-  activeTimer={on,cat:selCat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial};
+  activeTimer={on,cat:selCat,label,t0:Date.now(),startHM:nowHM(),special:selSpecial,date:dateKey(new Date())};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
   scheduleSave(); // Sync activeTimer til Gist så den vises på anden enhed
   toast(`▶ ${label} startet`,'ok'); tab('dag');
@@ -2505,7 +2525,7 @@ function scanConfirm(){
   }
   // Start nyt
   const label=`${scanSelCat} · ${on}`;
-  activeTimer={on,cat:scanSelCat,label,t0:Date.now(),startHM:now};
+  activeTimer={on,cat:scanSelCat,label,t0:Date.now(),startHM:now,date:dk};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
   // Husk kategori-valg
   const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
