@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.5</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.6</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -373,6 +373,7 @@ const DAY_TYPES=[
 // ═══════════════════════════════════════════════════════
 let db = { version:3, days:{} }; // master database
 let activeTimer=null, timerIv=null, currentTab='dag';
+let staleTimerPending=null; // Ventende “glemt at afslutte”-timer, afventer bruger-input
 let selCat='', selOn='', customOn='', selSpecial='';
 let tilfoejStart='', tilfoejStop='';
 let editingIdx=-1;
@@ -407,7 +408,7 @@ async function ghLoad(){
         localStorage.removeItem('vct_activeTimer');
         db.activeTimer=null;
         isDirty=true; ghSave();
-        toast(`⚠️ Gammel kørende timer fra ${remote.date} blev fundet og nulstillet — husk evt. at registrere den manuelt`,'err');
+        flagStaleTimer(remote); // Spørg brugeren hvornår dagen faktisk blev afsluttet
       } else {
         // Genberegn t0 fra startHM så live-timer er korrekt
         const [sh,sm]=remote.startHM.split(':').map(Number);
@@ -531,7 +532,7 @@ async function init(){
     if(parsed.date && parsed.date!==dateKey(new Date())){
       localStorage.removeItem('vct_activeTimer');
       activeTimer=null;
-      toast(`⚠️ Gammel kørende timer fra ${parsed.date} blev fundet og nulstillet — husk evt. at registrere den manuelt`,'err');
+      flagStaleTimer(parsed); // Spørg brugeren hvornår dagen faktisk blev afsluttet
     } else {
       activeTimer=parsed;
     }
@@ -576,6 +577,75 @@ async function saveToken(){
   toast('Token gemt!','ok');
   await ghLoad();
   render();
+}
+
+// ═══════════════════════════════════════════════════════
+//  GLEMT AT AFSLUTTE — bruger fik ikke stoppet en timer
+// ═══════════════════════════════════════════════════════
+function flagStaleTimer(stale){
+  if(staleTimerPending) return; // Der er allerede en ventende — undgå dubletter
+  if(!stale || !stale.startHM || !stale.date) return;
+  staleTimerPending=stale;
+  showStaleTimerModal(stale);
+}
+
+function showStaleTimerModal(stale){
+  if(document.getElementById('staleTimerModal')) return; // Vis kun én ad gangen
+  const d=new Date(stale.date+'T00:00:00');
+  const di=(d.getDay()+6)%7;
+  const target=DAY_TARGET[di]||7.5;
+  const [sh,sm]=stale.startHM.split(':').map(Number);
+  let endMin=sh*60+sm+Math.round(target*60);
+  if(endMin>23*60+59) endMin=23*60+59;
+  const suggestStop=`${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
+  const dateFmt=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  document.body.insertAdjacentHTML('beforeend',`
+  <div id="staleTimerModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:400;display:flex;align-items:flex-end">
+    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
+      <div class="section-label" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
+      <div style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">
+        <b style="color:var(--snow)">${stale.label}</b> blev startet kl. ${stale.startHM} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
+      </div>
+      <label class="field-label">Sluttede kl.</label>
+      <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none;margin-bottom:14px">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="flex:1" onclick="discardStaleTimer()">Kassér</button>
+        <button class="btn" style="flex:1;background:var(--green);color:var(--ink)" onclick="saveStaleTimer()">Gem afslutning ✓</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function saveStaleTimer(){
+  const stale=staleTimerPending;
+  if(!stale){ closeStaleTimerModal(); return; }
+  const stopEl=document.getElementById('staleStopInput');
+  const stop=stopEl?stopEl.value:'';
+  if(!stop){ toast('Angiv et sluttidspunkt','err'); return; }
+  const sh=hmToH(stale.startHM), eh=hmToH(stop);
+  if(eh<=sh){ toast('Sluttid skal være efter starttid','err'); return; }
+  const dk=stale.date;
+  const overlap=checkOverlap(dk, stale.startHM, stop);
+  if(overlap){ toast('⚠️ '+overlap,'err'); return; }
+  const entry={on:stale.on, cat:stale.cat||'', start:stale.startHM, stop, hours:eh-sh, date:dk};
+  if(stale.special) entry.special=stale.special;
+  addEntry(dk,entry);
+  recalcSpecial(dk);
+  staleTimerPending=null;
+  closeStaleTimerModal();
+  toast(`✓ ${stale.label} afsluttet kl. ${stop} den ${dk}`,'ok');
+  render();
+}
+
+function discardStaleTimer(){
+  const stale=staleTimerPending;
+  staleTimerPending=null;
+  closeStaleTimerModal();
+  toast(`Kasseret — ingen registrering gemt${stale?' for '+stale.label:''}`,'err');
+}
+
+function closeStaleTimerModal(){
+  document.getElementById('staleTimerModal')?.remove();
 }
 
 function updateHeader(){
