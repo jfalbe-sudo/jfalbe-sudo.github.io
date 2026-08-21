@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.6</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.8</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -466,7 +466,7 @@ function scheduleSave(){
   isDirty=true;
   localStorage.setItem('vct_db', JSON.stringify(db));
   clearTimeout(syncTimer);
-  syncTimer=setTimeout(ghSave, 2000);
+  syncTimer=setTimeout(ghSave, 800); // Hurtigere gem — mindre ventetid før ændringer når Gist
 }
 
 function checkDailyBackup(){
@@ -525,14 +525,15 @@ async function init(){
   // Brug lokalt cache straks mens vi loader fra GitHub
   const local=localStorage.getItem('vct_db');
   if(local) { try{ db=JSON.parse(local); }catch{} }
-  // Gist behøver ikke SHA
+  // Optimistisk visning: vis KUN den lokale timer med det samme hvis den er fra i dag.
+  // Er den fra en tidligere dag, venter vi med at afgøre om den er "glemt" til EFTER
+  // sync — den anden enhed kan allerede have stoppet/registreret den i mellemtiden.
+  let localStaleCandidate=null;
   const saved=localStorage.getItem('vct_activeTimer');
   if(saved) try{
     const parsed=JSON.parse(saved);
     if(parsed.date && parsed.date!==dateKey(new Date())){
-      localStorage.removeItem('vct_activeTimer');
-      activeTimer=null;
-      flagStaleTimer(parsed); // Spørg brugeren hvornår dagen faktisk blev afsluttet
+      localStaleCandidate=parsed; // Afgøres efter ghLoad()
     } else {
       activeTimer=parsed;
     }
@@ -543,12 +544,23 @@ async function init(){
     showTokenSetup();
     return;
   }
-  // Load fra GitHub i baggrunden
+  // Load fra GitHub FØRST — Gist-data er altid den mest opdaterede kilde
   await ghLoad();
+  // Nu hvor sync er færdig: håndter en evt. lokal "glemt timer"-kandidat.
+  // Kun relevant hvis Gist slet ikke havde activeTimer-info (fx meget gammel/uden sync
+  // endnu) — ellers har ghLoad() allerede afgjort sagen ud fra den friske Gist-data.
+  if(activeTimer===null && !db.hasOwnProperty('activeTimer') && localStaleCandidate){
+    localStorage.removeItem('vct_activeTimer');
+    flagStaleTimer(localStaleCandidate); // Spørg brugeren hvornår dagen faktisk blev afsluttet
+  } else if(localStaleCandidate && (activeTimer!==null || db.activeTimer===null)){
+    // Gist har allerede afklaret det (enten en gyldig timer, eller bekræftet stoppet
+    // af den anden enhed) — ryd bare den forældede lokale kopi uden at spørge
+    localStorage.removeItem('vct_activeTimer');
+  }
   render(); // Genrender med GitHub data
   checkDailyBackup(); // Auto-backup én gang om dagen
   // Auto-sync hvert 30 sek (henter andres ændringer)
-  setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 30000);
+  setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 10000); // Poll hvert 10. sek — 5000 kald/time-grænsen har rigelig plads
 }
 
 function showTokenSetup(){
