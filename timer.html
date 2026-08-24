@@ -265,7 +265,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.8</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v3.9</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -560,7 +560,7 @@ async function init(){
   render(); // Genrender med GitHub data
   checkDailyBackup(); // Auto-backup én gang om dagen
   // Auto-sync hvert 30 sek (henter andres ændringer)
-  setInterval(async()=>{ if(!isDirty){ await ghLoad(); render(); }}, 10000); // Poll hvert 10. sek — 5000 kald/time-grænsen har rigelig plads
+  setInterval(async()=>{ if(!isDirty){ await ghLoad(); safeRender(); }}, 10000); // Poll hvert 10. sek — 5000 kald/time-grænsen har rigelig plads
 }
 
 function showTokenSetup(){
@@ -687,6 +687,17 @@ function render(){
   // Gendan åbne panels efter render
   openIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
   if(currentTab==='dag'&&activeTimer) startDisp();
+}
+
+// Bruges af baggrunds-sync (periodisk poll + manuel "Sync nu"): tegner IKKE om
+// mens en "Ret registrering"-boks er åben, så et igangværende rettelse-input
+// ikke bliver visket ud / nulstillet af en samtidig gen-tegning. Selve data-
+// synkroniseringen (ghLoad) kører stadig i baggrunden — kun visningen udskydes,
+// og den bliver automatisk opdateret så snart brugeren lukker redigeringsboksen
+// (cancelEdit/saveEdit kalder altid render() direkte).
+function safeRender(){
+  if(editingIdx!==-1) return; // Redigeringsboks åben — vent til den lukkes
+  render();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2237,8 +2248,12 @@ function saveFerie(){
 async function manualSync(){
   toast('Synkroniserer...','');
   await ghLoad();
-  render();
-  toast('✓ Synkroniseret','ok');
+  if(editingIdx!==-1){
+    toast('✓ Synkroniseret (vises når du lukker rettelsen)','ok');
+  } else {
+    render();
+    toast('✓ Synkroniseret','ok');
+  }
 }
 
 function importData(){
