@@ -237,13 +237,22 @@ select option{background:#081828}
 .scan-confirm{width:100%;padding:14px;background:var(--gold);color:var(--ink);font-size:15px;font-weight:900;border:none;border-radius:12px;cursor:pointer}
 .scan-dismiss{width:100%;padding:10px;background:transparent;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:4px}
 
+/* ── MODALER ───────────────────────────────── */
+/* position:fixed maaler fra viewporten, ikke fra body{max-width:480px} —
+   derfor centrerer og begraenser panelet sig selv, ellers straekkes modaler
+   over hele skaermen paa en PC. */
+.modal-wrap{position:fixed;inset:0;background:rgba(4,15,26,.92);z-index:250;display:flex;align-items:flex-end;justify-content:center}
+.modal-panel{background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 32px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto}
+/* Smal knap i en flex-raekke. .btn saetter width:100%, hvilket ellers
+   klemmer naboerne vaek — se v4.6. */
+.btn-slim{flex:0 0 auto!important;width:auto!important}
 </style>
 </head>
 <body>
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.5</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.7</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -628,8 +637,8 @@ function showSettings(){
     '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
   ).join('');
   document.getElementById('main').innerHTML+=`
-  <div id="settingsModal" style="position:fixed;inset:0;background:rgba(4,15,26,.92);z-index:100;display:flex;align-items:flex-end">
-    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:22px 18px 32px;width:100%;max-height:92vh;overflow-y:auto">
+  <div id="settingsModal" class="modal-wrap">
+    <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">⚙️ Indstillinger</div>
       <div style="font-size:11px;color:var(--slate);margin-bottom:18px">Gælder kun denne enhed. Dine timer røres ikke.</div>
 
@@ -671,7 +680,7 @@ function catRowsHTML(){
     '<input type="text" id="cName'+i+'" value="'+esc(k.label||'')+'" style="'+S_INP+';flex:1;min-width:0">'+
     '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--slate);white-space:nowrap" title="Kræver ikke ON-nummer">'+
     '<input type="checkbox" id="cNoOn'+i+'"'+(k.noOn?' checked':'')+'>u/ON</label>'+
-    '<button class="btn btn-ghost" style="padding:0 9px;color:var(--red);font-size:15px" onclick="removeCatRow('+i+')">×</button>'+
+    '<button class="btn btn-ghost btn-slim" style="padding:0 11px;color:var(--red);font-size:16px" onclick="removeCatRow('+i+')">×</button>'+
     '</div>'
   ).join('');
 }
@@ -807,8 +816,8 @@ async function migrateToNewGist(){
 
 function showGistMigrated(nyId, gammelId, dage){
   document.getElementById('main').innerHTML+=`
-  <div id="migModal" style="position:fixed;inset:0;background:rgba(4,15,26,.94);z-index:101;display:flex;align-items:flex-end">
-    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 32px;width:100%;max-height:92vh;overflow-y:auto">
+  <div id="migModal" class="modal-wrap" style="z-index:251">
+    <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px;color:var(--green)">✓ Ny Gist oprettet</div>
       <div style="font-size:13px;color:var(--mist);line-height:1.6;margin-bottom:16px">
         Dine <b>${dage} dage</b> ligger nu i en ny secret Gist, og denne enhed bruger den.
@@ -841,8 +850,8 @@ function showSyncSetup(){
   const inp='width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none';
   const on=syncEnabled();
   document.getElementById('main').innerHTML+=`
-  <div id="syncModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:100;display:flex;align-items:flex-end">
-    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%;max-height:92vh;overflow-y:auto">
+  <div id="syncModal" class="modal-wrap">
+    <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px">⚙️ Sync-opsætning</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">
         ${on
@@ -2358,7 +2367,7 @@ function rapportHTML(){
     </div>
     <div style="display:flex;gap:7px;margin-top:8px">
       <button class="btn" style="flex:1;background:rgba(77,166,255,.1);color:var(--blue);border:1.5px solid rgba(77,166,255,.3)" onclick="importOutlook()">📅 Hent fra Outlook</button>
-      <button class="btn btn-ghost" style="flex:0 0 auto;padding:0 15px" onclick="showSettings()" title="Indstillinger">⚙️</button>
+      <button class="btn btn-ghost btn-slim" style="padding:0 16px" onclick="showSettings()" title="Indstillinger">⚙️</button>
     </div>
   </div>
   <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
@@ -2514,8 +2523,8 @@ function downloadBackup(){
 function showFerieModal(){
   const today=dateKey(new Date());
   document.getElementById('main').innerHTML+=`
-  <div id="ferieModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:100;display:flex;align-items:flex-end">
-    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
+  <div id="ferieModal" class="modal-wrap">
+    <div class="modal-panel">
       <div class="section-label" style="margin-bottom:14px">🌴 Sæt ferieperiode</div>
       <div class="form-row" style="margin-bottom:12px">
         <div><label class="field-label">Fra dato</label><input type="date" id="ferieFrom" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none"></div>
