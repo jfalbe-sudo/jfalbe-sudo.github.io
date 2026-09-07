@@ -243,7 +243,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.1</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.5</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -313,27 +313,65 @@ select option{background:#081828}
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
-const GIST_ID    = 'cdff9229870dc7f4c74b99cf30acedfd';
 const GIST_FILE  = 'timer_data.json';
-const GIST_API   = `https://api.github.com/gists/${GIST_ID}`;
+// Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
+// Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
+// i denne browser, og der tales slet ikke med GitHub.
+function getGistId(){ return localStorage.getItem('vct_gistid')||''; }
 function getToken(){ return localStorage.getItem('vct_ghtoken')||''; }
+function gistApi(){ return `https://api.github.com/gists/${getGistId()}`; }
+function syncEnabled(){ return !!(getGistId() && getToken()); }
 
 // ═══════════════════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════════════════
-const DAY_TARGET = [7.5,7.5,7.5,7.5,6.5,0,0];
 const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-const QUICK_ON= ['ON','2613','2965','2973','3179','3200','3201'];
-const CATS    = [
-  {label:'Admin/Møde',icon:'📋'},
-  {label:'Undervisning',icon:'🎓'},
-  {label:'ON',icon:'🔧'},
-  {label:'Service',icon:'⚙️'},
-  {label:'Andet',icon:'📌'},
-];
-const CATS_NO_ON=new Set(['Admin/Møde','Undervisning']);
+
+// ═══ BRUGER-KONFIGURATION ═══
+// Arbejdstid, ON-numre, kategorier og frokost kan sættes pr. enhed under
+// RAPPORT → ⚙️. Defaults herunder er Jimmys værdier, så en ukonfigureret
+// enhed opfører sig præcis som før. Gemmes i localStorage under 'vct_cfg' —
+// bevidst UDEN for db, fordi ghLoad() overskriver db komplet.
+const CFG_DEFAULTS={
+  dayTarget:[7.5,7.5,7.5,7.5,6.5,0,0],
+  quickOn:['ON','2613','2965','2973','3179','3200','3201'],
+  cats:[
+    {label:'Admin/Møde',icon:'📋',noOn:true},
+    {label:'Undervisning',icon:'🎓',noOn:true},
+    {label:'ON',icon:'🔧',noOn:false},
+    {label:'Service',icon:'⚙️',noOn:false},
+    {label:'Andet',icon:'📌',noOn:false},
+  ],
+  frokostStart:'12:00',
+  frokostStop:'12:30',
+};
+function defaultCfg(){ return JSON.parse(JSON.stringify(CFG_DEFAULTS)); }
+function loadCfg(){
+  try{
+    const raw=localStorage.getItem('vct_cfg');
+    if(!raw) return defaultCfg();
+    return Object.assign(defaultCfg(), JSON.parse(raw));
+  }catch{ return defaultCfg(); }
+}
+let cfg=loadCfg();
+// Disse er 'let' og ikke funktioner, så alle eksisterende brugssteder
+// (fx DAY_TARGET[di], CATS.map, CATS_NO_ON.has) virker urørt.
+let DAY_TARGET=cfg.dayTarget;
+let QUICK_ON  =cfg.quickOn;
+let CATS      =cfg.cats;
+let CATS_NO_ON=new Set(CATS.filter(c=>c.noOn).map(c=>c.label));
+let FROKOST_DEFAULT_START=cfg.frokostStart;
+let FROKOST_DEFAULT_STOP =cfg.frokostStop;
+function applyCfg(){
+  DAY_TARGET=cfg.dayTarget;
+  QUICK_ON  =cfg.quickOn;
+  CATS      =cfg.cats;
+  CATS_NO_ON=new Set(CATS.filter(c=>c.noOn).map(c=>c.label));
+  FROKOST_DEFAULT_START=cfg.frokostStart;
+  FROKOST_DEFAULT_STOP =cfg.frokostStop;
+}
 const DAY_TYPES=[
   {id:'kontor',label:'🏢 Kontor',cls:'sel-kontor'},
   {id:'hjemme',label:'🏠 Hjemme',cls:'sel-hjemme'},
@@ -357,20 +395,44 @@ let syncTimer=null, isDirty=false;
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC
 // ═══════════════════════════════════════════════════════
-function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | ''
+function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | '' (= lokal tilstand)
   const d=document.getElementById('syncDot');
-  if(d){ d.className='sync-indicator'+(s?' '+s:''); }
+  if(d){
+    d.className='sync-indicator'+(s?' '+s:'');
+    d.title=s==='syncing'?'Synkroniserer...':s==='ok'?'Synkroniseret med Gist'
+      :s==='err'?'Sync-fejl — data er gemt lokalt'
+      :'Lokal tilstand — data gemmes kun i denne browser';
+  }
 }
 
 async function ghLoad(){
+  if(!syncEnabled()){ // Lokal tilstand — læs kun fra denne browser
+    const local=localStorage.getItem('vct_db');
+    if(local) try{ db=JSON.parse(local); }catch{}
+    return;
+  }
   setSyncStatus('syncing');
   try {
-    const r=await fetch(GIST_API,{headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'}});
+    const r=await fetch(gistApi(),{headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'}});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
     const fileContent=j.files[GIST_FILE]?.content;
     if(!fileContent) throw new Error('Ingen data i Gist');
     const decoded=JSON.parse(fileContent);
+    // ── Beskyttelse mod datatab ──
+    // En tom Gist må ALDRIG overskrive lokale timer. Det sker når man peger
+    // appen på en nyoprettet Gist (fx ved flytning), eller når en kollega har
+    // kørt lokalt og først bagefter sætter sync op. I stedet uploader vi de
+    // lokale data — det er næsten altid det man vil.
+    const remoteDays=Object.keys(decoded.days||{}).length;
+    const localDays=Object.keys((db&&db.days)||{}).length;
+    if(remoteDays===0 && localDays>0){
+      console.warn('ghLoad: Gist er tom, men enheden har '+localDays+' dage — uploader lokale data i stedet');
+      isDirty=true;
+      await ghSave();
+      toast('Gist var tom — dine '+localDays+' dage er uploadet','ok');
+      return;
+    }
     db=decoded;
     localStorage.setItem('vct_db', JSON.stringify(db));
     // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
@@ -409,6 +471,11 @@ async function ghLoad(){
 
 async function ghSave(){
   if(!isDirty) return;
+  if(!syncEnabled()){ // Lokal tilstand — gem kun i denne browser, ingen fejlstatus
+    localStorage.setItem('vct_db', JSON.stringify(db));
+    isDirty=false;
+    return;
+  }
   setSyncStatus('syncing');
   try {
     // Inkluder activeTimer i Gist-data så andre enheder ser den
@@ -421,7 +488,7 @@ async function ghSave(){
       date: activeTimer.date||dateKey(new Date()),
     } : null;
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
-    const r=await fetch(GIST_API,{
+    const r=await fetch(gistApi(),{
       method:'PATCH',
       headers:{'Authorization':`token ${getToken()}`,'Content-Type':'application/json'},
       body:JSON.stringify(body)
@@ -514,10 +581,17 @@ async function init(){
     }
   }catch{}
   tab('dag');
-  // Tjek om token er sat
-  if(!getToken()){
-    showTokenSetup();
-    return;
+  // Ingen sync konfigureret → lokal tilstand. Appen virker fuldt ud;
+  // data ligger kun i denne browser, og checkDailyBackup() er sikkerhedsnettet.
+  if(!syncEnabled()){
+    setSyncStatus('');
+    if(localStaleCandidate){
+      localStorage.removeItem('vct_activeTimer');
+      flagStaleTimer(localStaleCandidate); // Spørg hvornår dagen faktisk blev afsluttet
+    }
+    render();
+    checkDailyBackup();
+    return; // Ingen ghLoad og ingen poll — der er ingen backend at tale med
   }
   // Load fra GitHub FØRST — Gist-data er altid den mest opdaterede kilde
   await ghLoad();
@@ -538,31 +612,285 @@ async function init(){
   setInterval(async()=>{ if(!isDirty){ await ghLoad(); safeRender(); }}, 10000); // Poll hvert 10. sek — 5000 kald/time-grænsen har rigelig plads
 }
 
-function showTokenSetup(){
-  document.getElementById('main').innerHTML=`
-  <div class="card" style="margin-top:20px">
-    <div class="section-label">Første gangs opsætning</div>
-    <div style="font-size:14px;color:var(--mist);margin-bottom:14px;line-height:1.6">
-      Indtast dit GitHub token for at aktivere sync mellem PC og telefon.
-      Token gemmes kun på denne enhed.
-    </div>
-    <div>
-      <label class="field-label">GitHub Token</label>
-      <input type="password" id="tokenInput" placeholder="ghp_..." style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none">
-    </div>
-    <button class="btn btn-gold" style="margin-top:12px" onclick="saveToken()">Gem token og start →</button>
-    <div style="font-size:11px;color:var(--slate);margin-top:10px">
-      Token gemmes kun lokalt i browseren — ikke i koden.
+// ═════════════════════════════════════════════════════
+//  INDSTILLINGER — arbejdstid, ON-numre, kategorier, frokost
+// ═════════════════════════════════════════════════════
+let catDraft=[]; // Arbejdskopi af kategorier mens modalen er åben
+
+const S_INP='background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:9px 10px;font-size:14px;font-family:var(--font);outline:none';
+
+function showSettings(){
+  catDraft=JSON.parse(JSON.stringify(cfg.cats));
+  const dayRows=DAY_S.map((d,i)=>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+    '<div style="width:38px;font-size:12px;color:var(--mist);font-weight:700">'+d+'</div>'+
+    '<input type="number" id="dt'+i+'" value="'+cfg.dayTarget[i]+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
+    '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
+  ).join('');
+  document.getElementById('main').innerHTML+=`
+  <div id="settingsModal" style="position:fixed;inset:0;background:rgba(4,15,26,.92);z-index:100;display:flex;align-items:flex-end">
+    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:22px 18px 32px;width:100%;max-height:92vh;overflow-y:auto">
+      <div class="section-label" style="margin-bottom:4px">⚙️ Indstillinger</div>
+      <div style="font-size:11px;color:var(--slate);margin-bottom:18px">Gælder kun denne enhed. Dine timer røres ikke.</div>
+
+      <div class="section-label" style="margin-bottom:8px">Arbejdstid pr. ugedag</div>
+      ${dayRows}
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Sæt 0 på fridage. Bruges til mål, over-/underskud og auto-beregning af syge- og §56-timer.</div>
+
+      <div class="section-label" style="margin-bottom:8px">ON-numre</div>
+      <input type="text" id="onList" value="${cfg.quickOn.join(', ')}" style="${S_INP};width:100%">
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Adskilt med komma. Vises som genvejsknapper i TILFØJ.</div>
+
+      <div class="section-label" style="margin-bottom:8px">Kategorier</div>
+      <div id="catRows">${catRowsHTML()}</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:13px" onclick="addCatRow()">+ Tilføj kategori</button>
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Fluebenet betyder at kategorien <b>ikke</b> kræver et ON-nummer.</div>
+
+      <div class="section-label" style="margin-bottom:8px">Frokost</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="time" id="frStart" value="${cfg.frokostStart}" style="${S_INP}">
+        <div style="color:var(--slate)">→</div>
+        <input type="time" id="frStop" value="${cfg.frokostStop}" style="${S_INP}">
+      </div>
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 20px">Standard man–fre. Kan stadig ændres eller springes over pr. dag under I DAG.</div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('settingsModal').remove()">Annuller</button>
+        <button class="btn btn-gold" style="flex:1" onclick="saveSettings()">Gem ✓</button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="showSyncSetup()">⚙️ Sync-opsætning →</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px;color:var(--red)" onclick="resetSettings()">Nulstil til standard</button>
     </div>
   </div>`;
 }
 
-async function saveToken(){
+function catRowsHTML(){
+  return catDraft.map((k,i)=>
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
+    '<input type="text" id="cIcon'+i+'" value="'+esc(k.icon||'')+'" style="'+S_INP+';width:44px;text-align:center">'+
+    '<input type="text" id="cName'+i+'" value="'+esc(k.label||'')+'" style="'+S_INP+';flex:1;min-width:0">'+
+    '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--slate);white-space:nowrap" title="Kræver ikke ON-nummer">'+
+    '<input type="checkbox" id="cNoOn'+i+'"'+(k.noOn?' checked':'')+'>u/ON</label>'+
+    '<button class="btn btn-ghost" style="padding:0 9px;color:var(--red);font-size:15px" onclick="removeCatRow('+i+')">×</button>'+
+    '</div>'
+  ).join('');
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function readCatRows(){ // Læs felterne ind i catDraft, så indtastninger ikke tabes ved re-render
+  catDraft.forEach((k,i)=>{
+    const ic=document.getElementById('cIcon'+i), nm=document.getElementById('cName'+i), no=document.getElementById('cNoOn'+i);
+    if(ic) k.icon=ic.value;
+    if(nm) k.label=nm.value;
+    if(no) k.noOn=no.checked;
+  });
+}
+
+function addCatRow(){
+  readCatRows();
+  catDraft.push({label:'',icon:'📌',noOn:false});
+  document.getElementById('catRows').innerHTML=catRowsHTML();
+}
+
+function removeCatRow(i){
+  readCatRows();
+  catDraft.splice(i,1);
+  document.getElementById('catRows').innerHTML=catRowsHTML();
+}
+
+function saveSettings(){
+  readCatRows();
+  // Arbejdstid
+  const dt=[];
+  for(let i=0;i<7;i++){
+    const v=parseFloat(document.getElementById('dt'+i).value);
+    if(isNaN(v)||v<0||v>24){ toast('Ugyldig arbejdstid for '+DAY_S[i],'err'); return; }
+    dt.push(v);
+  }
+  // ON-numre
+  const ons=document.getElementById('onList').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(ons.length===0){ toast('Mindst ét ON-nummer','err'); return; }
+  // Kategorier
+  const cats=catDraft.map(k=>({label:(k.label||'').trim(),icon:(k.icon||'').trim()||'📌',noOn:!!k.noOn})).filter(k=>k.label);
+  if(cats.length===0){ toast('Mindst én kategori','err'); return; }
+  const names=cats.map(k=>k.label);
+  if(new Set(names).size!==names.length){ toast('To kategorier har samme navn','err'); return; }
+  // Frokost
+  const fs=document.getElementById('frStart').value, fe=document.getElementById('frStop').value;
+  if(!fs||!fe||hmToH(fe)<=hmToH(fs)){ toast('Frokost-slut skal ligge efter start','err'); return; }
+  // Advar hvis en kategori i brug forsvinder — gamle entries beholder deres værdi,
+  // men kategorien kan ikke længere vælges.
+  const brugte=new Set();
+  Object.keys(db.days||{}).forEach(dk=>(db.days[dk].entries||[]).forEach(e=>{ if(e.cat) brugte.add(e.cat); }));
+  const fjernet=[...brugte].filter(b=>!names.includes(b));
+  if(fjernet.length && !confirm('Kategorien '+fjernet.join(', ')+' bruges i registrerede timer. De timer bevares, men kategorien kan ikke længere vælges. Fortsæt?')) return;
+
+  cfg.dayTarget=dt; cfg.quickOn=ons; cfg.cats=cats;
+  cfg.frokostStart=fs; cfg.frokostStop=fe;
+  localStorage.setItem('vct_cfg',JSON.stringify(cfg));
+  applyCfg();
+  const m=document.getElementById('settingsModal'); if(m) m.remove();
+  toast('Indstillinger gemt','ok');
+  render();
+}
+
+function resetSettings(){
+  if(!confirm('Nulstil arbejdstid, ON-numre, kategorier og frokost til standard? Dine registrerede timer røres ikke.')) return;
+  localStorage.removeItem('vct_cfg');
+  cfg=defaultCfg();
+  applyCfg();
+  const m=document.getElementById('settingsModal'); if(m) m.remove();
+  toast('Indstillinger nulstillet','ok');
+  render();
+}
+
+// ═════════════════════════════════════════════════════
+//  GIST-MIGRERING — opretter en ny secret Gist via API'et og flytter data
+//  Bruges både til privatlivs-flytningen (gammelt ID lå i et public repo)
+//  og til at give en kollega sin første Gist uden manuel oprettelse.
+//  Den GAMLE Gist slettes bevidst IKKE — den er sikkerhedsnettet indtil
+//  brugeren selv har bekræftet at den nye virker på alle enheder.
+// ═════════════════════════════════════════════════════
+async function migrateToNewGist(){
+  const tok=getToken();
+  if(!tok){ toast('Indtast og gem token først','err'); return; }
+  const dage=Object.keys((db&&db.days)||{}).length;
+  const gammelId=getGistId();
+  const sp=gammelId
+    ? 'Opret en ny secret Gist og flyt dine '+dage+' registrerede dage derover?\n\nDen gamle Gist slettes IKKE — den skal du selv slette bagefter, når du har bekræftet at alt ser rigtigt ud på både PC og telefon.'
+    : 'Opret en ny secret Gist til dine '+dage+' registrerede dage? Derefter synkroniserer denne enhed med GitHub.';
+  if(!confirm(sp)) return;
+  setSyncStatus('syncing');
+  try{
+    // Samme activeTimer-håndtering som ghSave(), så den nye Gist er komplet
+    db.activeTimer = activeTimer ? {
+      on: activeTimer.on,
+      cat: activeTimer.cat,
+      label: activeTimer.label,
+      startHM: activeTimer.startHM,
+      special: activeTimer.special||null,
+      date: activeTimer.date||dateKey(new Date()),
+    } : null;
+    const r=await fetch('https://api.github.com/gists',{
+      method:'POST',
+      headers:{'Authorization':'token '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        description:'Vestergaard Timer — timeregistrering',
+        public:false,
+        files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}
+      })
+    });
+    if(!r.ok){ throw new Error('HTTP '+r.status+': '+(await r.text())); }
+    const j=await r.json();
+    if(!j.id) throw new Error('Intet Gist-ID i svaret');
+    // Verificér at data faktisk ligger i den nye Gist før vi skifter over
+    const kontrol=j.files && j.files[GIST_FILE] && j.files[GIST_FILE].content;
+    let kontrolDage=-1;
+    if(kontrol){ try{ kontrolDage=Object.keys(JSON.parse(kontrol).days||{}).length; }catch{} }
+    if(kontrolDage!==dage){
+      throw new Error('Den nye Gist indeholder '+kontrolDage+' dage, forventede '+dage+' — skifter ikke over');
+    }
+    localStorage.setItem('vct_gistid', j.id);
+    localStorage.setItem('vct_db', JSON.stringify(db));
+    isDirty=false;
+    setSyncStatus('ok');
+    const m=document.getElementById('syncModal'); if(m) m.remove();
+    showGistMigrated(j.id, gammelId, dage);
+  }catch(e){
+    console.error('migrateToNewGist',e);
+    setSyncStatus('err');
+    toast('Kunne ikke oprette ny Gist — intet er ændret','err');
+    alert('Oprettelsen fejlede. Dine data og din nuværende oplætning er urørte.\n\n'+e.message);
+  }
+}
+
+function showGistMigrated(nyId, gammelId, dage){
+  document.getElementById('main').innerHTML+=`
+  <div id="migModal" style="position:fixed;inset:0;background:rgba(4,15,26,.94);z-index:101;display:flex;align-items:flex-end">
+    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 32px;width:100%;max-height:92vh;overflow-y:auto">
+      <div class="section-label" style="margin-bottom:12px;color:var(--green)">✓ Ny Gist oprettet</div>
+      <div style="font-size:13px;color:var(--mist);line-height:1.6;margin-bottom:16px">
+        Dine <b>${dage} dage</b> ligger nu i en ny secret Gist, og denne enhed bruger den.
+      </div>
+      <div style="font-size:11px;color:var(--slate);margin-bottom:4px">NYT GIST-ID — indtast dette på din telefon</div>
+      <div style="background:var(--ink3);border:1.5px solid rgba(61,220,151,.3);border-radius:10px;padding:12px;font-family:var(--mono);font-size:13px;word-break:break-all;color:var(--green);margin-bottom:8px" id="nyGistId">${nyId}</div>
+      <button class="btn btn-ghost" style="width:100%;font-size:13px;margin-bottom:18px" onclick="kopierNytId()">📋 Kopiér ID</button>
+      <div class="section-label" style="margin-bottom:8px">Tilbage står</div>
+      <div style="font-size:13px;color:var(--mist);line-height:1.7;margin-bottom:16px">
+        1. Indtast ID'et ovenfor på telefonen (RAPPORT → ⚙️ → Sync-opsætning)<br>
+        2. Tjek at UGE og RAPPORT ser rigtige ud på begge enheder<br>
+        3. <b>Først derefter:</b> slet den gamle Gist på GitHub
+      </div>
+      ${gammelId?`<div style="font-size:11px;color:var(--slate);margin-bottom:4px">GAMMEL GIST — slet denne til sidst</div>
+      <a href="https://gist.github.com/${gammelId}" target="_blank" rel="noopener" style="display:block;background:var(--ink3);border:1px solid rgba(255,92,92,.25);border-radius:10px;padding:11px;font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--red);text-decoration:none;margin-bottom:18px">${gammelId} ↗</a>`:''}
+      <button class="btn btn-gold" style="width:100%" onclick="document.getElementById('migModal').remove();render()">Forstået ✓</button>
+    </div>
+  </div>`;
+}
+
+function kopierNytId(){
+  const t=document.getElementById('nyGistId');
+  if(!t) return;
+  const s=t.textContent.trim();
+  if(navigator.clipboard) navigator.clipboard.writeText(s).then(()=>toast('ID kopieret','ok'),()=>toast('Kunne ikke kopiere','err'));
+  else toast('Clipboard ikke understøttet','err');
+}
+
+function showSyncSetup(){
+  const inp='width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none';
+  const on=syncEnabled();
+  document.getElementById('main').innerHTML+=`
+  <div id="syncModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:100;display:flex;align-items:flex-end">
+    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%;max-height:92vh;overflow-y:auto">
+      <div class="section-label" style="margin-bottom:12px">⚙️ Sync-opsætning</div>
+      <div style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">
+        ${on
+          ? 'Sync er <b style="color:var(--green)">aktiv</b>. Dine timer gemmes i din egen Gist, så PC og telefon viser det samme.'
+          : 'Appen kører i <b>lokal tilstand</b>: dine timer gemmes kun i denne browser. Det virker fint — men husk at tage backup, ellers mister du data hvis browserdata ryddes.<br><br>Vil du have samme timer på både PC og telefon, kan du udfylde felterne herunder. Det kræver en GitHub-konto.'}
+      </div>
+      <div style="margin-bottom:12px">
+        <label class="field-label">Gist-ID</label>
+        <input type="text" id="gistInput" value="${getGistId()}" placeholder="fx a1b2c3d4e5f6..." style="${inp}">
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="field-label">GitHub token (gist-scope)</label>
+        <input type="password" id="tokenInput" value="${getToken()}" placeholder="ghp_..." style="${inp}">
+      </div>
+      <div style="font-size:11px;color:var(--slate);margin-bottom:16px;line-height:1.5">
+        Begge gemmes kun lokalt på denne enhed — aldrig i koden. Du skal indtaste dem
+        én gang pr. enhed, derefter husker browseren dem.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('syncModal').remove()">Luk</button>
+        <button class="btn btn-gold" style="flex:1" onclick="saveSyncConfig()">Gem ✓</button>
+      </div>
+      ${getToken()?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;color:var(--blue)" onclick="migrateToNewGist()">${getGistId()?'🔒 Opret ny Gist og flyt data':'➕ Opret min egen Gist'}</button>`:''}
+      ${on?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;color:var(--red)" onclick="clearSyncConfig()">Slå sync fra — kør kun lokalt</button>`:''}
+    </div>
+  </div>`;
+}
+
+async function saveSyncConfig(){
+  const g=document.getElementById('gistInput').value.trim();
   const t=document.getElementById('tokenInput').value.trim();
-  if(!t||!t.startsWith('ghp_')){toast('Ugyldigt token','err');return;}
+  if(!g||!/^[0-9a-f]{20,}$/i.test(g)){ toast('Ugyldigt Gist-ID','err'); return; }
+  if(!t||!t.startsWith('ghp_')){ toast('Ugyldigt token','err'); return; }
+  localStorage.setItem('vct_gistid',g);
   localStorage.setItem('vct_ghtoken',t);
-  toast('Token gemt!','ok');
+  const m=document.getElementById('syncModal'); if(m) m.remove();
+  toast('Sync-opsætning gemt','ok');
   await ghLoad();
+  render();
+}
+
+function clearSyncConfig(){
+  if(!confirm('Slå sync fra? Dine timer bliver liggende i denne browser, men synkroniseres ikke længere med andre enheder.')) return;
+  localStorage.removeItem('vct_gistid');
+  localStorage.removeItem('vct_ghtoken');
+  const m=document.getElementById('syncModal'); if(m) m.remove();
+  setSyncStatus('');
+  toast('Sync slået fra — kører lokalt','ok');
   render();
 }
 
@@ -1203,8 +1531,7 @@ function bindDagTimelineHandlers(){
 // ═══════════════════════════════════════════════════════
 //  FROKOST
 // ═══════════════════════════════════════════════════════
-const FROKOST_DEFAULT_START='12:00';
-const FROKOST_DEFAULT_STOP ='12:30';
+// FROKOST_DEFAULT_START/STOP defineres i bruger-konfigurationen øverst i filen.
 
 function getFrokost(dk){
   // Returnerer {start,stop} eller null hvis sprunget over
@@ -2021,7 +2348,9 @@ function rapportHTML(){
     </div>
     <div style="display:flex;gap:7px;flex-wrap:wrap">
       <button class="btn btn-ghost" style="flex:1" onclick="importData()">📥 Importer</button>
-      <button class="btn btn-gold" style="flex:1" onclick="manualSync()">🔄 Sync nu</button>
+      ${syncEnabled()
+        ? `<button class=\"btn btn-gold\" style=\"flex:1\" onclick=\"manualSync()\">🔄 Sync nu</button>`
+        : `<button class=\"btn btn-ghost\" style=\"flex:1\" onclick=\"showSyncSetup()\">⚙️ Opsæt sync</button>`}
     </div>
     <div style="display:flex;gap:7px;margin-top:8px">
       <button class="btn btn-ghost" style="flex:1" onclick="downloadBackup()">💾 Backup</button>
@@ -2029,6 +2358,7 @@ function rapportHTML(){
     </div>
     <div style="display:flex;gap:7px;margin-top:8px">
       <button class="btn" style="flex:1;background:rgba(77,166,255,.1);color:var(--blue);border:1.5px solid rgba(77,166,255,.3)" onclick="importOutlook()">📅 Hent fra Outlook</button>
+      <button class="btn btn-ghost" style="flex:0 0 auto;padding:0 15px" onclick="showSettings()" title="Indstillinger">⚙️</button>
     </div>
   </div>
   <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
