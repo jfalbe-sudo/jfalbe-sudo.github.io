@@ -252,7 +252,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.7</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.8</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -483,6 +483,7 @@ async function ghSave(){
   if(!syncEnabled()){ // Lokal tilstand — gem kun i denne browser, ingen fejlstatus
     localStorage.setItem('vct_db', JSON.stringify(db));
     isDirty=false;
+    writeBackupFolder(); // Mappe-backup er kollegaernes eneste net — fejler stille
     return;
   }
   setSyncStatus('syncing');
@@ -594,6 +595,7 @@ async function init(){
   // data ligger kun i denne browser, og checkDailyBackup() er sikkerhedsnettet.
   if(!syncEnabled()){
     setSyncStatus('');
+    await initBackupFolder(); // Genfind brugerens backup-mappe fra IndexedDB
     if(localStaleCandidate){
       localStorage.removeItem('vct_activeTimer');
       flagStaleTimer(localStaleCandidate); // Spørg hvornår dagen faktisk blev afsluttet
@@ -655,6 +657,9 @@ function showSettings(){
       <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:13px" onclick="addCatRow()">+ Tilføj kategori</button>
       <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Fluebenet betyder at kategorien <b>ikke</b> kræver et ON-nummer.</div>
 
+      ${!syncEnabled()?`<div class="section-label" style="margin-bottom:8px">Backup-mappe</div>
+      ${backupFolderStatusHTML()}
+      <div style="height:18px"></div>`:''}
       <div class="section-label" style="margin-bottom:8px">Frokost</div>
       <div style="display:flex;align-items:center;gap:8px">
         <input type="time" id="frStart" value="${cfg.frokostStart}" style="${S_INP}">
@@ -761,6 +766,158 @@ function resetSettings(){
 //  Den GAMLE Gist slettes bevidst IKKE — den er sikkerhedsnettet indtil
 //  brugeren selv har bekræftet at den nye virker på alle enheder.
 // ═════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════
+//  MAPPE-BACKUP — skriver timerne til en mappe brugeren selv vælger.
+//  Kun relevant i lokal tilstand (kollega-installationer): uden Gist er
+//  browserens localStorage ellers eneste kopi, og den ryger hvis browserdata
+//  slettes. Bruger File System Access API, som KUN findes i Chromium
+//  (Edge/Chrome) — alt herunder fejler stille i andre browsere.
+//  Stien kan ikke hardkodes; browseren kræver at brugeren peger på mappen.
+//  Handlen gemmes i IndexedDB, saa den huskes mellem sessioner.
+// ═════════════════════════════════════════════════════
+const FS_DB='vct_fs', FS_STORE='handles', FS_KEY='backupDir';
+const SNAP_KEEP_DAYS=60;
+let backupDir=null;
+let backupDirState='none'; // 'none' | 'ok' | 'renew' | 'unsupported'
+
+function fsSupported(){ return typeof window.showDirectoryPicker==='function'; }
+
+function fsIdb(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(FS_DB,1);
+    r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains(FS_STORE)) r.result.createObjectStore(FS_STORE); };
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function fsIdbPut(k,v){ const d=await fsIdb(); return new Promise((res,rej)=>{ const t=d.transaction(FS_STORE,'readwrite'); t.objectStore(FS_STORE).put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function fsIdbGet(k){ const d=await fsIdb(); return new Promise((res,rej)=>{ const t=d.transaction(FS_STORE,'readonly'); const q=t.objectStore(FS_STORE).get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function fsIdbDel(k){ const d=await fsIdb(); return new Promise((res,rej)=>{ const t=d.transaction(FS_STORE,'readwrite'); t.objectStore(FS_STORE).delete(k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+
+async function initBackupFolder(){
+  if(!fsSupported()){ backupDirState='unsupported'; return; }
+  try{
+    const h=await fsIdbGet(FS_KEY);
+    if(!h){ backupDirState='none'; return; }
+    backupDir=h;
+    // requestPermission kræver et klik, saa ved opstart kan vi kun spørge
+    const p=await h.queryPermission({mode:'readwrite'});
+    backupDirState = (p==='granted') ? 'ok' : 'renew';
+  }catch(e){ console.warn('initBackupFolder',e); backupDirState='none'; }
+}
+
+async function pickBackupFolder(){
+  if(!fsSupported()){ toast('Denne browser understøtter ikke mappe-backup','err'); return; }
+  try{
+    const h=await window.showDirectoryPicker({mode:'readwrite'});
+    const p=await h.requestPermission({mode:'readwrite'});
+    if(p!=='granted'){ toast('Adgang til mappen blev ikke givet','err'); return; }
+    backupDir=h; backupDirState='ok';
+    await fsIdbPut(FS_KEY,h);
+    const ok=await writeBackupFolder(true);
+    toast(ok?('Backup-mappe valgt: '+h.name):'Mappe valgt, men skrivning fejlede', ok?'ok':'err');
+  }catch(e){
+    if(e && e.name==='AbortError') return; // brugeren lukkede dialogen
+    console.error('pickBackupFolder',e);
+    toast('Kunne ikke vælge mappe','err');
+  }
+  const m=document.getElementById('settingsModal');
+  if(m){ m.remove(); showSettings(); } else render();
+}
+
+async function renewBackupAccess(){
+  if(!backupDir) return;
+  try{
+    const p=await backupDir.requestPermission({mode:'readwrite'});
+    if(p==='granted'){
+      backupDirState='ok';
+      const ok=await writeBackupFolder(true);
+      toast(ok?'Adgang fornyet — backup gemt':'Adgang givet, men skrivning fejlede', ok?'ok':'err');
+    } else toast('Adgang blev ikke givet','err');
+  }catch(e){ console.error('renewBackupAccess',e); toast('Kunne ikke fornye adgang','err'); }
+  const m=document.getElementById('settingsModal');
+  if(m){ m.remove(); showSettings(); } else render();
+}
+
+async function forgetBackupFolder(){
+  if(!confirm('Fjern backup-mappen? Filerne i mappen slettes ikke — appen holder blot op med at skrive til den.')) return;
+  backupDir=null; backupDirState= fsSupported()?'none':'unsupported';
+  try{ await fsIdbDel(FS_KEY); }catch(e){ console.warn(e); }
+  localStorage.removeItem('vct_folder_last');
+  localStorage.removeItem('vct_folder_snap');
+  toast('Backup-mappe fjernet','ok');
+  const m=document.getElementById('settingsModal');
+  if(m){ m.remove(); showSettings(); } else render();
+}
+
+async function fsWriteFile(dir,name,text){
+  const fh=await dir.getFileHandle(name,{create:true});
+  const w=await fh.createWritable();
+  await w.write(text);
+  await w.close();
+}
+
+// Skriver nyeste data + ét dateret snapshot pr. dag. Fejler ALTID stille:
+// backup maa ikke kunne blokere registrering af timer.
+async function writeBackupFolder(force){
+  if(!backupDir || !fsSupported()) return false;
+  try{
+    const p=await backupDir.queryPermission({mode:'readwrite'});
+    if(p!=='granted'){ backupDirState='renew'; return false; }
+    const json=JSON.stringify(db,null,2);
+    await fsWriteFile(backupDir,'timer_data.json',json);
+    const dk=dateKey(new Date());
+    if(force || localStorage.getItem('vct_folder_snap')!==dk){
+      await fsWriteFile(backupDir,'timer_'+dk+'.json',json);
+      localStorage.setItem('vct_folder_snap',dk);
+      pruneSnapshots(); // ryd op i baggrunden
+    }
+    localStorage.setItem('vct_folder_last', new Date().toISOString());
+    backupDirState='ok';
+    return true;
+  }catch(e){
+    console.warn('writeBackupFolder',e);
+    return false;
+  }
+}
+
+async function pruneSnapshots(){
+  if(!backupDir) return;
+  try{
+    const cut=new Date(); cut.setDate(cut.getDate()-SNAP_KEEP_DAYS);
+    const gamle=[];
+    for await (const navn of backupDir.keys()){
+      const m=/^timer_(\d{4}-\d{2}-\d{2})\.json$/.exec(navn);
+      if(m && new Date(m[1])<cut) gamle.push(navn);
+    }
+    for(const navn of gamle) await backupDir.removeEntry(navn);
+  }catch(e){ console.warn('pruneSnapshots',e); }
+}
+
+function backupFolderStatusHTML(){
+  if(backupDirState==='unsupported'){
+    return '<div style="font-size:12px;color:var(--slate);line-height:1.5">Denne browser understøtter ikke mappe-backup. Brug Edge eller Chrome — eller knappen 💾 Backup i RAPPORT.</div>';
+  }
+  const sidst=localStorage.getItem('vct_folder_last');
+  const sidstTxt=sidst?new Date(sidst).toLocaleString('da-DK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'aldrig';
+  if(backupDirState==='ok'){
+    return '<div style="font-size:12px;color:var(--green);margin-bottom:8px">✓ Gemmer til <b>'+esc(backupDir.name)+'</b></div>'+
+      '<div style="font-size:11px;color:var(--slate);margin-bottom:10px">Sidst gemt: '+sidstTxt+'. Der skrives ved hver ændring, plus ét dateret snapshot pr. dag.</div>'+
+      '<div style="display:flex;gap:8px">'+
+      '<button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="pickBackupFolder()">Skift mappe</button>'+
+      '<button class="btn btn-ghost" style="flex:1;font-size:13px;color:var(--red)" onclick="forgetBackupFolder()">Fjern</button></div>';
+  }
+  if(backupDirState==='renew'){
+    return '<div style="font-size:12px;color:var(--amber);margin-bottom:8px">⚠ Adgang til <b>'+esc(backupDir?backupDir.name:'mappen')+'</b> skal fornyes</div>'+
+      '<div style="font-size:11px;color:var(--slate);margin-bottom:10px">Browseren har glemt tilladelsen. Der bliver <b>ikke</b> taget backup før du fornyer den. Sidst gemt: '+sidstTxt+'.</div>'+
+      '<div style="display:flex;gap:8px">'+
+      '<button class="btn btn-gold" style="flex:1;font-size:13px" onclick="renewBackupAccess()">Forny adgang</button>'+
+      '<button class="btn btn-ghost" style="flex:1;font-size:13px;color:var(--red)" onclick="forgetBackupFolder()">Fjern</button></div>';
+  }
+  return '<div style="font-size:12px;color:var(--mist);margin-bottom:10px;line-height:1.5">Dine timer ligger kun i denne browser. Vælg en mappe, saa gemmer appen automatisk en kopi — fx en mappe i OneDrive, saa den ogsaa kommer i skyen.</div>'+
+    '<button class="btn btn-gold" style="width:100%;font-size:14px" onclick="pickBackupFolder()">📁 Vælg backup-mappe</button>';
+}
+
 async function migrateToNewGist(){
   const tok=getToken();
   if(!tok){ toast('Indtast og gem token først','err'); return; }
@@ -2355,6 +2512,11 @@ function rapportHTML(){
       <div class="rys"><div class="rys-val" style="color:var(--green)">🌴 ${yearFerie}</div><div class="rys-lbl">Feriedage</div></div>
       <div class="rys"><div class="rys-val">${yearOffice+yearHome}</div><div class="rys-lbl">Arbejdsdage</div></div>
     </div>
+    ${(!syncEnabled() && backupDirState==='renew')?`<div style="background:rgba(245,172,0,.12);border:1.5px solid rgba(245,172,0,.35);border-radius:12px;padding:11px 13px;margin-bottom:9px">
+      <div style="font-size:12px;color:var(--amber);font-weight:700;margin-bottom:3px">⚠ Der tages ikke backup</div>
+      <div style="font-size:11px;color:var(--mist);margin-bottom:8px">Browseren har glemt adgangen til din backup-mappe.</div>
+      <button class="btn btn-gold" style="width:100%;font-size:13px" onclick="renewBackupAccess()">Forny adgang</button>
+    </div>`:''}
     <div style="display:flex;gap:7px;flex-wrap:wrap">
       <button class="btn btn-ghost" style="flex:1" onclick="importData()">📥 Importer</button>
       ${syncEnabled()
