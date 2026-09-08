@@ -252,7 +252,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.2</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.3</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -275,6 +275,10 @@ select option{background:#081828}
   </button>
 </nav>
 <main id="main"></main>
+<!-- Modaler skal ligge UDEN FOR #main: render() overskriver #main.innerHTML,
+     og baggrunds-pollen kalder render() hvert 10. sek. Laa modalen i #main,
+     blev den slettet midt i redigeringen (fejl fundet i v5.2). -->
+<div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
 <!-- ── FAB KNAPPER ── -->
@@ -692,7 +696,7 @@ function showIntro(){
   const backupTekst = erLokalFil()
     ? 'Dine timer ligger kun i denne browser. Appen henter automatisk en backup-fil til <b>Overførsler</b> én gang om dagen — flyt den gerne til OneDrive. Du kan altid hente en med <b>💾 Backup</b> i RAPPORT.'
     : 'Dine timer ligger kun i denne browser. Gå ind under <b>⚙️</b> og vælg en <b>backup-mappe</b> — helst i din OneDrive — så gemmer appen automatisk en kopi.';
-  document.getElementById('main').innerHTML+=`
+  document.getElementById('modalRoot').innerHTML+=`
   <div id="introModal" class="modal-wrap" style="z-index:252">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">👋 Velkommen til Timer</div>
@@ -723,7 +727,7 @@ function showSettings(){
     '<input type="number" id="dt'+i+'" value="'+esc(settingsDraft.dt[i])+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
     '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
   ).join('');
-  document.getElementById('main').innerHTML+=`
+  document.getElementById('modalRoot').innerHTML+=`
   <div id="settingsModal" class="modal-wrap">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">⚙️ Indstillinger</div>
@@ -1070,7 +1074,7 @@ async function migrateToNewGist(){
 }
 
 function showGistMigrated(nyId, gammelId, dage){
-  document.getElementById('main').innerHTML+=`
+  document.getElementById('modalRoot').innerHTML+=`
   <div id="migModal" class="modal-wrap" style="z-index:251">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px;color:var(--green)">✓ Ny Gist oprettet</div>
@@ -1104,7 +1108,7 @@ function kopierNytId(){
 function showSyncSetup(){
   const inp='width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none';
   const on=syncEnabled();
-  document.getElementById('main').innerHTML+=`
+  document.getElementById('modalRoot').innerHTML+=`
   <div id="syncModal" class="modal-wrap">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px">⚙️ Sync-opsætning</div>
@@ -1263,7 +1267,14 @@ function render(){
 // (cancelEdit/saveEdit kalder altid render() direkte).
 function safeRender(){
   if(editingIdx!==-1) return; // Redigeringsboks åben — vent til den lukkes
+  if(modalAaben()) return;    // En modal er åben — tegn ikke om under brugerens hænder
   render();
+}
+
+// Er der en modal fremme? Bruges af safeRender, saa baggrunds-sync ikke
+// forstyrrer mens brugeren retter noget.
+function modalAaben(){
+  return !!document.querySelector('.modal-wrap, #staleTimerModal, #scanPopup:not(.hidden)');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2785,7 +2796,7 @@ function downloadBackup(){
 
 function showFerieModal(){
   const today=dateKey(new Date());
-  document.getElementById('main').innerHTML+=`
+  document.getElementById('modalRoot').innerHTML+=`
   <div id="ferieModal" class="modal-wrap">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:14px">🌴 Sæt ferieperiode</div>
