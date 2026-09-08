@@ -252,7 +252,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.0</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.1</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -630,6 +630,38 @@ async function init(){
 //  INDSTILLINGER — arbejdstid, ON-numre, kategorier, frokost
 // ═════════════════════════════════════════════════════
 let catDraft=[]; // Arbejdskopi af kategorier mens modalen er åben
+// Kladde over HELE indstillingsformen. Nødvendig fordi modalen bliver
+// genopbygget midt i redigeringen (fx når man vælger backup-mappe) — uden
+// kladden blev felterne bygget fra cfg igen, og alt ugemt gik tabt.
+let settingsDraft=null;
+
+function initSettingsDraft(){
+  settingsDraft={
+    dt: cfg.dayTarget.map(v=>String(v)),
+    onRaw: cfg.quickOn.join(', '),
+    cats: JSON.parse(JSON.stringify(cfg.cats)),
+    frStart: cfg.frokostStart,
+    frStop: cfg.frokostStop,
+  };
+  catDraft=settingsDraft.cats; // samme reference, saa readCatRows() opdaterer kladden
+}
+
+// Læs formen ind i kladden. Skal kaldes FØR modalen genopbygges.
+function readSettingsForm(){
+  if(!settingsDraft) return;
+  for(let i=0;i<7;i++){ const el=document.getElementById('dt'+i); if(el) settingsDraft.dt[i]=el.value; }
+  const on=document.getElementById('onList'); if(on) settingsDraft.onRaw=on.value;
+  const a=document.getElementById('frStart'); if(a) settingsDraft.frStart=a.value;
+  const b=document.getElementById('frStop'); if(b) settingsDraft.frStop=b.value;
+  readCatRows();
+}
+
+// Luk uden at gemme — kladden skal væk, ellers dukker gamle indtastninger
+// op næste gang man åbner indstillinger.
+function lukSettings(){
+  settingsDraft=null;
+  const m=document.getElementById('settingsModal'); if(m) m.remove();
+}
 
 const S_INP='background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:9px 10px;font-size:14px;font-family:var(--font);outline:none';
 
@@ -670,11 +702,12 @@ function lukIntro(){
 }
 
 function showSettings(){
-  catDraft=JSON.parse(JSON.stringify(cfg.cats));
+  if(!settingsDraft) initSettingsDraft();
+  else catDraft=settingsDraft.cats; // genopbygning midt i redigering
   const dayRows=DAY_S.map((d,i)=>
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
     '<div style="width:38px;font-size:12px;color:var(--mist);font-weight:700">'+d+'</div>'+
-    '<input type="number" id="dt'+i+'" value="'+cfg.dayTarget[i]+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
+    '<input type="number" id="dt'+i+'" value="'+esc(settingsDraft.dt[i])+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
     '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
   ).join('');
   document.getElementById('main').innerHTML+=`
@@ -688,8 +721,8 @@ function showSettings(){
       <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Sæt 0 på fridage. Bruges til mål, over-/underskud og auto-beregning af syge- og §56-timer.</div>
 
       <div class="section-label" style="margin-bottom:8px">ON-numre</div>
-      <input type="text" id="onList" value="${cfg.quickOn.join(', ')}" style="${S_INP};width:100%">
-      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Adskilt med komma. Vises som genvejsknapper i TILFØJ.</div>
+      <input type="text" id="onList" value="${esc(settingsDraft.onRaw)}" style="${S_INP};width:100%">
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Genvejsknapper i TILFØJ til det du oftest arbejder på — job-numre eller maskinnavne, fx <b>2613, Beta M, My M</b>. Adskil med komma.</div>
 
       <div class="section-label" style="margin-bottom:8px">Kategorier</div>
       <div id="catRows">${catRowsHTML()}</div>
@@ -701,17 +734,17 @@ function showSettings(){
       <div style="height:18px"></div>`:''}
       <div class="section-label" style="margin-bottom:8px">Frokost</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <input type="time" id="frStart" value="${cfg.frokostStart}" style="${S_INP}">
+        <input type="time" id="frStart" value="${esc(settingsDraft.frStart)}" style="${S_INP}">
         <div style="color:var(--slate)">→</div>
-        <input type="time" id="frStop" value="${cfg.frokostStop}" style="${S_INP}">
+        <input type="time" id="frStop" value="${esc(settingsDraft.frStop)}" style="${S_INP}">
       </div>
       <div style="font-size:11px;color:var(--slate);margin:6px 0 20px">Standard man–fre. Kan stadig ændres eller springes over pr. dag under I DAG.</div>
 
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('settingsModal').remove()">Annuller</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="lukSettings()">Annuller</button>
         <button class="btn btn-gold" style="flex:1" onclick="saveSettings()">Gem ✓</button>
       </div>
-      ${!syncEnabled()?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="document.getElementById('settingsModal').remove();showIntro()">👋 Vis kom-i-gang-vejledning</button>`:''}
+      ${!syncEnabled()?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="lukSettings();showIntro()">👋 Vis kom-i-gang-vejledning</button>`:''}
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="showSyncSetup()">⚙️ Sync-opsætning →</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px;color:var(--red)" onclick="resetSettings()">Nulstil til standard</button>
     </div>
@@ -784,6 +817,7 @@ function saveSettings(){
   cfg.frokostStart=fs; cfg.frokostStop=fe;
   localStorage.setItem('vct_cfg',JSON.stringify(cfg));
   applyCfg();
+  settingsDraft=null; // gemt — kladden er ikke længere aktuel
   const m=document.getElementById('settingsModal'); if(m) m.remove();
   toast('Indstillinger gemt','ok');
   render();
@@ -794,6 +828,7 @@ function resetSettings(){
   localStorage.removeItem('vct_cfg');
   cfg=defaultCfg();
   applyCfg();
+  settingsDraft=null;
   const m=document.getElementById('settingsModal'); if(m) m.remove();
   toast('Indstillinger nulstillet','ok');
   render();
@@ -851,6 +886,7 @@ async function initBackupFolder(){
 }
 
 async function pickBackupFolder(){
+  readSettingsForm(); // Bevar ugemte indtastninger over genopbygningen
   if(!fsSupported()){ toast(erLokalFil()?'Virker ikke når appen kører som lokal fil':'Denne browser understøtter ikke mappe-backup','err'); return; }
   try{
     const h=await window.showDirectoryPicker({mode:'readwrite'});
@@ -870,6 +906,7 @@ async function pickBackupFolder(){
 }
 
 async function renewBackupAccess(){
+  readSettingsForm(); // Bevar ugemte indtastninger over genopbygningen
   if(!backupDir) return;
   try{
     const p=await backupDir.requestPermission({mode:'readwrite'});
@@ -884,6 +921,7 @@ async function renewBackupAccess(){
 }
 
 async function forgetBackupFolder(){
+  readSettingsForm(); // Bevar ugemte indtastninger over genopbygningen
   if(!confirm('Fjern backup-mappen? Filerne i mappen slettes ikke — appen holder blot op med at skrive til den.')) return;
   backupDir=null; backupDirState= fsSupported()?'none':'unsupported';
   try{ await fsIdbDel(FS_KEY); }catch(e){ console.warn(e); }
