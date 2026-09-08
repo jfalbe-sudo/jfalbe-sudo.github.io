@@ -239,8 +239,8 @@ select option{background:#081828}
 
 /* ── MODALER ───────────────────────────────── */
 /* position:fixed maaler fra viewporten, ikke fra body{max-width:480px} —
-   derfor centrerer og begraenser panelet sig selv, ellers straekkes modaler
-   over hele skaermen paa en PC. */
+   derfor centrerer og begrænser panelet sig selv, ellers strækkes modaler
+   over hele skærmen på en PC. */
 .modal-wrap{position:fixed;inset:0;background:rgba(4,15,26,.92);z-index:250;display:flex;align-items:flex-end;justify-content:center}
 .modal-panel{background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 32px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto}
 /* Smal knap i en flex-raekke. .btn saetter width:100%, hvilket ellers
@@ -252,7 +252,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v4.8</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.0</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -602,6 +602,9 @@ async function init(){
     }
     render();
     checkDailyBackup();
+    // Første gang: vis en kort vejledning. Kun i lokal tilstand — Jimmys
+    // app har sync opsat og når aldrig hertil.
+    if(!localStorage.getItem('vct_intro_seen')) setTimeout(showIntro,700);
     return; // Ingen ghLoad og ingen poll — der er ingen backend at tale med
   }
   // Load fra GitHub FØRST — Gist-data er altid den mest opdaterede kilde
@@ -629,6 +632,42 @@ async function init(){
 let catDraft=[]; // Arbejdskopi af kategorier mens modalen er åben
 
 const S_INP='background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:9px 10px;font-size:14px;font-family:var(--font);outline:none';
+
+// ═════════════════════════════════════════════════════
+//  KOM I GANG — vises første gang i lokal tilstand (kollega-installationer).
+//  Jimmys egen app har sync opsat og ser den derfor aldrig.
+// ═════════════════════════════════════════════════════
+function showIntro(){
+  if(document.getElementById('introModal')) return;
+  const trin=(nr,titel,tekst)=>
+    '<div style="display:flex;gap:11px;margin-bottom:14px">'+
+    '<div style="flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--ink);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">'+nr+'</div>'+
+    '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--snow);margin-bottom:2px">'+titel+'</div>'+
+    '<div style="font-size:12px;color:var(--mist);line-height:1.55">'+tekst+'</div></div></div>';
+  const backupTekst = erLokalFil()
+    ? 'Dine timer ligger kun i denne browser. Appen henter automatisk en backup-fil til <b>Overførsler</b> én gang om dagen — flyt den gerne til OneDrive. Du kan altid hente en med <b>💾 Backup</b> i RAPPORT.'
+    : 'Dine timer ligger kun i denne browser. Gå ind under <b>⚙️</b> og vælg en <b>backup-mappe</b> — helst i din OneDrive — så gemmer appen automatisk en kopi.';
+  document.getElementById('main').innerHTML+=`
+  <div id="introModal" class="modal-wrap" style="z-index:252">
+    <div class="modal-panel">
+      <div class="section-label" style="margin-bottom:4px">👋 Velkommen til Timer</div>
+      <div style="font-size:12px;color:var(--slate);margin-bottom:18px;line-height:1.55">Et værktøj til at holde styr på dine arbejdstimer. Alt ligger på <b>din egen PC</b> — ingen andre kan se dine timer.</div>
+      ${trin(1,'Sæt dine egne indstillinger','Gå ind under <b>RAPPORT → ⚙️</b> og ret arbejdstid pr. ugedag, dine ON-numre, kategorier og frokosttid, så det passer til dig.')}
+      ${trin(2,'Registrér din tid','Under <b>TILFØJ</b> indtaster du en periode manuelt. Eller tryk på den store <b>▶</b> nede i højre hjørne for at starte et ur, og stop det når du er færdig.')}
+      ${trin(3,'Husk backup', backupTekst)}
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-ghost" style="flex:1;font-size:13px" onclick="lukIntro()">Luk</button>
+        <button class="btn btn-gold" style="flex:1;font-size:13px" onclick="lukIntro();tab('rapport');showSettings()">⚙️ Indstillinger</button>
+      </div>
+      <div style="font-size:10px;color:var(--slate);margin-top:12px;text-align:center">Du kan altid finde denne vejledning igen under ⚙️</div>
+    </div>
+  </div>`;
+}
+
+function lukIntro(){
+  const m=document.getElementById('introModal'); if(m) m.remove();
+  localStorage.setItem('vct_intro_seen','1');
+}
 
 function showSettings(){
   catDraft=JSON.parse(JSON.stringify(cfg.cats));
@@ -672,6 +711,7 @@ function showSettings(){
         <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('settingsModal').remove()">Annuller</button>
         <button class="btn btn-gold" style="flex:1" onclick="saveSettings()">Gem ✓</button>
       </div>
+      ${!syncEnabled()?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="document.getElementById('settingsModal').remove();showIntro()">👋 Vis kom-i-gang-vejledning</button>`:''}
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="showSyncSetup()">⚙️ Sync-opsætning →</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px;color:var(--red)" onclick="resetSettings()">Nulstil til standard</button>
     </div>
@@ -773,7 +813,7 @@ function resetSettings(){
 //  slettes. Bruger File System Access API, som KUN findes i Chromium
 //  (Edge/Chrome) — alt herunder fejler stille i andre browsere.
 //  Stien kan ikke hardkodes; browseren kræver at brugeren peger på mappen.
-//  Handlen gemmes i IndexedDB, saa den huskes mellem sessioner.
+//  Handlen gemmes i IndexedDB, så den huskes mellem sessioner.
 // ═════════════════════════════════════════════════════
 const FS_DB='vct_fs', FS_STORE='handles', FS_KEY='backupDir';
 const SNAP_KEEP_DAYS=60;
@@ -781,6 +821,10 @@ let backupDir=null;
 let backupDirState='none'; // 'none' | 'ok' | 'renew' | 'unsupported'
 
 function fsSupported(){ return typeof window.showDirectoryPicker==='function'; }
+// Appen kan køre som en fil kollegaen har fået tilsendt (file://). Da
+// showDirectoryPicker kræver secure context, findes den ikke der — og
+// beskeden skal sige *hvorfor*, ikke bare at browseren ikke kan.
+function erLokalFil(){ return location.protocol==='file:' || !window.isSecureContext; }
 
 function fsIdb(){
   return new Promise((res,rej)=>{
@@ -800,14 +844,14 @@ async function initBackupFolder(){
     const h=await fsIdbGet(FS_KEY);
     if(!h){ backupDirState='none'; return; }
     backupDir=h;
-    // requestPermission kræver et klik, saa ved opstart kan vi kun spørge
+    // requestPermission kræver et klik, så ved opstart kan vi kun spørge
     const p=await h.queryPermission({mode:'readwrite'});
     backupDirState = (p==='granted') ? 'ok' : 'renew';
   }catch(e){ console.warn('initBackupFolder',e); backupDirState='none'; }
 }
 
 async function pickBackupFolder(){
-  if(!fsSupported()){ toast('Denne browser understøtter ikke mappe-backup','err'); return; }
+  if(!fsSupported()){ toast(erLokalFil()?'Virker ikke når appen kører som lokal fil':'Denne browser understøtter ikke mappe-backup','err'); return; }
   try{
     const h=await window.showDirectoryPicker({mode:'readwrite'});
     const p=await h.requestPermission({mode:'readwrite'});
@@ -896,6 +940,9 @@ async function pruneSnapshots(){
 
 function backupFolderStatusHTML(){
   if(backupDirState==='unsupported'){
+    if(erLokalFil()){
+      return '<div style="font-size:12px;color:var(--mist);line-height:1.6">Appen kører som en <b>lokal fil</b>, og browseren tillader ikke at skrive direkte i mapper derfra.<br><br>Dine timer gemmes stadig i browseren, og appen henter automatisk en backup-fil til <b>Overførsler</b> én gang om dagen. Flyt den gerne til OneDrive.<br><br>Du kan også hente en backup når som helst med <b>💾 Backup</b> i RAPPORT.</div>';
+    }
     return '<div style="font-size:12px;color:var(--slate);line-height:1.5">Denne browser understøtter ikke mappe-backup. Brug Edge eller Chrome — eller knappen 💾 Backup i RAPPORT.</div>';
   }
   const sidst=localStorage.getItem('vct_folder_last');
@@ -914,7 +961,7 @@ function backupFolderStatusHTML(){
       '<button class="btn btn-gold" style="flex:1;font-size:13px" onclick="renewBackupAccess()">Forny adgang</button>'+
       '<button class="btn btn-ghost" style="flex:1;font-size:13px;color:var(--red)" onclick="forgetBackupFolder()">Fjern</button></div>';
   }
-  return '<div style="font-size:12px;color:var(--mist);margin-bottom:10px;line-height:1.5">Dine timer ligger kun i denne browser. Vælg en mappe, saa gemmer appen automatisk en kopi — fx en mappe i OneDrive, saa den ogsaa kommer i skyen.</div>'+
+  return '<div style="font-size:12px;color:var(--mist);margin-bottom:10px;line-height:1.5">Dine timer ligger kun i denne browser. Vælg en mappe, så gemmer appen automatisk en kopi — fx en mappe i OneDrive, så den også kommer i skyen.</div>'+
     '<button class="btn btn-gold" style="width:100%;font-size:14px" onclick="pickBackupFolder()">📁 Vælg backup-mappe</button>';
 }
 
