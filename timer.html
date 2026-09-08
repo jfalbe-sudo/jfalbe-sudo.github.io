@@ -252,7 +252,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.1</span></div>
+    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.2</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -345,7 +345,7 @@ const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørd
 // bevidst UDEN for db, fordi ghLoad() overskriver db komplet.
 const CFG_DEFAULTS={
   dayTarget:[7.5,7.5,7.5,7.5,6.5,0,0],
-  quickOn:['ON','2613','2965','2973','3179','3200','3201'],
+  quickOn:[], // Tom som standard — hver bruger opretter sine egne genveje
   cats:[
     {label:'Admin/Møde',icon:'📋',noOn:true},
     {label:'Undervisning',icon:'🎓',noOn:true},
@@ -357,11 +357,24 @@ const CFG_DEFAULTS={
   frokostStop:'12:30',
 };
 function defaultCfg(){ return JSON.parse(JSON.stringify(CFG_DEFAULTS)); }
+// ON-numrene var hardkodede til og med v5.1. De er nu tomme som standard, saa
+// hver bruger opretter sine egne — men en enhed der ALLEREDE har registreret
+// timer er en eksisterende bruger og skal ikke miste sine genveje.
+const LEGACY_QUICK_ON=['ON','2613','2965','2973','3179','3200','3201'];
 function loadCfg(){
   try{
     const raw=localStorage.getItem('vct_cfg');
-    if(!raw) return defaultCfg();
-    return Object.assign(defaultCfg(), JSON.parse(raw));
+    if(raw) return Object.assign(defaultCfg(), JSON.parse(raw));
+    // Ingen gemt konfiguration: engangs-migrering for eksisterende brugere.
+    const d=defaultCfg();
+    try{
+      const db0=JSON.parse(localStorage.getItem('vct_db')||'{}');
+      if(Object.keys(db0.days||{}).length>0){
+        d.quickOn=LEGACY_QUICK_ON.slice();
+        localStorage.setItem('vct_cfg', JSON.stringify(d)); // gør det permanent
+      }
+    }catch{}
+    return d;
   }catch{ return defaultCfg(); }
 }
 let cfg=loadCfg();
@@ -722,7 +735,7 @@ function showSettings(){
 
       <div class="section-label" style="margin-bottom:8px">ON-numre</div>
       <input type="text" id="onList" value="${esc(settingsDraft.onRaw)}" style="${S_INP};width:100%">
-      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Genvejsknapper i TILFØJ til det du oftest arbejder på — job-numre eller maskinnavne, fx <b>2613, Beta M, My M</b>. Adskil med komma.</div>
+      <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Lav genvejsknapper til det du oftest arbejder på, saa du ikke skal skrive det hver gang. Job-numre eller maskinnavne — fx <b>2613, Beta M, My M</b>. Adskil med komma. Lad feltet stå tomt hvis du ikke vil have genveje.</div>
 
       <div class="section-label" style="margin-bottom:8px">Kategorier</div>
       <div id="catRows">${catRowsHTML()}</div>
@@ -796,8 +809,8 @@ function saveSettings(){
     dt.push(v);
   }
   // ON-numre
+  // Tom liste er tilladt — genveje er valgfrie, og ON kan altid skrives manuelt.
   const ons=document.getElementById('onList').value.split(',').map(s=>s.trim()).filter(Boolean);
-  if(ons.length===0){ toast('Mindst ét ON-nummer','err'); return; }
   // Kategorier
   const cats=catDraft.map(k=>({label:(k.label||'').trim(),icon:(k.icon||'').trim()||'📌',noOn:!!k.noOn})).filter(k=>k.label);
   if(cats.length===0){ toast('Mindst én kategori','err'); return; }
@@ -1968,7 +1981,10 @@ function tilfoejHTML(){
   if(!tilfoejStop)  tilfoejStop=now;
 
   const catBtns2=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
-  const chips=QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${o}')">${o}</button>`).join('');
+  // Tom liste maa ikke se ud som en fejl — forklar hvor genveje oprettes.
+  const chips=QUICK_ON.length
+    ? QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${esc(o)}')">${esc(o)}</button>`).join('')
+    : '<div style="font-size:11px;color:var(--slate);line-height:1.5">Ingen genveje endnu. Skriv nummeret nedenfor — eller opret faste genveje til det du ofte arbejder på under RAPPORT → ⚙️.</div>';
 
   // Byg tidslinje
   const tlHtml=buildTimelineEditor(dk);
@@ -2906,9 +2922,12 @@ function buildScanCatGrid(selCat){
       onclick="scanPickCat('${c.label}',this)">${c.icon} ${c.label}</button>`).join('');
 }
 function buildScanOnChips(selOn){
-  document.getElementById('scanOnChips').innerHTML=QUICK_ON.map(o=>`
+  // Tom genvejsliste: forklar det i stedet for at efterlade et tomt felt.
+  document.getElementById('scanOnChips').innerHTML=QUICK_ON.length
+    ? QUICK_ON.map(o=>`
     <button class="scan-on-chip${selOn===o?' sel':''}"
-      onclick="scanPickOn('${o}',this)">${o}</button>`).join('');
+      onclick="scanPickOn('${esc(o)}',this)">${esc(o)}</button>`).join('')
+    : '<div style="font-size:11px;color:var(--slate)">Ingen genveje — opret dem under RAPPORT → ⚙️</div>';
 }
 function scanPickCat(cat,btn){
   scanSelCat=cat;
