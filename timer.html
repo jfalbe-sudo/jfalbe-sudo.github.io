@@ -2,35 +2,88 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- maximum-scale/user-scalable fjernet i v5.5: blokerede zoom og brød WCAG 1.4.4 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#040F1A">
+<!-- CSP: appen har ingen eksterne scripts eller CDN'er. Policyen blokerer
+     fremmede scripts, formularer og <base>, og laaser netvaerket til GitHubs
+     API. Den stopper IKKE XSS i sig selv — 'unsafe-inline' er noedvendigt
+     saa laenge UI'et bruger inline-handlers. Vaernet mod XSS er esc() plus
+     validering ved indgangen (rensEntry/renTekst). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.github.com; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="theme-color" content="#051C2C">
+<!-- Ikon indlejret i filen, så den virker alene - også som lokal fil (v5.4) -->
+<link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACoUlEQVR42mWTWUhUYRTHf3PnmrmUYYJZaVmZlo2SJho+tGA9TNRDJUXSTr5USj0UPRQtFEFQSkG2B9lDOwTVU0hRIWKbJLZSQdE2hTp3psbxntODd6YZ+56+7fedc/7/87mWbzs62hiScKq/3/aIioEIKoKqogiogICojYoCNqhLTDdtobC1wTQSEk91vfvk7fZboBHYpnreTFKSE1FV/FaAy7fvg9rOuTAyLTU7b9xoNcN2uHgwrCLsqF2Cy+UCQFW5fKslCiOC72c3E8aMqjBUxBgMo8LWg6fptYL0WEG2HGiKgyNzW223CfFwalIiG1d48c4qZXhqMgB76lZS5snj6Lnr9Pot1AmICqaKRuG0lCTO7t/MxJws2l+84WnnG1SV6YWTqFlURXlRATX1++jp9Q/ooYIR+9qmFV4m5mSx+9hF1m4/ROP568zvX09L81r2NJxl0vix1K9bGiOmYkTgBLeBd/YMWp+/5Nqde9E68zO62TnnCYmfT9L6tJNF8ypJcBtRPQxQVITMkWmkJA2lveNVnGCRUe15T9uzTlKTk8nMSI9mbahTizqXVTVO7caHU519QNSZD8CqiomCivDlh4/A7z+UFefT1PzPqoYHBaA2PmsIVasKsYJBvn777gQUDERAbfpCfdy8+4iK4iksWzAnxiqbI/cnY+fUUlEyjRu3WwiF+qLOxfSB0HjmKqWFeeyqX82CuRU87ugClBlFUyjxFPDy7QcOH78Q03CKqSJ2pOZev0VN3V42r1nCwqpKSj35APzq8XPu0k0aTjRjBayogIqIa3Hd/iuv335c6vvVHZe2ipCRnoaK8MP3879WHzFsGFPzc2+ZobC/Ni83m9zszHIR2/kXA04MqK2MH5sJaiPOGkFMt9ER7g/U/gWVhwGm4OJ3lQAAAABJRU5ErkJggg==">
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
 <title>Timer · JIF</title>
 <style>
 :root {
-  --ink:#040F1A;--ink2:#081828;--ink3:#0d2236;--ink4:#122d47;--ink5:#1a3d5c;
-  --gold:#F5AC00;--green:#3DDC97;--red:#FF5C5C;--amber:#FF9F43;--blue:#4DA6FF;--purple:#B06EFF;
-  --slate:#6B8FA8;--mist:#A8C4D8;--snow:#EEF4F8;
-  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+  /* Baggrunde: --ink er Vestergaard Corporate Blue. Skalaen er strammet i v5.5,
+     saa al tekst holder WCAG AA (4,5:1) ogsaa paa de lyseste flader. */
+  --ink:#051C2C;--ink2:#09212F;--ink3:#0D2839;--ink4:#122F43;--ink5:#183A51;
+  /* --gold er praecis Corporate Yellow #F5AC00. Roed, blaa, lilla og slate er
+     lysnet i v5.5; de fejlede 4,5:1 paa --ink4/--ink5. */
+  --gold:#F5AC00;--green:#3DDC97;--red:#FF7B7B;--amber:#FF9F43;--blue:#6FB8FF;--purple:#C99BFF;
+  /* --slate skal kunne skelnes fra --mist, ellers kollapser teksthierarkiet.
+     #8FAAC0 giver 1,33:1 mod --mist og holder 4,92:1 paa --ink5. */
+  --slate:#8FAAC0;--mist:#A8C4D8;--snow:#EEF4F8;
+  /* Rammer og skillelinjer. rgba(255,255,255,.1) gav kun 1,3:1 og brød
+     1.4.11 Non-text Contrast. --line giver mindst 3,49:1 paa alle flader. */
+  --line:#678FB3;
+  /* Tahoma er Vestergaards web-font (brand-retningslinjer). */
+  --font:Tahoma,Verdana,Geneva,sans-serif;
   --mono:'SF Mono','Consolas',monospace;--r:16px;--r2:12px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:var(--font);background:var(--ink);color:var(--snow);min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
+/* ── TILGÆNGELIGHED (v5.5) ──────────────────────────────────────
+   Synlig fokusring overalt. Før v5.5 satte ~20 felter outline:none inline,
+   hvilket slog stylesheet-reglen — de havde ingen fokusmarkering.
+   De inline erklæringer er nu fjernet, saa fokus styres udelukkende herfra.
+   Sæt aldrig outline:none inline igen (hård regel 18). */
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+/* Browserens standard-placeholder gav kun 3,3:1 mod --ink3. */
+::placeholder{color:var(--slate);opacity:1}
+/* Mus og touch skal ikke se ringen — kun tastatur. */
+:focus:not(:focus-visible){outline:none}
+/* Tilbagemelding med mus. Kun paa enheder der rent faktisk har en
+   markoer, saa touch ikke faar haengende hover-tilstande. */
+@media (hover:hover){
+  .btn:hover,.cat-btn:hover,.on-chip:hover,.daytype-btn:hover,
+  .entry-btn:hover,.frokost-skip:hover,.nav-btn:hover,
+  .wr-hdr[role="button"]:hover,.report-week-hdr:hover{filter:brightness(1.18)}
+  .fab:hover{filter:brightness(1.12)}
+}
+/* Respektér brugere der har slået bevægelse fra i systemet. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+/* Kun for skærmlæsere — giver tilgængeligt navn uden synlig tekst. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body{font-family:var(--font);background:var(--ink);color:var(--snow);height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;overflow:hidden}
 .app-header{padding:14px 18px 10px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50;background:var(--ink);display:flex;align-items:center;justify-content:space-between}
-.logo{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.logo{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--snow);text-transform:uppercase}
+/* Brandets gule regel: ved to ord er det sidste gult. */
+.logo .gul{color:var(--gold)}
+.logo .ver{font-size:9px;letter-spacing:1px;color:var(--mist)}
 .date-line{font-size:13px;color:var(--mist);margin-top:2px;font-weight:500}
 .week-chip{background:var(--ink4);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--gold)}
-.sync-indicator{width:8px;height:8px;border-radius:50%;background:var(--slate);flex-shrink:0;transition:background .3s}
-.sync-indicator.syncing{background:var(--amber);animation:pulse 1s ease-in-out infinite}
-.sync-indicator.ok{background:var(--green)}
-.sync-indicator.err{background:var(--red)}
+/* Status vises med BAADE tegn og farve — farve alene bryder WCAG 1.4.1,
+   og de fire tilstande var ikke til at skelne paa en 8px prik. */
+.sync-indicator{width:18px;height:18px;border-radius:50%;background:transparent;color:var(--slate);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;line-height:1;transition:color .3s;border:1.5px solid currentColor}
+.sync-indicator.syncing{color:var(--amber);animation:pulse 1s ease-in-out infinite}
+.sync-indicator.ok{color:var(--green)}
+.sync-indicator.err{color:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:53px;z-index:49}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
 .nav-btn svg{width:17px;height:17px}
 .nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
-main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:column;gap:10px}
+main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:column;gap:10px}
 .card{background:var(--ink2);border-radius:var(--r);padding:14px}
 .section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:10px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
@@ -63,7 +116,7 @@ main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:c
 .entry-btn-sep{width:1px;background:rgba(255,255,255,.05)}
 .edit-panel{background:var(--ink4);padding:11px 12px;border-top:1px solid rgba(245,172,0,.2)}
 .edit-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
-.edit-input{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:10px 11px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none}
+.edit-input{width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:10px;color:var(--snow);padding:10px 11px;font-size:15px;font-family:var(--font);-webkit-appearance:none}
 .edit-input:focus{border-color:var(--gold)}
 .edit-btns{display:flex;gap:7px}
 .btn-save-edit{flex:1;background:var(--gold);color:var(--ink);border:none;border-radius:50px;padding:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font)}
@@ -77,21 +130,21 @@ main{flex:1;overflow-y:auto;padding:12px 12px 40px;display:flex;flex-direction:c
 .btn:active{transform:scale(.97);opacity:.9}
 .btn-gold{background:var(--gold);color:var(--ink)}
 .btn-green{background:var(--green);color:var(--ink)}
-.btn-red{background:var(--red);color:#fff}
+.btn-red{background:var(--red);color:var(--ink)}
 .btn-ghost{background:var(--ink4);color:var(--snow)}
 .btn-sm{padding:8px 14px;font-size:12px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
 .btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:5px;width:100%}
 .form-col{display:flex;flex-direction:column;gap:10px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
-select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);outline:none;-webkit-appearance:none;transition:border-color .15s}
+select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);-webkit-appearance:none;transition:border-color .15s}
 select:focus,input:focus{border-color:var(--gold)}
 select option{background:#081828}
 .on-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
-.on-chip{background:var(--ink4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow)}
+.on-chip{background:var(--ink4);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow)}
 .on-chip.sel{background:rgba(245,172,0,.2);border-color:var(--gold);color:var(--gold)}
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
-.cat-btn{background:var(--ink4);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow)}
+.cat-btn{background:var(--ink4);border:1.5px solid var(--line);border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:var(--snow)}
 .cat-btn.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
 .special-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
 .special-btn{border:1.5px solid;border-radius:var(--r2);padding:10px 8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;background:transparent;font-family:var(--font)}
@@ -103,7 +156,8 @@ select option{background:#081828}
 .week-row.today{border-color:rgba(245,172,0,.3)}
 .week-row.syg-day{border-color:rgba(255,92,92,.3);background:rgba(255,92,92,.05)}
 .week-row.barnsyg-day{border-color:rgba(77,166,255,.3);background:rgba(77,166,255,.05)}
-.wr-hdr{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer}
+.wr-hdr{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:default}
+.wr-hdr[role="button"]{cursor:pointer}
 .wr-day{width:36px;flex-shrink:0}
 .wr-name{font-size:13px;font-weight:700}
 .wr-date{font-size:10px;color:var(--slate);margin-top:1px}
@@ -137,7 +191,7 @@ select option{background:#081828}
 .rys-val{font-size:20px;font-weight:900}
 .rys-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
 .daytype-row{display:flex;gap:6px;flex-wrap:wrap}
-.daytype-btn{border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;font-family:var(--font);color:var(--slate)}
+.daytype-btn{border:1.5px solid var(--line);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;font-family:var(--font);color:var(--slate)}
 .daytype-btn.sel-kontor{background:rgba(61,220,151,.15);border-color:var(--green);color:var(--green)}
 .daytype-btn.sel-hjemme{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
 .daytype-btn.sel-syg{background:rgba(255,92,92,.15);border-color:var(--red);color:var(--red)}
@@ -154,11 +208,12 @@ select option{background:#081828}
 .timeline-track{position:relative;height:52px;background:var(--ink3);border-radius:10px;overflow:hidden;cursor:crosshair}
 .timeline-block{position:absolute;top:4px;bottom:4px;border-radius:6px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;overflow:hidden;white-space:nowrap;cursor:pointer;transition:opacity .15s;pointer-events:none}
 .timeline-block.normal{background:rgba(245,172,0,.7);color:var(--ink)}
-.timeline-block.syg{background:rgba(255,92,92,.7);color:#fff}
-.timeline-block.barnsyg{background:rgba(77,166,255,.7);color:#fff}
-.timeline-block.p56{background:rgba(176,110,255,.7);color:#fff}
-.timeline-block.ferie{background:rgba(61,220,151,.5);color:var(--ink)}
-.timeline-block.overlap{background:rgba(255,50,50,.9);color:#fff;border:2px solid var(--red)}
+/* Efterregnet mod --ink3: hvid tekst gav 3,70-4,30:1 paa disse flader. */
+.timeline-block.syg{background:rgba(255,123,123,.85);color:#2A0505}
+.timeline-block.barnsyg{background:rgba(111,184,255,.85);color:#041426}
+.timeline-block.p56{background:rgba(201,155,255,.85);color:#1A0033}
+.timeline-block.ferie{background:rgba(61,220,151,.7);color:var(--ink)}
+.timeline-block.overlap{background:rgba(255,123,123,.95);color:#2A0505;border:2px solid var(--red)}
 .timeline-now{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);opacity:.8;pointer-events:none}
 .tl-sel{position:absolute;top:0;bottom:0;background:rgba(245,172,0,.18);border:2px solid var(--gold);border-radius:7px;pointer-events:auto;box-sizing:border-box}
 .tl-handle{position:absolute;top:0;bottom:0;width:18px;background:var(--gold);opacity:.85;border-radius:5px;cursor:ew-resize;display:flex;align-items:center;justify-content:center}
@@ -190,13 +245,13 @@ select option{background:#081828}
 .frokost-info{flex:1;min-width:0}
 .frokost-title{font-size:12px;font-weight:700;color:var(--mist)}
 .frokost-time{font-size:11px;color:var(--slate)}
-.frokost-skip{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--slate);font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.frokost-skip{background:transparent;border:1px solid var(--line);color:var(--slate);font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .frokost-skip:hover{border-color:var(--red);color:var(--red)}
 .frokost-skip.skipped{border-color:rgba(61,220,151,.4);color:var(--green)}
 /* Frokost blok på tidslinje */
 .dag-tl-frokost{position:absolute;top:2px;bottom:2px;border-radius:5px;background:repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0px,rgba(255,255,255,.07) 4px,transparent 4px,transparent 8px);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.3);font-weight:700;overflow:hidden;pointer-events:none}
 /* ── FAB KNAPPER ──────────────────────────────────────── */
-.fab-group{position:fixed;bottom:76px;right:14px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.fab-group{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));right:14px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .fab{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.45);transition:transform .12s}
 .fab:active{transform:scale(.9)}
 .fab-start{background:var(--gold)}
@@ -233,7 +288,7 @@ select option{background:#081828}
 .scan-on-chip{background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer}
 .scan-on-chip.sel{background:rgba(245,172,0,.15);border-color:var(--gold);color:var(--gold)}
 .scan-on-custom{width:100%;background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:10px;box-sizing:border-box}
-.scan-on-custom:focus{outline:none;border-color:var(--gold)}
+.scan-on-custom:focus{border-color:var(--gold)}
 .scan-confirm{width:100%;padding:14px;background:var(--gold);color:var(--ink);font-size:15px;font-weight:900;border:none;border-radius:12px;cursor:pointer}
 .scan-dismiss{width:100%;padding:10px;background:transparent;border:none;color:var(--slate);font-size:13px;cursor:pointer;margin-top:4px}
 
@@ -252,11 +307,11 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · Timer <span style="font-size:9px;opacity:.5;letter-spacing:1px">v5.3</span></div>
+    <div class="logo">Vestergaard · <span class="gul">Timer</span> <span class="ver" id="appVer">v5.5.0</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
-    <div class="sync-indicator" id="syncDot" title="Sync status"></div>
+    <div class="sync-indicator" id="syncDot" role="img" title="Sync status"></div>
     <div class="week-chip" id="hdrWeek">Uge —</div>
   </div>
 </header>
@@ -279,7 +334,7 @@ select option{background:#081828}
      og baggrunds-pollen kalder render() hvert 10. sek. Laa modalen i #main,
      blev den slettet midt i redigeringen (fejl fundet i v5.2). -->
 <div id="modalRoot"></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ── FAB KNAPPER ── -->
 <div class="fab-group">
@@ -326,13 +381,24 @@ select option{background:#081828}
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
+// Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
+const APP_VERSION = '5.5.0';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
 // i denne browser, og der tales slet ikke med GitHub.
+// Samme moenster ved indtastning og ved kald, saa appen ikke kan gemme et
+// ID den bagefter naegter at bruge.
+const GIST_ID_RE=/^[0-9a-f]{20,40}$/i;
 function getGistId(){ return localStorage.getItem('vct_gistid')||''; }
 function getToken(){ return localStorage.getItem('vct_ghtoken')||''; }
-function gistApi(){ return `https://api.github.com/gists/${getGistId()}`; }
+function gistApi(){
+  const id=getGistId();
+  // Valider her ogsaa, saa en vaerdi skrevet direkte i localStorage ikke kan
+  // pege tokenet mod et andet endpoint via '..' eller '@'.
+  if(!GIST_ID_RE.test(id)) throw new Error('Ugyldigt gist-ID');
+  return 'https://api.github.com/gists/'+id;
+}
 function syncEnabled(){ return !!(getGistId() && getToken()); }
 
 // ═══════════════════════════════════════════════════════
@@ -368,7 +434,23 @@ const LEGACY_QUICK_ON=['ON','2613','2965','2973','3179','3200','3201'];
 function loadCfg(){
   try{
     const raw=localStorage.getItem('vct_cfg');
-    if(raw) return Object.assign(defaultCfg(), JSON.parse(raw));
+    if(raw){
+      const gemt=JSON.parse(raw);
+      const ud=Object.assign(defaultCfg(), gemt);
+      // Byg felterne op igen, saa en beskadiget eller manipuleret vct_cfg
+      // hverken kan braekke appen ved boot eller smugle tegn ind i
+      // inline-handlers.
+      ud.quickOn = Array.isArray(ud.quickOn) ? ud.quickOn.map(o=>renTekst(o,40)).filter(Boolean) : [];
+      ud.cats = Array.isArray(ud.cats) && ud.cats.length
+        ? ud.cats.map(k=>({label:renTekst(k&&k.label,40),icon:renTekst(k&&k.icon,8)||'📌',noOn:!!(k&&k.noOn)})).filter(k=>k.label)
+        : defaultCfg().cats;
+      ud.dayTarget = Array.isArray(ud.dayTarget) && ud.dayTarget.length===7
+        ? ud.dayTarget.map(v=>{ const t=Number(v); return Number.isFinite(t)&&t>=0&&t<=24 ? t : 0; })
+        : defaultCfg().dayTarget;
+      if(!HHMM.test(ud.frokostStart)) ud.frokostStart=CFG_DEFAULTS.frokostStart;
+      if(!HHMM.test(ud.frokostStop))  ud.frokostStop =CFG_DEFAULTS.frokostStop;
+      return ud;
+    }
     // Ingen gemt konfiguration: engangs-migrering for eksisterende brugere.
     const d=defaultCfg();
     try{
@@ -423,12 +505,16 @@ let syncTimer=null, isDirty=false;
 // ═══════════════════════════════════════════════════════
 function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | '' (= lokal tilstand)
   const d=document.getElementById('syncDot');
-  if(d){
-    d.className='sync-indicator'+(s?' '+s:'');
-    d.title=s==='syncing'?'Synkroniserer...':s==='ok'?'Synkroniseret med Gist'
-      :s==='err'?'Sync-fejl — data er gemt lokalt'
-      :'Lokal tilstand — data gemmes kun i denne browser';
-  }
+  if(!d) return;
+  // Tegn + tekst + farve. Farve alene ville bryde WCAG 1.4.1.
+  const t = s==='syncing' ? {tegn:'↻', txt:'Synkroniserer'}
+          : s==='ok'      ? {tegn:'✓', txt:'Synkroniseret med Gist'}
+          : s==='err'     ? {tegn:'!', txt:'Sync-fejl — data er gemt lokalt'}
+          :                 {tegn:'●', txt:'Lokal tilstand — data gemmes kun i denne browser'};
+  d.className='sync-indicator'+(s?' '+s:'');
+  d.textContent=t.tegn;
+  d.title=t.txt;
+  d.setAttribute('aria-label','Sync: '+t.txt);
 }
 
 async function ghLoad(){
@@ -445,6 +531,37 @@ async function ghLoad(){
     const fileContent=j.files[GIST_FILE]?.content;
     if(!fileContent) throw new Error('Ingen data i Gist');
     const decoded=JSON.parse(fileContent);
+    // ── Gist-indhold behandles som data udefra ──
+    // Gist-ID'et indtastes manuelt, og appen opfordrer selv til at flytte det
+    // mellem enheder — en kollega kan derfor komme til at indtaste et fremmed
+    // ID. Samme validering som ved filimport.
+    if(decoded && typeof decoded==='object'){
+      const rene={};
+      for(const d of Object.keys(decoded.days||{})){
+        if(!DATOKEY.test(d)) continue;
+        const dag=decoded.days[d]||{};
+        rene[d]={
+          entries:(Array.isArray(dag.entries)?dag.entries:[]).map(x=>rensEntry(x,d)).filter(Boolean),
+          type: DAGTYPER.has(dag.type)?dag.type:'kontor'
+        };
+      }
+      decoded.days=rene;
+      const fc={};
+      for(const d of Object.keys(decoded.frokostCustom||{})){
+        const v=decoded.frokostCustom[d];
+        if(DATOKEY.test(d) && v && HHMM.test(v.start) && HHMM.test(v.stop)) fc[d]={start:v.start,stop:v.stop};
+      }
+      decoded.frokostCustom=fc;
+      const at=decoded.activeTimer;
+      if(at && typeof at==='object' && HHMM.test(at.startHM)){
+        decoded.activeTimer={
+          on:renTekst(at.on,40), cat:renTekst(at.cat,40), label:renTekst(at.label,60),
+          startHM:at.startHM,
+          special:SPECTYPER.has(at.special)?at.special:null,
+          date:DATOKEY.test(at.date)?at.date:dateKey(new Date())
+        };
+      } else if(at!==undefined){ decoded.activeTimer=null; }
+    }
     // ── Beskyttelse mod datatab ──
     // En tom Gist må ALDRIG overskrive lokale timer. Det sker når man peger
     // appen på en nyoprettet Gist (fx ved flytning), eller når en kollega har
@@ -668,8 +785,8 @@ function readSettingsForm(){
   if(!settingsDraft) return;
   for(let i=0;i<7;i++){ const el=document.getElementById('dt'+i); if(el) settingsDraft.dt[i]=el.value; }
   const on=document.getElementById('onList'); if(on) settingsDraft.onRaw=on.value;
-  const a=document.getElementById('frStart'); if(a) settingsDraft.frStart=a.value;
-  const b=document.getElementById('frStop'); if(b) settingsDraft.frStop=b.value;
+  const a=document.getElementById('setFrStart'); if(a) settingsDraft.frStart=a.value;
+  const b=document.getElementById('setFrStop'); if(b) settingsDraft.frStop=b.value;
   readCatRows();
 }
 
@@ -680,7 +797,7 @@ function lukSettings(){
   const m=document.getElementById('settingsModal'); if(m) m.remove();
 }
 
-const S_INP='background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--snow);padding:9px 10px;font-size:14px;font-family:var(--font);outline:none';
+const S_INP='background:var(--ink3);border:1.5px solid var(--line);border-radius:10px;color:var(--snow);padding:9px 10px;font-size:14px;font-family:var(--font)';
 
 // ═════════════════════════════════════════════════════
 //  KOM I GANG — vises første gang i lokal tilstand (kollega-installationer).
@@ -697,7 +814,7 @@ function showIntro(){
     ? 'Dine timer ligger kun i denne browser. Appen henter automatisk en backup-fil til <b>Overførsler</b> én gang om dagen — flyt den gerne til OneDrive. Du kan altid hente en med <b>💾 Backup</b> i RAPPORT.'
     : 'Dine timer ligger kun i denne browser. Gå ind under <b>⚙️</b> og vælg en <b>backup-mappe</b> — helst i din OneDrive — så gemmer appen automatisk en kopi.';
   document.getElementById('modalRoot').innerHTML+=`
-  <div id="introModal" class="modal-wrap" style="z-index:252">
+  <div id="introModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Velkommen" style="z-index:252">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">👋 Velkommen til Timer</div>
       <div style="font-size:12px;color:var(--slate);margin-bottom:18px;line-height:1.55">Et værktøj til at holde styr på dine arbejdstimer. Alt ligger på <b>din egen PC</b> — ingen andre kan se dine timer.</div>
@@ -723,12 +840,12 @@ function showSettings(){
   else catDraft=settingsDraft.cats; // genopbygning midt i redigering
   const dayRows=DAY_S.map((d,i)=>
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-    '<div style="width:38px;font-size:12px;color:var(--mist);font-weight:700">'+d+'</div>'+
+    '<label for="dt'+i+'" style="width:38px;font-size:12px;color:var(--mist);font-weight:700">'+d+'</label>'+
     '<input type="number" id="dt'+i+'" value="'+esc(settingsDraft.dt[i])+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
     '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
   ).join('');
   document.getElementById('modalRoot').innerHTML+=`
-  <div id="settingsModal" class="modal-wrap">
+  <div id="settingsModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Indstillinger">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">⚙️ Indstillinger</div>
       <div style="font-size:11px;color:var(--slate);margin-bottom:18px">Gælder kun denne enhed. Dine timer røres ikke.</div>
@@ -738,6 +855,7 @@ function showSettings(){
       <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Sæt 0 på fridage. Bruges til mål, over-/underskud og auto-beregning af syge- og §56-timer.</div>
 
       <div class="section-label" style="margin-bottom:8px">ON-numre</div>
+      <label class="sr-only" for="onList">ON-numre, adskilt med komma</label>
       <input type="text" id="onList" value="${esc(settingsDraft.onRaw)}" style="${S_INP};width:100%">
       <div style="font-size:11px;color:var(--slate);margin:6px 0 18px">Lav genvejsknapper til det du oftest arbejder på, saa du ikke skal skrive det hver gang. Job-numre eller maskinnavne — fx <b>2613, Beta M, My M</b>. Adskil med komma. Lad feltet stå tomt hvis du ikke vil have genveje.</div>
 
@@ -751,9 +869,11 @@ function showSettings(){
       <div style="height:18px"></div>`:''}
       <div class="section-label" style="margin-bottom:8px">Frokost</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <input type="time" id="frStart" value="${esc(settingsDraft.frStart)}" style="${S_INP}">
+        <label class="sr-only" for="setFrStart">Frokost starter</label>
+        <input type="time" id="setFrStart" value="${esc(settingsDraft.frStart)}" style="${S_INP}">
         <div style="color:var(--slate)">→</div>
-        <input type="time" id="frStop" value="${esc(settingsDraft.frStop)}" style="${S_INP}">
+        <label class="sr-only" for="setFrStop">Frokost slutter</label>
+        <input type="time" id="setFrStop" value="${esc(settingsDraft.frStop)}" style="${S_INP}">
       </div>
       <div style="font-size:11px;color:var(--slate);margin:6px 0 20px">Standard man–fre. Kan stadig ændres eller springes over pr. dag under I DAG.</div>
 
@@ -766,21 +886,53 @@ function showSettings(){
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px;color:var(--red)" onclick="resetSettings()">Nulstil til standard</button>
     </div>
   </div>`;
+  fokuserModal('settingsModal');
 }
 
 function catRowsHTML(){
   return catDraft.map((k,i)=>
     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
-    '<input type="text" id="cIcon'+i+'" value="'+esc(k.icon||'')+'" style="'+S_INP+';width:44px;text-align:center">'+
-    '<input type="text" id="cName'+i+'" value="'+esc(k.label||'')+'" style="'+S_INP+';flex:1;min-width:0">'+
-    '<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--slate);white-space:nowrap" title="Kræver ikke ON-nummer">'+
-    '<input type="checkbox" id="cNoOn'+i+'"'+(k.noOn?' checked':'')+'>u/ON</label>'+
-    '<button class="btn btn-ghost btn-slim" style="padding:0 11px;color:var(--red);font-size:16px" onclick="removeCatRow('+i+')">×</button>'+
+    '<input type="text" id="cIcon'+i+'" value="'+esc(k.icon||'')+'" aria-label="Ikon for kategori '+(i+1)+'" style="'+S_INP+';width:44px;text-align:center">'+
+    '<input type="text" id="cName'+i+'" value="'+esc(k.label||'')+'" aria-label="Navn paa kategori '+(i+1)+'" style="'+S_INP+';flex:1;min-width:0">'+
+    '<label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--slate);white-space:nowrap;padding:5px 0;min-height:24px" title="Kræver ikke ON-nummer">'+
+    '<input type="checkbox" id="cNoOn'+i+'"'+(k.noOn?' checked':'')+' style="width:20px;height:20px;accent-color:var(--gold)">u/ON</label>'+
+    '<button class="btn btn-ghost btn-slim" style="padding:5px 11px;min-height:44px;color:var(--red);font-size:16px" onclick="removeCatRow('+i+')" aria-label="Fjern kategori '+(i+1)+'">×</button>'+
     '</div>'
   ).join('');
 }
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Escaper ogsaa ' for attributkontekster. BEMAERK: det beskytter IKKE i
+// onclick="f('...')" — HTML-parseren afkoder &#39; til ' foer JS kompileres.
+// Vaerdier der havner i inline-handlers renses derfor ved kilden med
+// renTekst() i saveSettings() og loadCfg().
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Renser fritekst der bliver til ON-numre og kategorinavne. Bruges ved
+// kilden (stregkodescanning, import), saa skadelige vaerdier aldrig naar db.
+// Gyldige formater til validering af data udefra (import og gist).
+const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/;
+const DATOKEY=/^\d{4}-\d{2}-\d{2}$/;
+const DAGTYPER=new Set(['kontor','hjemme','syg','barnsyg','p56','ferie','fri']);
+const SPECTYPER=new Set(['syg','barnsyg','p56']);
+// Renser een registrering fra en importfil eller en gist. Returnerer null
+// hvis posten ikke kan bruges, saa kaldere kan filtrere den fra.
+function rensEntry(e,dk){
+  if(!e||typeof e!=='object') return null;
+  if(!HHMM.test(e.start)||!HHMM.test(e.stop)) return null;
+  const t=Number(e.hours);
+  const ud={
+    on: renTekst(e.on,40),
+    cat: renTekst(e.cat,40),
+    start: e.start,
+    stop: e.stop,
+    hours: (Number.isFinite(t)&&t>=0&&t<=24) ? t : 0,
+    date: DATOKEY.test(e.date) ? e.date : dk,
+  };
+  if(SPECTYPER.has(e.special)) ud.special=e.special;
+  if(e.auto_special) ud.auto_special=true;
+  if(e.frokost) ud.frokost=true;
+  return ud;
+}
+function renTekst(s,maks){ return String(s==null?'':s).replace(/[\u0000-\u001F\u007F<>"'&\\]/g,'').trim().slice(0,maks||40); }
 
 function readCatRows(){ // Læs felterne ind i catDraft, så indtastninger ikke tabes ved re-render
   catDraft.forEach((k,i)=>{
@@ -814,14 +966,15 @@ function saveSettings(){
   }
   // ON-numre
   // Tom liste er tilladt — genveje er valgfrie, og ON kan altid skrives manuelt.
-  const ons=document.getElementById('onList').value.split(',').map(s=>s.trim()).filter(Boolean);
+  // renTekst fjerner tegn der kan bryde ud af inline-handlers.
+  const ons=document.getElementById('onList').value.split(',').map(s=>renTekst(s,40)).filter(Boolean);
   // Kategorier
-  const cats=catDraft.map(k=>({label:(k.label||'').trim(),icon:(k.icon||'').trim()||'📌',noOn:!!k.noOn})).filter(k=>k.label);
+  const cats=catDraft.map(k=>({label:renTekst(k.label,40),icon:renTekst(k.icon,8)||'📌',noOn:!!k.noOn})).filter(k=>k.label);
   if(cats.length===0){ toast('Mindst én kategori','err'); return; }
   const names=cats.map(k=>k.label);
   if(new Set(names).size!==names.length){ toast('To kategorier har samme navn','err'); return; }
   // Frokost
-  const fs=document.getElementById('frStart').value, fe=document.getElementById('frStop').value;
+  const fs=document.getElementById('setFrStart').value, fe=document.getElementById('setFrStop').value;
   if(!fs||!fe||hmToH(fe)<=hmToH(fs)){ toast('Frokost-slut skal ligge efter start','err'); return; }
   // Advar hvis en kategori i brug forsvinder — gamle entries beholder deres værdi,
   // men kategorien kan ikke længere vælges.
@@ -1075,14 +1228,14 @@ async function migrateToNewGist(){
 
 function showGistMigrated(nyId, gammelId, dage){
   document.getElementById('modalRoot').innerHTML+=`
-  <div id="migModal" class="modal-wrap" style="z-index:251">
+  <div id="migModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Ny Gist oprettet" style="z-index:251">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px;color:var(--green)">✓ Ny Gist oprettet</div>
       <div style="font-size:13px;color:var(--mist);line-height:1.6;margin-bottom:16px">
         Dine <b>${dage} dage</b> ligger nu i en ny secret Gist, og denne enhed bruger den.
       </div>
       <div style="font-size:11px;color:var(--slate);margin-bottom:4px">NYT GIST-ID — indtast dette på din telefon</div>
-      <div style="background:var(--ink3);border:1.5px solid rgba(61,220,151,.3);border-radius:10px;padding:12px;font-family:var(--mono);font-size:13px;word-break:break-all;color:var(--green);margin-bottom:8px" id="nyGistId">${nyId}</div>
+      <div style="background:var(--ink3);border:1.5px solid rgba(61,220,151,.3);border-radius:10px;padding:12px;font-family:var(--mono);font-size:13px;word-break:break-all;color:var(--green);margin-bottom:8px" id="nyGistId">${esc(nyId)}</div>
       <button class="btn btn-ghost" style="width:100%;font-size:13px;margin-bottom:18px" onclick="kopierNytId()">📋 Kopiér ID</button>
       <div class="section-label" style="margin-bottom:8px">Tilbage står</div>
       <div style="font-size:13px;color:var(--mist);line-height:1.7;margin-bottom:16px">
@@ -1091,7 +1244,7 @@ function showGistMigrated(nyId, gammelId, dage){
         3. <b>Først derefter:</b> slet den gamle Gist på GitHub
       </div>
       ${gammelId?`<div style="font-size:11px;color:var(--slate);margin-bottom:4px">GAMMEL GIST — slet denne til sidst</div>
-      <a href="https://gist.github.com/${gammelId}" target="_blank" rel="noopener" style="display:block;background:var(--ink3);border:1px solid rgba(255,92,92,.25);border-radius:10px;padding:11px;font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--red);text-decoration:none;margin-bottom:18px">${gammelId} ↗</a>`:''}
+      <a href="https://gist.github.com/${esc(gammelId)}" target="_blank" rel="noopener" style="display:block;background:var(--ink3);border:1px solid rgba(255,92,92,.25);border-radius:10px;padding:11px;font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--red);text-decoration:none;margin-bottom:18px">${esc(gammelId)} ↗</a>`:''}
       <button class="btn btn-gold" style="width:100%" onclick="document.getElementById('migModal').remove();render()">Forstået ✓</button>
     </div>
   </div>`;
@@ -1106,10 +1259,10 @@ function kopierNytId(){
 }
 
 function showSyncSetup(){
-  const inp='width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none';
+  const inp='width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font)';
   const on=syncEnabled();
   document.getElementById('modalRoot').innerHTML+=`
-  <div id="syncModal" class="modal-wrap">
+  <div id="syncModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Sync-opsætning">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px">⚙️ Sync-opsætning</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:16px;line-height:1.6">
@@ -1119,11 +1272,11 @@ function showSyncSetup(){
       </div>
       <div style="margin-bottom:12px">
         <label class="field-label">Gist-ID</label>
-        <input type="text" id="gistInput" value="${getGistId()}" placeholder="fx a1b2c3d4e5f6..." style="${inp}">
+        <input type="text" id="gistInput" value="${esc(getGistId())}" placeholder="fx a1b2c3d4e5f6..." style="${inp}">
       </div>
       <div style="margin-bottom:14px">
         <label class="field-label">GitHub token (gist-scope)</label>
-        <input type="password" id="tokenInput" value="${getToken()}" placeholder="ghp_..." style="${inp}">
+        <input type="password" id="tokenInput" value="${esc(getToken())}" placeholder="ghp_..." style="${inp}">
       </div>
       <div style="font-size:11px;color:var(--slate);margin-bottom:16px;line-height:1.5">
         Begge gemmes kun lokalt på denne enhed — aldrig i koden. Du skal indtaste dem
@@ -1142,8 +1295,10 @@ function showSyncSetup(){
 async function saveSyncConfig(){
   const g=document.getElementById('gistInput').value.trim();
   const t=document.getElementById('tokenInput').value.trim();
-  if(!g||!/^[0-9a-f]{20,}$/i.test(g)){ toast('Ugyldigt Gist-ID','err'); return; }
-  if(!t||!t.startsWith('ghp_')){ toast('Ugyldigt token','err'); return; }
+  if(!GIST_ID_RE.test(g)){ toast('Ugyldigt Gist-ID','err'); return; }
+  // Accepter baade klassiske og fine-grained tokens — de sidste har
+  // snaevrere rettigheder og er at foretraekke.
+  if(!/^(ghp_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{20,})$/.test(t||'')){ toast('Ugyldigt token','err'); return; }
   localStorage.setItem('vct_gistid',g);
   localStorage.setItem('vct_ghtoken',t);
   const m=document.getElementById('syncModal'); if(m) m.remove();
@@ -1187,10 +1342,10 @@ function showStaleTimerModal(stale){
     <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
       <div class="section-label" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">
-        <b style="color:var(--snow)">${stale.label}</b> blev startet kl. ${stale.startHM} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
+        <b style="color:var(--snow)">${esc(stale.label)}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
       </div>
       <label class="field-label">Sluttede kl.</label>
-      <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none;margin-bottom:14px">
+      <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);margin-bottom:14px">
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" style="flex:1" onclick="discardStaleTimer()">Kassér</button>
         <button class="btn" style="flex:1;background:var(--green);color:var(--ink)" onclick="saveStaleTimer()">Gem afslutning ✓</button>
@@ -1232,6 +1387,8 @@ function closeStaleTimerModal(){
 }
 
 function updateHeader(){
+  const v=document.getElementById('appVer');
+  if(v) v.textContent='v'+APP_VERSION; // eneste kilde: APP_VERSION
   const d=new Date();
   document.getElementById('hdrDate').textContent=`${WDAYS[d.getDay()]} ${d.getDate()}. ${MONTHS_S[d.getMonth()]}`;
   document.getElementById('hdrWeek').textContent=`Uge ${weekNum(d)}`;
@@ -1255,7 +1412,7 @@ function render(){
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else                            m.innerHTML=rapportHTML();
   // Gendan åbne panels efter render
-  openIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('open'); });
+  openIds.forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.add('open'); saetUdfoldet(id); } });
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
@@ -1285,10 +1442,10 @@ function buildEntryHTML(e,i,dk){
   const editPanel=isEditing?`
     <div class="edit-panel">
       <div class="field-label" style="margin-bottom:6px">Ret registrering</div>
-      <div style="margin-bottom:7px"><label class="field-label">ON / Projekt</label><input type="text" class="edit-input" id="editOn" value="${e.on}"></div>
+      <div style="margin-bottom:7px"><label class="field-label">ON / Projekt</label><input type="text" class="edit-input" id="editOn" value="${esc(e.on)}"></div>
       <div class="edit-row">
-        <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${e.start}"></div>
-        <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${e.stop}"></div>
+        <div><label class="field-label">Start</label><input type="time" class="edit-input" id="editStart" value="${esc(e.start)}"></div>
+        <div><label class="field-label">Stop</label><input type="time" class="edit-input" id="editStop" value="${esc(e.stop)}"></div>
       </div>
       <div class="edit-btns">
         <button class="btn-cancel-edit" onclick="cancelEdit()">Annuller</button>
@@ -1299,9 +1456,9 @@ function buildEntryHTML(e,i,dk){
   const dot=`<div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0;margin-top:3px"></div>`;
   return`<div class="entry">
     <div class="entry-main-row">
-      <div class="entry-time-col"><div class="entry-time">${e.start}</div><div class="entry-time">${e.stop}</div></div>
+      <div class="entry-time-col"><div class="entry-time">${esc(e.start)}</div><div class="entry-time">${e.stop}</div></div>
       <div class="entry-divider"></div>
-      <div class="entry-body" style="display:flex;align-items:flex-start;gap:7px">${dot}<div><div class="entry-on">${e.on}</div>${e.cat&&e.cat!==e.on?`<div class="entry-cat">${e.cat}</div>`:''}</div></div>
+      <div class="entry-body" style="display:flex;align-items:flex-start;gap:7px">${dot}<div><div class="entry-on">${esc(e.on||e.cat||'Uden ON')}</div>${e.cat&&e.cat!==e.on?`<div class="entry-cat">${esc(e.cat)}</div>`:''}</div></div>
       <div class="entry-dur">${fmtH(e.hours)}</div>
     </div>
     <div class="entry-actions">
@@ -1401,26 +1558,26 @@ function dagHTML(){
         const cats=Object.entries(onCats[k]||{});
         const catRows=cats.map(([cat,h])=>`
           <div style="display:flex;justify-content:space-between;padding:2px 0 2px 16px;font-size:11px;color:var(--slate)">
-            <span>${cat}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
+            <span>${esc(cat)}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
           </div>`).join('');
         return`<div class="promak-row" style="flex-direction:column;align-items:stretch;gap:0">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:700">${k}</span>
+            <span style="font-weight:700">${esc(k)}</span>
             <span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span>
           </div>
           ${catRows}
         </div>`;
       }).join('')}
       ${spKeys.length>0?`<div style="border-top:1px solid rgba(255,255,255,.06);margin:6px 0"></div>`:''}
-      ${spKeys.map(k=>`<div class="promak-row"><span style="font-weight:600;color:var(--slate)">${k}</span><span style="color:var(--slate);font-family:var(--mono);font-weight:700">${fmtH(specialTotals[k])}</span></div>`).join('')}
+      ${spKeys.map(k=>`<div class="promak-row"><span style="font-weight:600;color:var(--slate)">${esc(k)}</span><span style="color:var(--slate);font-family:var(--mono);font-weight:700">${fmtH(specialTotals[k])}</span></div>`).join('')}
     </div>
   </div>`:'';
 
   const timerHTML=activeTimer?`
     <div class="live-card">
       <div class="live-label"><div class="live-dot"></div>Timer kører</div>
-      <div class="live-project">${activeTimer.label}</div>
-      <div class="live-sub">Startet kl. ${activeTimer.startHM}</div>
+      <div class="live-project">${esc(activeTimer.label)}</div>
+      <div class="live-sub">Startet kl. ${esc(activeTimer.startHM)}</div>
       <div class="live-time" id="timerDisp">0:00:00</div>
       <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
@@ -1428,7 +1585,7 @@ function dagHTML(){
   // Byg liste med frokost indsat på rette tidspunkt
   const frokostRow=fr?`<div class="entry" style="opacity:.65;border-left:3px solid rgba(255,255,255,.12)">
     <div class="entry-main-row">
-      <div class="entry-time-col"><div class="entry-time">${fr.start}</div><div class="entry-time">${fr.stop}</div></div>
+      <div class="entry-time-col"><div class="entry-time">${fr.start}</div><div class="entry-time">${esc(fr.stop)}</div></div>
       <div class="entry-divider"></div>
       <div class="entry-body">
         <div class="entry-on" style="color:var(--slate)">🍽️ Frokost</div>
@@ -1483,20 +1640,20 @@ function dtlGetX(ev){ return ev.clientX??ev.touches?.[0]?.clientX??0; }
 
 // Farve-palette — hash af ON-navn → fast farve
 const DTL_COLORS=[
-  {bg:'#4DA6FF',fg:'#fff'},  // blå
+  {bg:'#6FB8FF',fg:'#041426'},  // blå
   {bg:'#3DDC97',fg:'#071a10'}, // grøn
-  {bg:'#B06EFF',fg:'#fff'},  // lilla
+  {bg:'#C99BFF',fg:'#1A0033'},  // lilla
   {bg:'#FF9F43',fg:'#2a1500'}, // orange
   {bg:'#4CD4D4',fg:'#071a1a'}, // teal
   {bg:'#FF7EB6',fg:'#2a0015'}, // rosa
   {bg:'#A8E063',fg:'#1a2a00'}, // lime
-  {bg:'#778CA8',fg:'#fff'},  // blågrå
+  {bg:'#94A9C2',fg:'#08131C'},  // blågrå
 ];
 const DTL_SPECIAL={
-  syg:    {bg:'rgba(255,92,92,.85)',fg:'#fff'},
-  barnsyg:{bg:'rgba(77,166,255,.85)',fg:'#fff'},
-  p56:    {bg:'rgba(176,110,255,.85)',fg:'#fff'},
-  auto_s: {bg:'rgba(255,92,92,.35)',fg:'rgba(255,255,255,.7)',dash:true},
+  syg:    {bg:'rgba(255,123,123,.92)',fg:'#2A0505'},
+  barnsyg:{bg:'rgba(111,184,255,.92)',fg:'#041426'},
+  p56:    {bg:'rgba(201,155,255,.92)',fg:'#1A0033'},
+  auto_s: {bg:'rgba(255,123,123,.45)',fg:'var(--snow)',dash:true},
 };
 // Husk ON→farve så samme ON altid får samme farve på tværs af dage
 const _onColorCache={};
@@ -1554,10 +1711,10 @@ function frokostBarHTML(dk){
       <div class="frokost-info">
         <div class="frokost-title">Frokost · <span id="frMins">${mins}</span> min</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
-          <input type="time" id="frStart" value="${start}" style="${inputStyle}"
+          <input type="time" id="frStart" value="${start}" aria-label="Frokost starter" style="${inputStyle}"
             oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
           <span style="color:var(--slate)">→</span>
-          <input type="time" id="frStop" value="${stop}" style="${inputStyle}"
+          <input type="time" id="frStop" value="${stop}" aria-label="Frokost slutter" style="${inputStyle}"
             oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
         </div>
       </div>
@@ -1605,8 +1762,8 @@ function buildDagTimeline(dk,entries){
     const blocksHTML=row.map(({e,i,l,r})=>{
       const w=r-l;
       const col=dtlColor(e);
-      const border=col.dash?`border:1.5px dashed ${col.bg};background:rgba(255,92,92,.18)`:`background:${col.bg}`;
-      const lbl=e.on.length>12?e.on.slice(0,11)+'…':e.on;
+      const border=col.dash?`border:1.5px dashed ${col.bg};background:rgba(255,123,123,.18)`:`background:${col.bg}`;
+      const lbl=esc(e.on.length>12?e.on.slice(0,11)+'…':e.on);
       // Vis tid i blokken hvis bred nok (>8%)
       const showTime=w>8;
       // Vis kun navn hvis <5%, ingenting hvis <2%
@@ -1616,7 +1773,7 @@ function buildDagTimeline(dk,entries){
         <div class="dtl-lh" data-role="L"></div>
         <div class="dtl-inner">
           ${showName?`<div class="dtl-name">${lbl}</div>`:''}
-          ${showTime?`<div class="dtl-time">${e.start}–${e.stop}</div>`:''}
+          ${showTime?`<div class="dtl-time">${esc(e.start)}–${esc(e.stop)}</div>`:''}
         </div>
         <div class="dtl-rh" data-role="R"></div>
       </div>`;
@@ -1892,7 +2049,7 @@ function checkSplitForFrokost(dk){
     activeTimer={...activeTimer, startHM:fr.stop, t0:Date.now()-(nowH-frStop)*3600000};
     localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
     scheduleSave();
-    toast(`🍽️ Frokost trukket fra — ${activeTimer.on} fortsætter fra ${fr.stop}`,'ok');
+    toast(`🍽️ Frokost trukket fra — ${activeTimer.on} fortsætter fra ${esc(fr.stop)}`,'ok');
     render();
   }
 }
@@ -1956,7 +2113,11 @@ function saveEdit(dk,i){
   saveEntries(dk,arr); editingIdx=-1; toast('✓ Rettet','ok'); render();
 }
 function doDelEntry(dk,i){
-  const arr=getEntries(dk); arr.splice(i,1); saveEntries(dk,arr);
+  const arr=getEntries(dk);
+  const e=arr[i];
+  const hvad=e?((e.on||e.cat||'posten')+' '+(e.start||'')+(e.stop?'–'+e.stop:'')).trim():'posten';
+  if(!confirm('Slet '+hvad+'?\n\nDet kan ikke fortrydes.')) return;
+  arr.splice(i,1); saveEntries(dk,arr);
   recalcSpecial(dk); // Genberegn special timer
   editingIdx=-1; render(); toast('Slettet','err');
 }
@@ -1991,7 +2152,7 @@ function tilfoejHTML(){
   if(!tilfoejStart) tilfoejStart=smartStart;
   if(!tilfoejStop)  tilfoejStop=now;
 
-  const catBtns2=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${c.label}')">${c.icon} ${c.label}</button>`).join('');
+  const catBtns2=CATS.map(c=>`<button class="cat-btn${selCat===c.label?' sel':''}" onclick="pickCat('${esc(c.label)}')">${esc(c.icon)} ${esc(c.label)}</button>`).join('');
   // Tom liste maa ikke se ud som en fejl — forklar hvor genveje oprettes.
   const chips=QUICK_ON.length
     ? QUICK_ON.map(o=>`<button class="on-chip${selOn===o?' sel':''}" onclick="pickOn('${esc(o)}')">${esc(o)}</button>`).join('')
@@ -2005,7 +2166,7 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
-    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${customOn}" oninput="customOn=this.value;selOn=''"></div>
+    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${esc(customOn)}" oninput="customOn=this.value;selOn=''"></div>
   </div>
   <div class="card">
     <div class="section-label">Syg / Barn syg / §56 på timer</div>
@@ -2021,7 +2182,7 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">▶ Start timer</div>
     <div class="form-col">
-      ${activeTimer?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${activeTimer.label}</button>`:`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
+      ${activeTimer?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${esc(activeTimer.label)}</button>`:`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
     </div>
   </div>
   <div class="card">
@@ -2128,8 +2289,8 @@ function buildTimelineEditor(dk){
   const blocks=entries.map(e=>{
     const left=tlPct(e.start), right=tlPct(e.stop), width=right-left;
     if(width<=0)return'';
-    const cls=e.special?e.special:'normal';
-    const lbl=e.on.length>8?e.on.slice(0,7)+'…':e.on;
+    const cls=esc(e.special?e.special:'normal');
+    const lbl=esc(e.on.length>8?e.on.slice(0,7)+'…':e.on);
     return`<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%">${width>8?lbl:''}</div>`;
   }).join('');
 
@@ -2321,7 +2482,7 @@ function checkOverlap(dk, newStart, newStop){
   for(const e of entries){
     const es = hmToH(e.start), ee = hmToH(e.stop);
     if(ns < ee && ne > es){
-      return `Overlapper med ${e.on} (${e.start}–${e.stop})`;
+      return `Overlapper med ${e.on} (${esc(e.start)}–${esc(e.stop)})`;
     }
   }
   return null;
@@ -2403,12 +2564,12 @@ function ugeHTML(){
       const cats=Object.entries(ugeCats[k]||{});
       const catRows=cats.map(([cat,h])=>`
         <div style="padding:1px 0 1px 20px;font-size:11px;color:var(--slate);display:flex;justify-content:space-between">
-          <span>${cat}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
+          <span>${esc(cat)}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
         </div>`).join('');
       return`<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:8px;height:8px;border-radius:50%;background:${col.bg};flex-shrink:0"></div>
-          <span style="flex:1;font-size:12px;font-weight:600">${k}</span>
+          <span style="flex:1;font-size:12px;font-weight:600">${esc(k)}</span>
           <span style="color:var(--gold);font-family:var(--mono);font-size:12px;font-weight:700">${fmtH(v)}</span>
         </div>
         ${catRows}
@@ -2429,7 +2590,7 @@ function ugeHTML(){
       </div>`:'';
 
     return`<div class="week-row ${rowCls}">
-      <div class="wr-hdr" onclick="toggleDay('wd-${dk}')">
+      <div class="wr-hdr"${entries.length>0?` role="button" tabindex="0" onclick="toggleDay('wd-${dk}')" onkeydown="tastTryk(event,()=>toggleDay('wd-${dk}'))" aria-expanded="false" aria-controls="wd-${dk}"`:''}>
         <div class="wr-day"><div class="wr-name">${name}</div><div class="wr-date">${d.getDate()}/${d.getMonth()+1}</div></div>
         <div class="wr-mid">
           <div class="wr-bar-row"><span>${type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':type==='ferie'?'🌴':'🏢'}</span><span>${h>0?fmtH(h):'—'}</span></div>
@@ -2460,7 +2621,56 @@ function ugeHTML(){
   ${exportHTML}`;
 }
 
-function toggleDay(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+// ══ MODAL-TASTATUR ═════════════════════════════════════════════
+// En synlig fokusring nytter ikke, hvis Tab foerer bagom en aaben modal.
+// Escape lukker oeverste lag, og Tab holdes inde i panelet.
+function oeversteModal(){
+  const lag=[...document.querySelectorAll('.modal-wrap,#staleTimerModal,#scanPopup:not(.hidden)')];
+  return lag.length?lag[lag.length-1]:null;
+}
+function lukOeversteModal(){
+  const m=oeversteModal(); if(!m) return false;
+  // Brug modalens egen luk-funktion, saa fx settingsDraft ryddes korrekt.
+  if(m.id==='settingsModal')      lukSettings();
+  else if(m.id==='introModal')    lukIntro();
+  else if(m.id==='scanPopup'){ scanDismiss(); }
+  else if(m.id==='staleTimerModal') return false; // skal besvares, ikke afvises
+  else m.remove();
+  return true;
+}
+document.addEventListener('keydown',ev=>{
+  const m=oeversteModal(); if(!m) return;
+  if(ev.key==='Escape'){ if(lukOeversteModal()) ev.preventDefault(); return; }
+  if(ev.key!=='Tab') return;
+  const f=[...m.querySelectorAll('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    .filter(el=>!el.disabled && el.offsetParent!==null);
+  if(!f.length) return;
+  const foerste=f[0], sidste=f[f.length-1];
+  if(ev.shiftKey && document.activeElement===foerste){ ev.preventDefault(); sidste.focus(); }
+  else if(!ev.shiftKey && document.activeElement===sidste){ ev.preventDefault(); foerste.focus(); }
+  else if(!m.contains(document.activeElement)){ ev.preventDefault(); foerste.focus(); }
+});
+// Flyt fokus ind i modalen naar den aabnes.
+function fokuserModal(id){
+  setTimeout(()=>{
+    const m=document.getElementById(id); if(!m) return;
+    const f=m.querySelector('input:not([type=hidden]),button,select,textarea,a[href]');
+    if(f) f.focus();
+  },60);
+}
+
+// Enter og mellemrum skal virke paa elementer med role=button (WCAG 2.1.1).
+function tastTryk(ev,handling){
+  if(ev.key==='Enter'||ev.key===' '||ev.key==='Spacebar'){ ev.preventDefault(); handling(); }
+}
+// Holder aria-expanded i sync med om panelet er aabent.
+function saetUdfoldet(id){
+  const el=document.getElementById(id); if(!el) return;
+  const sikkerId=(window.CSS&&CSS.escape)?CSS.escape(id):id;
+  const hdr=document.querySelector('[aria-controls="'+sikkerId+'"]');
+  if(hdr) hdr.setAttribute('aria-expanded', el.classList.contains('open')?'true':'false');
+}
+function toggleDay(id){const el=document.getElementById(id);if(el){el.classList.toggle('open');saetUdfoldet(id);}}
 
 function buildUgeExport(mon){
   const totals={};
@@ -2478,7 +2688,7 @@ function buildUgeExport(mon){
   return`
   <div class="card">
     <div class="section-label">Promak-oversigt</div>
-    <div class="promak-box">${keys.map(k=>`<div class="promak-row"><span style="font-weight:600">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span></div>`).join('')}</div>
+    <div class="promak-box">${keys.map(k=>`<div class="promak-row"><span style="font-weight:600">${esc(k)}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(totals[k])}</span></div>`).join('')}</div>
     <button class="btn btn-ghost" style="margin-top:9px" onclick="copyUgeText()">📋 Kopiér til Promak</button>
   </div>`;
 }
@@ -2555,10 +2765,10 @@ function rapportHTML(){
         const cats=Object.entries(onC[k]||{});
         const catRows=cats.map(([cat,h])=>`
           <div style="display:flex;justify-content:space-between;font-size:10px;padding:1px 0 1px 20px;color:var(--slate)">
-            <span>${cat}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
+            <span>${esc(cat)}</span><span style="font-family:var(--mono)">${fmtH(h)}</span>
           </div>`).join('');
         return`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0 0 12px;color:var(--mist)">
-          <span>${k}</span><span style="font-family:var(--mono);color:var(--gold)">${fmtH(v)}</span>
+          <span>${esc(k)}</span><span style="font-family:var(--mono);color:var(--gold)">${fmtH(v)}</span>
         </div>${catRows}`;
       }).join('');
       const typeIcon=type==='hjemme'?'🏠':type==='syg'?'🤒':type==='barnsyg'?'👶':type==='p56'?'§':type==='ferie'?'🌴':'🏢';
@@ -2588,7 +2798,7 @@ function rapportHTML(){
     });
 
     return`<div class="report-week">
-      <div class="report-week-hdr" onclick="toggleWeek('rwb-${wk}')">
+      <div class="report-week-hdr" role="button" tabindex="0" onclick="toggleWeek('rwb-${wk}')" onkeydown="tastTryk(event,()=>toggleWeek('rwb-${wk}'))" aria-expanded="false" aria-controls="rwb-${wk}">
         <div>
           <div class="report-week-title">Uge ${wNum}</div>
           <div class="report-week-meta">${mon.getDate()}. ${MONTHS_S[mon.getMonth()]} – ${fri.getDate()}. ${MONTHS_S[fri.getMonth()]} · ${badges.join(' ')}</div>
@@ -2603,7 +2813,7 @@ function rapportHTML(){
         ${Object.keys(onTotals).length?`
         <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;margin-top:4px">
           <div style="font-size:9px;color:var(--slate);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Ugetotal pr. ON</div>
-          ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span style="font-weight:700">${k}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
+          ${Object.keys(onTotals).map(k=>`<div class="report-entry"><span style="font-weight:700">${esc(k)}</span><span style="color:var(--gold);font-family:var(--mono);font-weight:800">${fmtH(onTotals[k])}</span></div>`).join('')}
           <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:11px;font-weight:800;color:var(--snow)">I alt</span>
             <span style="font-family:var(--mono);font-weight:900;font-size:14px;color:var(--gold)">${fmtH(Object.values(onTotals).reduce((s,v)=>s+v,0))}</span>
@@ -2647,32 +2857,38 @@ function rapportHTML(){
   <div class="card"><div class="section-label">Uger — klik for detaljer</div>${weeksHTML||'<div class="empty">Ingen data endnu</div>'}</div>`;
 }
 
-function toggleWeek(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+function toggleWeek(id){const el=document.getElementById(id);if(el){el.classList.toggle('open');saetUdfoldet(id);}}
 
-const OUTLOOK_ICS = 'https://outlook.office365.com/owa/calendar/e56d83353543442bb9b3f286e4efc118@vestergaardcompany.com/bf3e9209c7c04724995694304cd2bb209642795787987125204/calendar.ics';
+// ICS-feedets adresse er en HEMMELIGHED: den giver anonym adgang til hele
+// kalenderen. Den maa ALDRIG staa i koden — repoet er offentligt. Ligger nu
+// i localStorage pr. enhed, samme moenster som gist-ID og token.
+function getIcsUrl(){ return localStorage.getItem('vct_icsurl')||''; }
 
 async function importOutlook(){
-  toast('Henter kalender...','');
-  // Prøv flere CORS proxies
-  const proxies = [
-    'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
-    'https://proxy.cors.sh/',
-  ];
-  let icsText = null;
-  for(const proxy of proxies){
-    try {
-      const r = await fetch(proxy + encodeURIComponent(OUTLOOK_ICS), {signal: AbortSignal.timeout(8000)});
-      if(r.ok){ icsText = await r.text(); break; }
-    } catch{}
+  const url=getIcsUrl();
+  if(!url){
+    // Ingen feed-adresse gemt: gaa direkte til manuel upload.
+    toast('Vælg din eksporterede .ics-fil','');
+    setTimeout(()=>uploadICS(), 600);
+    return;
   }
+  toast('Henter kalender...','');
+  let icsText=null;
+  // Kun direkte hentning. De tidligere tredjeparts-CORS-proxyer fik baade
+  // feedets hemmelige adresse og hele kalenderindholdet — moedetitler,
+  // kunde- og kollega-navne — i klartekst. Det er fjernet i v5.5.
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    if(r.ok) icsText=await r.text();
+  }catch(e){ console.warn('importOutlook',e); }
   if(icsText && icsText.includes('VCALENDAR')){
-    const result = parseICS(icsText);
+    const result=parseICS(icsText);
     toast(`✓ ${result.ferie} feriedage importeret`,'ok');
     scheduleSave();
     render();
   } else {
-    toast('Prøv manuel upload i stedet','err');
+    // Direkte hentning blokeres typisk af CORS. Manuel upload virker altid.
+    toast('Kunne ikke hente — vælg filen manuelt','err');
     setTimeout(()=>uploadICS(), 1000);
   }
 }
@@ -2682,6 +2898,7 @@ function uploadICS(){
   input.type='file'; input.accept='.ics';
   input.onchange=async e=>{
     const file=e.target.files[0]; if(!file) return;
+    if(file.size>5*1024*1024){ toast('Filen er for stor (over 5 MB)','err'); return; }
     const text=await file.text();
     const result=parseICS(text);
     toast(`✓ ${result.ferie} feriedage, ${result.helligdag} helligdage importeret`,'ok');
@@ -2735,6 +2952,7 @@ function parseICS(text){
   return {ferie: ferieCount};
 }
 
+const ICS_MAKS_DAGE=400; // et enkelt event maa ikke saette tusindvis af dage
 function processICSEvent(evt){
   const summary=(evt.summary||'').toLowerCase();
   const isFerie    = summary.includes('ferie');
@@ -2773,7 +2991,8 @@ function processICSEvent(evt){
   const end=endDk?new Date(endDk):new Date(startDk);
   end.setDate(end.getDate()-1); // ICS DTEND er exclusive
 
-  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+  let _dage=0;
+  for(let d=new Date(start);d<=end && _dage<ICS_MAKS_DAGE;d.setDate(d.getDate()+1),_dage++){
     const di=d.getDay();
     if(di===0||di===6) continue; // Skip weekend
     const dk=dateKey(new Date(d));
@@ -2797,12 +3016,12 @@ function downloadBackup(){
 function showFerieModal(){
   const today=dateKey(new Date());
   document.getElementById('modalRoot').innerHTML+=`
-  <div id="ferieModal" class="modal-wrap">
+  <div id="ferieModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Sæt ferieperiode">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:14px">🌴 Sæt ferieperiode</div>
       <div class="form-row" style="margin-bottom:12px">
-        <div><label class="field-label">Fra dato</label><input type="date" id="ferieFrom" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none"></div>
-        <div><label class="field-label">Til dato</label><input type="date" id="ferieTo" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);outline:none"></div>
+        <div><label class="field-label">Fra dato</label><input type="date" id="ferieFrom" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);"></div>
+        <div><label class="field-label">Til dato</label><input type="date" id="ferieTo" value="${today}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);"></div>
       </div>
       <div style="font-size:12px;color:var(--slate);margin-bottom:14px">Weekender springes automatisk over</div>
       <div style="display:flex;gap:8px">
@@ -2820,7 +3039,8 @@ function saveFerie(){
   const start=new Date(from), end=new Date(to);
   if(end<start){toast('Slutdato skal være efter startdato','err');return;}
   let count=0;
-  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+  let _dage=0;
+  for(let d=new Date(start);d<=end && _dage<ICS_MAKS_DAGE;d.setDate(d.getDate()+1),_dage++){
     const di=d.getDay();
     if(di===0||di===6) continue; // Spring weekend over
     const dk=dateKey(new Date(d));
@@ -2849,20 +3069,38 @@ function importData(){
   input.onchange=async e=>{
     const file=e.target.files[0];if(!file)return;
     try{
+      if(file.size>5*1024*1024){ toast('Filen er for stor (over 5 MB)','err'); return; }
       const text=await file.text();
       const data=JSON.parse(text);
-      const src=data.days||{};
+      const src=(data&&typeof data.days==='object'&&data.days)||{};
+      // Gennemgaa filen FOER der skrives noget: den kommer udefra, og
+      // uvaliderede vaerdier ville ende direkte i markup.
+      const plan=[];
+      let afvist=0;
+      for(const dk of Object.keys(src)){
+        if(!DATOKEY.test(dk)){ afvist++; continue; }
+        const day=src[dk]||{};
+        const poster=Array.isArray(day.entries)?day.entries:[];
+        const rene=poster.map(e=>rensEntry(e,dk)).filter(Boolean);
+        afvist+=poster.length-rene.length;
+        plan.push({dk, type: DAGTYPER.has(day.type)?day.type:null, rene});
+      }
+      const ialt=plan.reduce((s,p)=>s+p.rene.length,0);
+      if(ialt>10000){ toast('Filen indeholder for mange registreringer','err'); return; }
+      if(!ialt){ toast(afvist?'Ingen gyldige registreringer i filen':'Filen er tom','err'); return; }
+      if(!confirm('Importér '+ialt+' registreringer fordelt på '+plan.length+' dage?'+
+                  (afvist?'\n\n'+afvist+' poster springes over, fordi de ikke kunne læses.':'')+
+                  '\n\nDine eksisterende timer bevares — der tilføjes kun nye.')) return;
       let count=0;
-      Object.keys(src).forEach(dk=>{
-        const day=src[dk];
-        if(!db.days[dk]) db.days[dk]={entries:[],type:'kontor'};
-        if(day.type&&day.type!=='kontor') db.days[dk].type=day.type;
-        const existing=db.days[dk].entries||[];
-        const existKeys=new Set(existing.map(e=>e.start+e.on));
-        const newE=(day.entries||[]).filter(e=>!existKeys.has(e.start+e.on));
-        db.days[dk].entries=[...existing,...newE];
-        count+=newE.length;
-      });
+      for(const p of plan){
+        if(!db.days[p.dk]) db.days[p.dk]={entries:[],type:'kontor'};
+        if(p.type && p.type!=='kontor') db.days[p.dk].type=p.type;
+        const existing=db.days[p.dk].entries||[];
+        const findes=new Set(existing.map(e=>e.start+e.on));
+        const nye=p.rene.filter(e=>!findes.has(e.start+e.on));
+        db.days[p.dk].entries=[...existing,...nye];
+        count+=nye.length;
+      }
       scheduleSave();
       toast(`✓ ${count} registreringer importeret`,'ok');
       render();
@@ -2930,7 +3168,7 @@ function quickStartOpen(){
 function buildScanCatGrid(selCat){
   document.getElementById('scanCatGrid').innerHTML=CATS.map(c=>`
     <button class="scan-cat-btn${selCat===c.label?' sel':''}"
-      onclick="scanPickCat('${c.label}',this)">${c.icon} ${c.label}</button>`).join('');
+      onclick="scanPickCat('${esc(c.label)}',this)">${esc(c.icon)} ${esc(c.label)}</button>`).join('');
 }
 function buildScanOnChips(selOn){
   // Tom genvejsliste: forklar det i stedet for at efterlade et tomt felt.
@@ -2981,7 +3219,8 @@ function scanOpen(){
   if(!('BarcodeDetector' in window)){
     scanClose();
     const on=prompt('BarcodeDetector ikke understøttet i denne browser.\nIndtast ON-nummer manuelt (fx 3200):');
-    if(on&&on.trim()) scanShowFromBarcode(on.trim().replace(/^ON\s*/i,'').trim());
+    // Samme rensning som ved rigtig scanning, så de to veje ikke divergerer.
+    if(on&&on.trim()) scanShowFromBarcode(renTekst(on.replace(/^ON\s*/i,''),40));
     return;
   }
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}}})
@@ -3001,7 +3240,8 @@ function scanLoop(){
     if(results.length>0){
       const raw=results[0].rawValue;
       const match=raw.match(/ON[\s\-]?(\d[\w\-]*)/i);
-      const on=match?match[1]:raw.trim();
+      // Rens ved kilden: en stregkode er ukontrolleret input.
+      const on=renTekst(match?match[1]:raw, 40);
       scanClose();
       scanShowFromBarcode(on);
     } else { scanRafId=requestAnimationFrame(scanLoop); }
