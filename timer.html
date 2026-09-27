@@ -36,6 +36,9 @@
   /* Tahoma er Vestergaards web-font (brand-retningslinjer). */
   --font:Tahoma,Verdana,Geneva,sans-serif;
   --mono:'SF Mono','Consolas',monospace;--r:16px;--r2:12px;
+  /* Browserens egne kontroller (scrollbar, time-/dato-vælger, select-liste)
+     tegnes mørkt. Uden den viste Windows en lys scrollbar med pile. */
+  color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 /* ── TILGÆNGELIGHED (v5.5) ──────────────────────────────────────
@@ -84,10 +87,29 @@ nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,
 .nav-btn svg{width:17px;height:17px}
 .nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
 main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:column;gap:10px}
-.card{background:var(--ink2);border-radius:var(--r);padding:14px}
+/* ── SCROLLBAR ────────────────────────────────────────────
+   Tynd og diskret, men ikke skjult: paa PC skal den kunne ses og traekkes i.
+   Gaelder alle scroll-containere (main og .modal-panel).
+   Efterregnet (WCAG 1.4.11, 3:1): thumb --line giver 5,09:1 mod --ink (main)
+   og 4,85:1 mod --ink2 (modal). Hover --slate: 7,18:1 / 6,83:1.
+   Chromium og Safari styres med ::-webkit-scrollbar — kun dér forsvinder
+   pilene og virker hover. Saettes scrollbar-color, ignorerer Chromium 121+
+   de regler (og tegner pile + en moerkere hover paa 2,8:1), saa standard-
+   egenskaberne gives kun til browsere uden ::-webkit-scrollbar (Firefox). */
+main::-webkit-scrollbar,.modal-panel::-webkit-scrollbar{width:8px;height:8px}
+main::-webkit-scrollbar-track,.modal-panel::-webkit-scrollbar-track{background:transparent}
+main::-webkit-scrollbar-thumb,.modal-panel::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+main::-webkit-scrollbar-thumb:hover,.modal-panel::-webkit-scrollbar-thumb:hover{background:var(--slate)}
+main::-webkit-scrollbar-button,.modal-panel::-webkit-scrollbar-button{display:none}
+@supports not selector(::-webkit-scrollbar){
+  main,.modal-panel{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+}
+/* Top-highlight (rgba af --snow) giver fladerne lidt dybde. Rent dekorativ —
+   fladerne er ikke interaktive, saa den skal ikke holde 3:1. */
+.card{background:var(--ink2);border-radius:var(--r);padding:14px;box-shadow:inset 0 1px 0 rgba(238,244,248,.05)}
 .section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--slate);margin-bottom:10px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
-.stat-box{background:var(--ink3);border-radius:var(--r2);padding:11px 8px;text-align:center}
+.stat-box{background:var(--ink3);border-radius:var(--r2);padding:11px 8px;text-align:center;box-shadow:inset 0 1px 0 rgba(238,244,248,.05)}
 .stat-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .stat-lbl{font-size:9px;color:var(--slate);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
 .good{color:var(--green)}.bad{color:var(--red)}.amber{color:var(--amber)}.white{color:var(--snow)}.blue{color:var(--blue)}
@@ -95,13 +117,18 @@ main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:
 .prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:4px}
 .prog-bg{background:rgba(255,255,255,.06);border-radius:99px;height:6px;overflow:hidden}
 .prog-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.live-card{background:linear-gradient(140deg,var(--ink3),var(--ink4));border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:14px}
+/* Live-kortet er det vigtigste paa I DAG. En blød guld-glød under kortet
+   (rgba af --gold) og lidt mere luft giver dybde uden en ny farve. Rammen er
+   dekorativ — kortet selv er ikke interaktivt. Ingen animation: prikken
+   pulserer allerede, og det er nok bevægelse. */
+.live-card{background:linear-gradient(140deg,var(--ink3),var(--ink4));border:1.5px solid rgba(245,172,0,.35);border-radius:var(--r);padding:18px 16px 16px;
+  box-shadow:inset 0 1px 0 rgba(238,244,248,.06),0 2px 6px rgba(0,0,0,.25),0 10px 28px -10px rgba(245,172,0,.28)}
 .live-label{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.4s ease-in-out infinite}
-.live-project{font-size:16px;font-weight:700;margin-top:5px}
+.live-project{font-size:17px;font-weight:700;margin-top:7px;line-height:1.3;overflow-wrap:anywhere}
 .live-sub{font-size:11px;color:var(--slate);margin-top:1px}
-.live-time{font-size:40px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:10px 0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;overflow:hidden}
+.live-time{font-size:40px;font-weight:900;font-family:var(--mono);color:var(--gold);text-align:center;margin:12px 0 14px;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.entry{background:var(--ink3);border-radius:var(--r2);margin-bottom:5px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(238,244,248,.05)}
 .entry-main-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
 .entry-time-col{text-align:right;flex-shrink:0;min-width:34px}
 .entry-time{font-size:11px;color:var(--slate);font-family:var(--mono);line-height:1.7}
@@ -111,7 +138,19 @@ main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:
 .entry-cat{font-size:11px;color:var(--slate);margin-top:1px}
 .entry-dur{font-size:13px;font-weight:800;color:var(--gold);font-family:var(--mono);flex-shrink:0}
 .entry-actions{display:flex;border-top:1px solid rgba(255,255,255,.05)}
-.entry-btn{flex:1;background:none;border:none;color:var(--slate);font-size:11px;font-weight:700;padding:8px;cursor:pointer;font-family:var(--font)}
+/* Ret/Slet: streg-ikoner i nav-stilen i stedet for emoji (✏️ blev tegnet
+   orange og stak ud). Ikonet arver knappens farve via currentColor.
+   Tekst paa --ink3: --gold 7,82:1, --red 6,07:1.
+   Hoejde: foer ca. 30 px (8+8 padding + emoji-linje). min-height holder den
+   mindst dér paa PC og giver 44 px paa touch. */
+.entry-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;min-height:32px;background:none;border:none;color:var(--slate);font-size:11px;font-weight:700;padding:8px;cursor:pointer;font-family:var(--font)}
+.entry-btn svg{width:14px;height:14px;flex-shrink:0}
+@media (pointer:coarse){.entry-btn{min-height:44px}}
+/* .entry har overflow:hidden, som klippede ringen til et "L". Tegn den
+   indvendigt i stedet. Guld paa --ink3: 7,82:1. */
+.entry-btn:focus-visible{outline-offset:-3px}
+/* Outline foelger border-radius — saa ringen ogsaa foelger kortets hjoerner. */
+.entry-btn.edit{border-bottom-left-radius:var(--r2)}.entry-btn.del{border-bottom-right-radius:var(--r2)}
 .entry-btn.edit{color:var(--gold)}.entry-btn.del{color:var(--red)}
 .entry-btn-sep{width:1px;background:rgba(255,255,255,.05)}
 .edit-panel{background:var(--ink4);padding:11px 12px;border-top:1px solid rgba(245,172,0,.2)}
@@ -131,6 +170,18 @@ main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:
 .btn-gold{background:var(--gold);color:var(--ink)}
 .btn-green{background:var(--green);color:var(--ink)}
 .btn-red{background:var(--red);color:var(--ink)}
+/* Tonal stop-knap: den massive laksefarvede pille dominerede skaermen.
+   Fyld rgba(--red,.10) over kortets flade, tekst og ramme i --red.
+   Efterregnet (WCAG, sammensat fyld afrundet til 8 bit):
+     tekst  5,76:1 paa --ink2 (TILFOEJ-kortet)
+            5,31:1 paa --ink3 og 4,81:1 paa --ink4 (live-kortets gradient,
+            begge ender — knappen ligger nederst, dvs. naermest --ink4)
+     ramme  6,59 / 6,07 / 5,53:1 mod samme flader
+     hover  (brightness 1.18) tekst mindst 4,79:1.
+   :active beholder fuld opacitet — .btn's opacity:.9 gav 4,18:1 paa --ink4.
+   padding er 1,5 px mindre end .btn, saa rammen ikke goer knappen hoejere. */
+.btn-stop{background:rgba(255,123,123,.10);color:var(--red);border:1.5px solid var(--red);padding:12.5px}
+.btn-stop:active{opacity:1}
 .btn-ghost{background:var(--ink4);color:var(--snow)}
 .btn-sm{padding:8px 14px;font-size:12px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
 .btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:5px;width:100%}
@@ -307,7 +358,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · <span class="gul">Timer</span> <span class="ver" id="appVer">v5.5.1</span></div>
+    <div class="logo">Vestergaard · <span class="gul">Timer</span> <span class="ver" id="appVer"></span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -382,7 +433,7 @@ select option{background:#081828}
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
 // Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
-const APP_VERSION = '5.5.1';
+const APP_VERSION = '5.6.0';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
@@ -1360,7 +1411,7 @@ function showStaleTimerModal(stale){
     <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
       <div class="section-label" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">
-        <b style="color:var(--snow)">${esc(stale.label)}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
+        <b style="color:var(--snow)">${esc(visLabel(stale.label))}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
       </div>
       <label class="field-label">Sluttede kl.</label>
       <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);margin-bottom:14px">
@@ -1389,7 +1440,7 @@ function saveStaleTimer(){
   recalcSpecial(dk);
   staleTimerPending=null;
   closeStaleTimerModal();
-  toast(`✓ ${stale.label} afsluttet kl. ${stop} den ${dk}`,'ok');
+  toast(`✓ ${visLabel(stale.label)} afsluttet kl. ${stop} den ${dk}`,'ok');
   render();
 }
 
@@ -1397,7 +1448,7 @@ function discardStaleTimer(){
   const stale=staleTimerPending;
   staleTimerPending=null;
   closeStaleTimerModal();
-  toast(`Kasseret — ingen registrering gemt${stale?' for '+stale.label:''}`,'err');
+  toast(`Kasseret — ingen registrering gemt${stale?' for '+visLabel(stale.label):''}`,'err');
 }
 
 function closeStaleTimerModal(){
@@ -1425,12 +1476,29 @@ function render(){
   // Gem hvilke panels der er åbne inden re-render
   const openIds=new Set([...document.querySelectorAll('.wr-body.open,.report-week-body.open')].map(el=>el.id));
   const m=document.getElementById('main');
+  // Husk fokus: innerHTML erstatter alle knapper, og render() fra minut-uret
+  // og sync-pollen smed ellers tastaturfokus tilbage til <body>. Knapper har
+  // sjældent id, saa de genkendes paa deres onclick. IKKE felter: focus()
+  // saetter markoeren forrest (tidsfelter: i timesegmentet), saa de naeste
+  // tastetryk landede forkert — "3200" blev til "0032". Felter beskyttes i
+  // stedet af safeRender(), der ikke tegner om mens man skriver.
+  const fa=document.activeElement;
+  const fokus=(fa&&fa!==m&&m.contains(fa)&&!fa.matches('input,select,textarea'))
+    ?{id:fa.id,klik:fa.getAttribute('onclick')}:null;
+  // Ikke Slet: indekset rykker efter en sletning eller en sync, og saa ville
+  // et ekstra Enter spoerge om at slette naeste post.
+  if(fokus&&/^doDelEntry\(/.test(fokus.klik||'')) fokus.klik=null;
   if(currentTab==='dag')          { m.innerHTML=dagHTML(); setTimeout(bindDagTimelineHandlers,0); }
   else if(currentTab==='tilfoej') { m.innerHTML=tilfoejHTML(); setTimeout(bindSelHandlers,0); }
   else if(currentTab==='uge')     m.innerHTML=ugeHTML();
   else                            m.innerHTML=rapportHTML();
   // Gendan åbne panels efter render
   openIds.forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.add('open'); saetUdfoldet(id); } });
+  if(fokus){
+    const el=(fokus.id&&document.getElementById(fokus.id))
+      ||(fokus.klik&&[...m.querySelectorAll('[onclick]')].find(x=>x.getAttribute('onclick')===fokus.klik));
+    if(el&&m.contains(el)) el.focus({preventScroll:true});
+  }
   if(currentTab==='dag'&&activeTimer) startDisp();
 }
 
@@ -1443,6 +1511,11 @@ function render(){
 function safeRender(){
   if(editingIdx!==-1) return; // Redigeringsboks åben — vent til den lukkes
   if(modalAaben()) return;    // En modal er åben — tegn ikke om under brugerens hænder
+  // Brugeren skriver i et felt — en gen-tegning ville smide feltet og tastetrykkene væk.
+  const a=document.activeElement;
+  // hasFocus: har brugeren skiftet vindue (fx til Promak), beholder feltet
+  // fokus, og så ville skærmen aldrig blive opdateret.
+  if(document.hasFocus()&&a&&a.matches('input,select,textarea')&&document.getElementById('main').contains(a)) return;
   render();
 }
 
@@ -1455,6 +1528,10 @@ function modalAaben(){
 // ═══════════════════════════════════════════════════════
 //  DAG
 // ═══════════════════════════════════════════════════════
+// Streg-ikoner til Ret/Slet — samme stil som nav-ikonerne. aria-hidden,
+// fordi den synlige tekst "Ret"/"Slet" er knappens navn.
+const IKON_RET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" focusable="false"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
+const IKON_SLET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 15H6L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
 function buildEntryHTML(e,i,dk){
   const isEditing=editingIdx===i;
   const editPanel=isEditing?`
@@ -1480,9 +1557,9 @@ function buildEntryHTML(e,i,dk){
       <div class="entry-dur">${fmtH(e.hours)}</div>
     </div>
     <div class="entry-actions">
-      <button class="entry-btn edit" onclick="startEdit(${i})">✏️ Ret</button>
+      <button class="entry-btn edit" onclick="startEdit(${i})">${IKON_RET}Ret</button>
       <div class="entry-btn-sep"></div>
-      <button class="entry-btn del" onclick="doDelEntry('${dk}',${i})">✕ Slet</button>
+      <button class="entry-btn del" onclick="doDelEntry('${dk}',${i})">${IKON_SLET}Slet</button>
     </div>
     ${editPanel}
   </div>`;
@@ -1594,10 +1671,10 @@ function dagHTML(){
   const timerHTML=activeTimer?`
     <div class="live-card">
       <div class="live-label"><div class="live-dot"></div>Timer kører</div>
-      <div class="live-project">${esc(activeTimer.label)}</div>
+      <div class="live-project">${esc(visLabel(activeTimer.label))}</div>
       <div class="live-sub">Startet kl. ${esc(activeTimer.startHM)}</div>
       <div class="live-time" id="timerDisp">0:00:00</div>
-      <button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
+      <button class="btn btn-stop" onclick="stopTimer()">■&nbsp; Stop &amp; Gem</button>
     </div>`:'';
 
   // Byg liste med frokost indsat på rette tidspunkt
@@ -1722,7 +1799,7 @@ function frokostBarHTML(dk){
   const start=fr?fr.start:FROKOST_DEFAULT_START;
   const stop =fr?fr.stop :FROKOST_DEFAULT_STOP;
   const mins=Math.round((hmToH(stop)-hmToH(start))*60);
-  const inputStyle=`background:var(--ink3);border:1.5px solid var(--ink4);color:var(--snow);border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;width:88px;font-family:var(--mono)`;
+  const inputStyle=`background:var(--ink3);border:1.5px solid var(--line);color:var(--snow);border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;width:88px;font-family:var(--mono)`;
   return`<div class="card">
     <div class="frokost-bar">
       <div class="frokost-icon">🍽️</div>
@@ -1730,10 +1807,10 @@ function frokostBarHTML(dk){
         <div class="frokost-title">Frokost · <span id="frMins">${mins}</span> min</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
           <input type="time" id="frStart" value="${start}" aria-label="Frokost starter" style="${inputStyle}"
-            oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
+            oninput="updateFrokost('${dk}')" onblur="commitFrokostInput('${dk}')">
           <span style="color:var(--slate)">→</span>
           <input type="time" id="frStop" value="${stop}" aria-label="Frokost slutter" style="${inputStyle}"
-            oninput="updateFrokost('${dk}')" onchange="commitFrokostInput('${dk}')">
+            oninput="updateFrokost('${dk}')" onblur="commitFrokostInput('${dk}')">
         </div>
       </div>
       <button class="frokost-skip" onclick="setFrokostSkip('${dk}',true)">Ingen<br>frokost</button>
@@ -1742,6 +1819,7 @@ function frokostBarHTML(dk){
 }
 
 function updateFrokost(dk){
+  frokostRoert=true;
   const s=document.getElementById('frStart')?.value;
   const e=document.getElementById('frStop')?.value;
   if(!s||!e) return;
@@ -1761,12 +1839,37 @@ function updateFrokost(dk){
   }
   scheduleSave();
 }
-// Fuld re-render når feltet forlades (onchange) — opdaterer STATUS I DAG korrekt
+// Fuld re-render når feltet forlades — opdaterer STATUS I DAG korrekt.
+// onblur, ikke onchange: Chrome sender change for hvert segment i et
+// tidsfelt, og render() smed så feltet væk efter første ciffer ("1" → 01:00).
+// updateFrokost gemmer allerede løbende.
+// Kun naar der faktisk er tastet — ellers gjorde et Tab gennem felterne dagens
+// frokost "tilpasset", og den fulgte ikke med en senere ændring under ⚙️.
+let frokostRoert=false;
+// blur kommer ved mousedown. Kører render() før mouseup, er knappen under
+// musen udskiftet, og klikket forsvinder. Vent derfor til klikket er afleveret.
+let pegerNede=false;
+addEventListener('pointerdown',()=>{pegerNede=true;},true);
+addEventListener('pointerup',()=>{pegerNede=false;},true);
+addEventListener('pointercancel',()=>{pegerNede=false;},true);
 function commitFrokostInput(dk){
-  const s=document.getElementById('frStart')?.value;
-  const e=document.getElementById('frStop')?.value;
-  if(!s||!e||hmToH(e)<=hmToH(s)) return;
-  setFrokostTime(dk,s,e);
+  const koer=()=>{
+    const a=document.activeElement;
+    if(a&&(a.id==='frStart'||a.id==='frStop')) return; // videre til det andet frokostfelt
+    if(!frokostRoert) return;
+    const s=document.getElementById('frStart')?.value;
+    const e=document.getElementById('frStop')?.value;
+    if(!s||!e) return;
+    if(hmToH(e)<=hmToH(s)){ frokostRoert=false; toast('Frokosten skal slutte efter den starter','err'); return; }
+    frokostRoert=false;
+    setFrokostTime(dk,s,e);
+  };
+  if(!pegerNede){ setTimeout(koer,0); return; }
+  const vent=()=>{
+    removeEventListener('pointerup',vent,true); removeEventListener('pointercancel',vent,true);
+    setTimeout(koer,0); // efter click, som sendes i samme omgang som pointerup
+  };
+  addEventListener('pointerup',vent,true); addEventListener('pointercancel',vent,true);
 }
 
 
@@ -2119,16 +2222,22 @@ function setDT(dk,type){
   toast((msgs[type]||type)+' registreret','ok');
 }
 function startEdit(i){editingIdx=i;render();}
-function cancelEdit(){editingIdx=-1;render();}
+// Annuller/Gem findes ikke efter render — fokus tilbage paa postens Ret-knap,
+// ellers skulle man Tab'e hele siden igennem for at komme tilbage.
+function fokusRet(i){
+  const b=[...document.querySelectorAll('#main [onclick]')].find(x=>x.getAttribute('onclick')===`startEdit(${i})`);
+  if(b) b.focus(); // med scroll: listen er sorteret efter tid, saa naboen kan ligge uden for skaermen
+}
+function cancelEdit(){const i=editingIdx;editingIdx=-1;render();fokusRet(i);}
 function saveEdit(dk,i){
-  const on=document.getElementById('editOn').value.trim();
+  const on=renTekst(document.getElementById('editOn').value,40);
   const start=document.getElementById('editStart').value;
   const stop=document.getElementById('editStop').value;
   if(!on||!start||!stop){toast('Udfyld alle felter','err');return;}
   const sh=hmToH(start),eh=hmToH(stop);
   if(eh<=sh){toast('Stop skal være efter start','err');return;}
   const arr=getEntries(dk); arr[i]={...arr[i],on,start,stop,hours:eh-sh};
-  saveEntries(dk,arr); editingIdx=-1; toast('✓ Rettet','ok'); render();
+  saveEntries(dk,arr); editingIdx=-1; toast('✓ Rettet','ok'); render(); fokusRet(i);
 }
 function doDelEntry(dk,i){
   const arr=getEntries(dk);
@@ -2138,19 +2247,26 @@ function doDelEntry(dk,i){
   arr.splice(i,1); saveEntries(dk,arr);
   recalcSpecial(dk); // Genberegn special timer
   editingIdx=-1; render(); toast('Slettet','err');
+  fokusRet(Math.min(i,getEntries(dk).length-1)); // naboens Ret — ikke Slet, se render()
 }
 function startDisp(){
   if(timerIv)clearInterval(timerIv);
   let lastMin=new Date().getMinutes();
-  timerIv=setInterval(()=>{
-    const el=document.getElementById('timerDisp'); if(!el){clearInterval(timerIv);return;}
+  const tick=()=>{
+    // !activeTimer: stoppet paa den anden enhed mens Ret-boksen/en modal holdt skaermen fast.
+    const el=document.getElementById('timerDisp'); if(!el||!activeTimer){clearInterval(timerIv);return;}
     const ms=Date.now()-activeTimer.t0;
     const s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);
     el.textContent=`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     // Genberegn STATUS I DAG (ARBEJDET/MANGLER) hvert minut, så det inkluderer løbende timer
     const curMin=new Date().getMinutes();
-    if(curMin!==lastMin){ lastMin=curMin; if(currentTab==='dag') render(); }
-  },1000);
+    // safeRender, ikke render: en aaben Ret-boks blev ellers nulstillet hvert minut (regel 6).
+    if(curMin!==lastMin){ lastMin=curMin; if(currentTab==='dag') safeRender(); }
+  };
+  // Straks, ikke først efter 1 sek: markup'en står på 0:00:00, og render()
+  // kører hvert minut og ved hver sync — så blinkede uret 0:00:00 i et sekund.
+  tick();
+  timerIv=setInterval(tick,1000);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2184,7 +2300,7 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
-    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${esc(customOn)}" oninput="customOn=this.value;selOn=''"></div>
+    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${esc(customOn)}" oninput="customOn=renTekst(this.value,40);selOn=''"></div>
   </div>
   <div class="card">
     <div class="section-label">Syg / Barn syg / §56 på timer</div>
@@ -2200,7 +2316,7 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">▶ Start timer</div>
     <div class="form-col">
-      ${activeTimer?`<button class="btn btn-red" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${esc(activeTimer.label)}</button>`:`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
+      ${activeTimer?`<button class="btn btn-stop" onclick="stopTimer()">■&nbsp; Stop &amp; Gem — ${esc(visLabel(activeTimer.label))}</button>`:`<button class="btn btn-green" onclick="startTimer()">▶&nbsp; Start timer nu</button>`}
     </div>
   </div>
   <div class="card">
@@ -2243,8 +2359,25 @@ function setNow(id){
   updateTlSel();
 }
 function getLabel(){const on=customOn||selOn||selCat||'?';return(selCat&&selCat!==on)?`${on} / ${selCat}`:on;}
+// Label til hurtigstart/scan. En kategori uden ON bruger kategorien som ON
+// (scanConfirm), og saa stod der "Admin/Møde · Admin/Møde".
+function jobLabel(cat,on){
+  if(!on||on===cat) return cat||'';
+  if(!cat) return on;
+  return `${cat} · ${on}`;
+}
+// Kun visning: en timer startet foer rettelsen kan have den dobbelte label
+// gemt. Kollaps "X · X" til "X" — de gemte data aendres ikke.
+function visLabel(l){
+  const s=String(l==null?'':l);
+  const m=/^(.+) · \1$/.exec(s);
+  return m?m[1]:s;
+}
 
 function startTimer(){
+  // Knappen kan vise "Start" selv om den anden enhed har startet en timer —
+  // safeRender() tegner ikke om mens man skriver. Overskriv den ikke.
+  if(activeTimer){ toast(`Der kører allerede en timer (${visLabel(activeTimer.label)}) — stop den først`,'err'); render(); return; }
   const baseOn=customOn||selOn||selCat;
   if(!baseOn&&!selSpecial){toast('Vælg kategori eller ON-nummer','err');return;}
   const on=baseOn||(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56');
@@ -3176,7 +3309,7 @@ function quickStartOpen(){
   scanSelCat=lastCat;
   document.getElementById('scanPopupON').textContent='▶ Hurtig start';
   const sub=activeTimer
-    ? `Stopper: ${activeTimer.label} — vælg nyt job`
+    ? `Stopper: ${visLabel(activeTimer.label)} — vælg nyt job`
     : 'Vælg kategori og ON-nummer';
   document.getElementById('scanPopupSub').textContent=sub;
   document.getElementById('scanConfirmBtn').textContent='▶ Start job';
@@ -3224,7 +3357,7 @@ function updateScanConfirmBtn(){
   const btn=document.getElementById('scanConfirmBtn');
   if(!btn)return;
   if(noOn)       btn.textContent=`▶ Start ${scanSelCat}`;
-  else if(on)    btn.textContent=`▶ Start ${scanSelCat} · ${on}`;
+  else if(on)    btn.textContent=`▶ Start ${jobLabel(scanSelCat,on)}`;
   else           btn.textContent=`▶ Start ${scanSelCat||'…'} — vælg ON`;
   // Vis/skjul ON-sektion for Admin/Møde
   const onSection=document.getElementById('scanOnChips');
@@ -3281,16 +3414,22 @@ function scanClose(){
 function scanShowFromBarcode(on){
   scanPendingON=on; scanCustomOnVal='';
   const history=JSON.parse(localStorage.getItem('vct_scan_cat_history')||'{}');
-  scanSelCat=history[on]||history['__last__']||'Service';
+  // Kun egne noegler: en stregkode som "constructor" gav ellers en indbygget funktion som kategori.
+  const huskKat=Object.prototype.hasOwnProperty.call(history,on)?history[on]:''; // ikke Object.hasOwn: kræver iOS 15.4+
+  let kat=(typeof huskKat==='string'&&huskKat)||history['__last__']||'Service';
+  // En stregkode ER et ON. Foreslaa ikke en kategori uden ON (fx Admin/Møde
+  // husket fra en hurtigstart) — saa ville scanConfirm smide det scannede ON vaek.
+  if(CATS_NO_ON.has(kat)) kat=(CATS.find(c=>!c.noOn)||{label:kat}).label;
+  scanSelCat=kat;
   document.getElementById('scanPopupON').textContent='ON '+on;
   const sub=activeTimer
-    ? `Stopper: ${activeTimer.label} — vælg kategori`
+    ? `Stopper: ${visLabel(activeTimer.label)} — vælg kategori`
     : 'Bekræft kategori';
   document.getElementById('scanPopupSub').textContent=sub;
-  document.getElementById('scanConfirmBtn').textContent=`▶ Start ${scanSelCat} · ${on}`;
   document.getElementById('scanOnCustom').value='';
   buildScanCatGrid(scanSelCat);
   buildScanOnChips(on);
+  updateScanConfirmBtn(); // knaptekst + ON-sektionens synlighed, ellers arvet fra forrige popup
   document.getElementById('scanPopup').classList.remove('hidden');
 }
 
@@ -3298,9 +3437,10 @@ function scanShowFromBarcode(on){
 // Kategorier der IKKE kræver ON-nummer — defineret sammen med CATS ovenfor
 
 function scanConfirm(){
-  const customVal=scanCustomOnVal.trim();
-  const on=customVal||scanPendingON||
-    (CATS_NO_ON.has(scanSelCat)?scanSelCat:null); // Admin/Møde bruger kategori som ON
+  const customVal=renTekst(scanCustomOnVal,40); // som stregkode-vejen — fritekst skal ogsaa renses foer db
+  // Admin/Møde bruger kategori som ON. Et ON valgt foer skiftet til en
+  // kategori uden ON er skjult og ignoreres — knappen viser "Start Admin/Møde".
+  const on=CATS_NO_ON.has(scanSelCat)?scanSelCat:(customVal||scanPendingON||null);
   if(!on){ toast('Vælg eller skriv ON-nummer','err'); return; }
   if(!scanSelCat){ toast('Vælg kategori','err'); return; }
   const now=nowHM();
@@ -3324,7 +3464,7 @@ function scanConfirm(){
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
   }
   // Start nyt
-  const label=`${scanSelCat} · ${on}`;
+  const label=jobLabel(scanSelCat,on);
   activeTimer={on,cat:scanSelCat,label,t0:Date.now(),startHM:now,date:dk};
   localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
   // Husk kategori-valg
