@@ -10,6 +10,22 @@ Den skrives til headeren ved opstart.
 
 ---
 
+## [5.5.1] – 2026-09-27
+
+### Fixed
+- **Outlook-importen virkede ikke efter 5.5.0.** Adressen blev flyttet til
+  `localStorage`, men der var intet sted at indtaste den, så knappen faldt
+  altid tilbage til manuel filvalg. Sync-opsætningen har nu et felt til
+  ICS-adressen, og CSP'en tillader Outlook-domænet igen.
+- Adressen valideres to steder: ved indtastning og igen før hvert kald.
+  Kun `https://outlook.office365.com/...` accepteres, så hverken en
+  tastefejl eller en manipuleret `localStorage`-værdi kan sende kalenderen
+  et andet sted hen. Feltet er maskeret som et kodeord, for adressen *er*
+  en hemmelighed.
+- "Slå sync fra" rydder nu også kalenderadressen.
+
+---
+
 ## [5.5.0] – 2026-09-27
 
 Første version der følger de fælles udviklingsregler: changelog, SemVer,

@@ -11,7 +11,7 @@
      API. Den stopper IKKE XSS i sig selv — 'unsafe-inline' er noedvendigt
      saa laenge UI'et bruger inline-handlers. Vaernet mod XSS er esc() plus
      validering ved indgangen (rensEntry/renTekst). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.github.com; object-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.github.com https://outlook.office365.com; object-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="theme-color" content="#051C2C">
 <!-- Ikon indlejret i filen, så den virker alene - også som lokal fil (v5.4) -->
 <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACoUlEQVR42mWTWUhUYRTHf3PnmrmUYYJZaVmZlo2SJho+tGA9TNRDJUXSTr5USj0UPRQtFEFQSkG2B9lDOwTVU0hRIWKbJLZSQdE2hTp3psbxntODd6YZ+56+7fedc/7/87mWbzs62hiScKq/3/aIioEIKoKqogiogICojYoCNqhLTDdtobC1wTQSEk91vfvk7fZboBHYpnreTFKSE1FV/FaAy7fvg9rOuTAyLTU7b9xoNcN2uHgwrCLsqF2Cy+UCQFW5fKslCiOC72c3E8aMqjBUxBgMo8LWg6fptYL0WEG2HGiKgyNzW223CfFwalIiG1d48c4qZXhqMgB76lZS5snj6Lnr9Pot1AmICqaKRuG0lCTO7t/MxJws2l+84WnnG1SV6YWTqFlURXlRATX1++jp9Q/ooYIR+9qmFV4m5mSx+9hF1m4/ROP568zvX09L81r2NJxl0vix1K9bGiOmYkTgBLeBd/YMWp+/5Nqde9E68zO62TnnCYmfT9L6tJNF8ypJcBtRPQxQVITMkWmkJA2lveNVnGCRUe15T9uzTlKTk8nMSI9mbahTizqXVTVO7caHU519QNSZD8CqiomCivDlh4/A7z+UFefT1PzPqoYHBaA2PmsIVasKsYJBvn777gQUDERAbfpCfdy8+4iK4iksWzAnxiqbI/cnY+fUUlEyjRu3WwiF+qLOxfSB0HjmKqWFeeyqX82CuRU87ugClBlFUyjxFPDy7QcOH78Q03CKqSJ2pOZev0VN3V42r1nCwqpKSj35APzq8XPu0k0aTjRjBayogIqIa3Hd/iuv335c6vvVHZe2ipCRnoaK8MP3879WHzFsGFPzc2+ZobC/Ni83m9zszHIR2/kXA04MqK2MH5sJaiPOGkFMt9ER7g/U/gWVhwGm4OJ3lQAAAABJRU5ErkJggg==">
@@ -307,7 +307,7 @@ select option{background:#081828}
 <div class="save-bar" id="saveBar"></div>
 <header class="app-header">
   <div>
-    <div class="logo">Vestergaard · <span class="gul">Timer</span> <span class="ver" id="appVer">v5.5.0</span></div>
+    <div class="logo">Vestergaard · <span class="gul">Timer</span> <span class="ver" id="appVer">v5.5.1</span></div>
     <div class="date-line" id="hdrDate">—</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -382,7 +382,7 @@ select option{background:#081828}
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
 // Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.5.1';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
@@ -1278,6 +1278,14 @@ function showSyncSetup(){
         <label class="field-label">GitHub token (gist-scope)</label>
         <input type="password" id="tokenInput" value="${esc(getToken())}" placeholder="ghp_..." style="${inp}">
       </div>
+      <div style="margin-bottom:14px">
+        <label class="field-label" for="icsInput">Outlook-kalender (valgfri)</label>
+        <input type="password" id="icsInput" value="${esc(getIcsUrl())}" placeholder="https://outlook.office365.com/owa/calendar/..." style="${inp}">
+        <div style="font-size:11px;color:var(--slate);margin-top:5px;line-height:1.5">
+          Adressen på dit publicerede ICS-feed. Bruges af “Hent fra Outlook” i RAPPORT.
+          <b>Behandl den som et kodeord</b> — alle med adressen kan læse hele din kalender.
+        </div>
+      </div>
       <div style="font-size:11px;color:var(--slate);margin-bottom:16px;line-height:1.5">
         Begge gemmes kun lokalt på denne enhed — aldrig i koden. Du skal indtaste dem
         én gang pr. enhed, derefter husker browseren dem.
@@ -1301,6 +1309,15 @@ async function saveSyncConfig(){
   if(!/^(ghp_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{20,})$/.test(t||'')){ toast('Ugyldigt token','err'); return; }
   localStorage.setItem('vct_gistid',g);
   localStorage.setItem('vct_ghtoken',t);
+  // ICS-adressen er valgfri. Kun https mod Outlook accepteres — den ender
+  // i et fetch, og en fri URL ville kunne pege andre steder hen.
+  const icsEl=document.getElementById('icsInput');
+  if(icsEl){
+    const u=icsEl.value.trim();
+    if(!u) localStorage.removeItem('vct_icsurl');
+    else if(ICS_URL_RE.test(u)) localStorage.setItem('vct_icsurl',u);
+    else { toast('Kalender-adressen skal starte med https://outlook.office365.com/','err'); return; }
+  }
   const m=document.getElementById('syncModal'); if(m) m.remove();
   toast('Sync-opsætning gemt','ok');
   await ghLoad();
@@ -1311,6 +1328,7 @@ function clearSyncConfig(){
   if(!confirm('Slå sync fra? Dine timer bliver liggende i denne browser, men synkroniseres ikke længere med andre enheder.')) return;
   localStorage.removeItem('vct_gistid');
   localStorage.removeItem('vct_ghtoken');
+  localStorage.removeItem('vct_icsurl');
   const m=document.getElementById('syncModal'); if(m) m.remove();
   setSyncStatus('');
   toast('Sync slået fra — kører lokalt','ok');
@@ -2862,7 +2880,11 @@ function toggleWeek(id){const el=document.getElementById(id);if(el){el.classList
 // ICS-feedets adresse er en HEMMELIGHED: den giver anonym adgang til hele
 // kalenderen. Den maa ALDRIG staa i koden — repoet er offentligt. Ligger nu
 // i localStorage pr. enhed, samme moenster som gist-ID og token.
-function getIcsUrl(){ return localStorage.getItem('vct_icsurl')||''; }
+const ICS_URL_RE=/^https:\/\/outlook\.office365\.com\/[^\s"'<>]+$/;
+function getIcsUrl(){
+  const u=localStorage.getItem('vct_icsurl')||'';
+  return ICS_URL_RE.test(u) ? u : '';
+}
 
 async function importOutlook(){
   const url=getIcsUrl();
