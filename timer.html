@@ -433,7 +433,7 @@ select option{background:#081828}
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
 // Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
-const APP_VERSION = '5.6.0';
+const APP_VERSION = '5.7.0';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
@@ -459,6 +459,15 @@ const DAY_S   = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
 const MONTHS_S= ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const WDAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
 
+// Gyldige formater til validering af data udefra (import og gist).
+// Skal staa FOER loadCfg() kaldes — ellers kaster const-opslaget en
+// ReferenceError ved opstart, catch fanger den, og alle indstillinger
+// nulstilles tavst (fejl i v5.5.0–v5.6.0).
+const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/;
+const DATOKEY=/^\d{4}-\d{2}-\d{2}$/;
+const DAGTYPER=new Set(['kontor','hjemme','syg','barnsyg','p56','ferie','fri']);
+const SPECTYPER=new Set(['syg','barnsyg','p56']);
+
 // ═══ BRUGER-KONFIGURATION ═══
 // Arbejdstid, ON-numre, kategorier og frokost kan sættes pr. enhed under
 // RAPPORT → ⚙️. Defaults herunder er Jimmys værdier, så en ukonfigureret
@@ -482,26 +491,41 @@ function defaultCfg(){ return JSON.parse(JSON.stringify(CFG_DEFAULTS)); }
 // hver bruger opretter sine egne — men en enhed der ALLEREDE har registreret
 // timer er en eksisterende bruger og skal ikke miste sine genveje.
 const LEGACY_QUICK_ON=['ON','2613','2965','2973','3179','3200','3201'];
+// Byg felterne op igen, saa en beskadiget eller manipuleret konfiguration
+// (vct_cfg eller cfg fra gist'en) hverken kan braekke appen eller smugle
+// tegn ind i inline-handlers. Kun kendte felter kommer med ud.
+function rensCfg(gemt){
+  const ud=Object.assign(defaultCfg(), (gemt&&typeof gemt==='object'&&!Array.isArray(gemt))?gemt:{});
+  // Lofter over antal: en fremmed gist maa ikke kunne fryse appen med
+  // tusindvis af knapper.
+  ud.quickOn = Array.isArray(ud.quickOn) ? [...new Set(ud.quickOn.slice(0,200).map(o=>renTekst(o,40)).filter(Boolean))].slice(0,50) : [];
+  ud.cats = Array.isArray(ud.cats) && ud.cats.length
+    ? ud.cats.slice(0,50).map(k=>({label:renTekst(k&&k.label,40),icon:renTekst(k&&k.icon,8)||'📌',noOn:!!(k&&k.noOn)})).filter(k=>k.label)
+    : defaultCfg().cats;
+  // Dublerede navne fjernes — saveSettings() tillader dem ikke, men en gist kan.
+  ud.cats = ud.cats.filter((k,i,a)=>a.findIndex(x=>x.label===k.label)===i).slice(0,20);
+  if(!ud.cats.length) ud.cats=defaultCfg().cats;
+  ud.dayTarget = Array.isArray(ud.dayTarget) && ud.dayTarget.length===7
+    ? ud.dayTarget.map(v=>{ const t=Number(v); return Number.isFinite(t)&&t>=0&&t<=24 ? t : 0; })
+    : defaultCfg().dayTarget;
+  if(!HHMM.test(ud.frokostStart)) ud.frokostStart=CFG_DEFAULTS.frokostStart;
+  if(!HHMM.test(ud.frokostStop))  ud.frokostStop =CFG_DEFAULTS.frokostStop;
+  if(ud.frokostStop<=ud.frokostStart){ ud.frokostStart=CFG_DEFAULTS.frokostStart; ud.frokostStop=CFG_DEFAULTS.frokostStop; }
+  // updatedAt afgoer ved sync hvilken enheds indstillinger der er nyest.
+  const ts=Number(ud.updatedAt);
+  return {dayTarget:ud.dayTarget, quickOn:ud.quickOn, cats:ud.cats,
+    frokostStart:ud.frokostStart, frokostStop:ud.frokostStop,
+    // Et tidsstempel langt ude i fremtiden (forkert ur eller en manipuleret
+    // gist) ville vinde hver sammenligning for altid — derfor max +1 døgn.
+    updatedAt: Number.isFinite(ts)&&ts>0&&ts<Date.now()+864e5 ? ts : 0};
+}
+// Nyt tidsstempel til en ændring: altid højere end det senest kendte, så
+// ændringen vinder, selv om enhedens ur går lidt bagud.
+function nytCfgTs(){ return Math.max(Date.now(), (cfg.updatedAt||0)+1, ((db&&db.cfg&&db.cfg.updatedAt)||0)+1); }
 function loadCfg(){
   try{
     const raw=localStorage.getItem('vct_cfg');
-    if(raw){
-      const gemt=JSON.parse(raw);
-      const ud=Object.assign(defaultCfg(), gemt);
-      // Byg felterne op igen, saa en beskadiget eller manipuleret vct_cfg
-      // hverken kan braekke appen ved boot eller smugle tegn ind i
-      // inline-handlers.
-      ud.quickOn = Array.isArray(ud.quickOn) ? ud.quickOn.map(o=>renTekst(o,40)).filter(Boolean) : [];
-      ud.cats = Array.isArray(ud.cats) && ud.cats.length
-        ? ud.cats.map(k=>({label:renTekst(k&&k.label,40),icon:renTekst(k&&k.icon,8)||'📌',noOn:!!(k&&k.noOn)})).filter(k=>k.label)
-        : defaultCfg().cats;
-      ud.dayTarget = Array.isArray(ud.dayTarget) && ud.dayTarget.length===7
-        ? ud.dayTarget.map(v=>{ const t=Number(v); return Number.isFinite(t)&&t>=0&&t<=24 ? t : 0; })
-        : defaultCfg().dayTarget;
-      if(!HHMM.test(ud.frokostStart)) ud.frokostStart=CFG_DEFAULTS.frokostStart;
-      if(!HHMM.test(ud.frokostStop))  ud.frokostStop =CFG_DEFAULTS.frokostStop;
-      return ud;
-    }
+    if(raw) return rensCfg(JSON.parse(raw));
     // Ingen gemt konfiguration: engangs-migrering for eksisterende brugere.
     const d=defaultCfg();
     try{
@@ -612,6 +636,7 @@ async function ghLoad(){
           date:DATOKEY.test(at.date)?at.date:dateKey(new Date())
         };
       } else if(at!==undefined){ decoded.activeTimer=null; }
+      if(decoded.cfg!==undefined) decoded.cfg = decoded.cfg ? rensCfg(decoded.cfg) : undefined;
     }
     // ── Beskyttelse mod datatab ──
     // En tom Gist må ALDRIG overskrive lokale timer. Det sker når man peger
@@ -629,6 +654,17 @@ async function ghLoad(){
     }
     db=decoded;
     localStorage.setItem('vct_db', JSON.stringify(db));
+    // Indstillinger: nyeste vinder. Er gist'ens nyere, overtages de; er de
+    // lokale nyere (fx gemt mens enheden var offline), sendes de op.
+    const fjernTs=(db.cfg&&db.cfg.updatedAt)||0, lokalTs=cfg.updatedAt||0;
+    if(fjernTs>lokalTs){
+      cfg=rensCfg(db.cfg);
+      localStorage.setItem('vct_cfg', JSON.stringify(cfg));
+      applyCfg();
+      if(document.getElementById('settingsModal')) toast('Indstillingerne er ændret på en anden enhed','ok');
+    } else if(lokalTs>fjernTs){
+      clearTimeout(syncTimer); isDirty=true; ghSave();
+    }
     // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
     if(db.activeTimer){
       const remote=db.activeTimer;
@@ -682,6 +718,9 @@ async function ghSave(){
       special: activeTimer.special||null,
       date: activeTimer.date||dateKey(new Date()),
     } : null;
+    // Indstillingerne sendes med, saa ON-genveje m.m. er ens paa alle enheder.
+    // vct_cfg er stadig kilden lokalt (haard regel 8) — db.cfg er kun transport.
+    if(cfg.updatedAt && cfg.updatedAt>=((db.cfg&&db.cfg.updatedAt)||0)) db.cfg=rensCfg(cfg);
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
     const r=await fetch(gistApi(),{
       method:'PATCH',
@@ -864,7 +903,7 @@ function showIntro(){
   const backupTekst = erLokalFil()
     ? 'Dine timer ligger kun i denne browser. Appen henter automatisk en backup-fil til <b>Overførsler</b> én gang om dagen — flyt den gerne til OneDrive. Du kan altid hente en med <b>💾 Backup</b> i RAPPORT.'
     : 'Dine timer ligger kun i denne browser. Gå ind under <b>⚙️</b> og vælg en <b>backup-mappe</b> — helst i din OneDrive — så gemmer appen automatisk en kopi.';
-  document.getElementById('modalRoot').innerHTML+=`
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
   <div id="introModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Velkommen" style="z-index:252">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">👋 Velkommen til Timer</div>
@@ -878,7 +917,7 @@ function showIntro(){
       </div>
       <div style="font-size:10px;color:var(--slate);margin-top:12px;text-align:center">Du kan altid finde denne vejledning igen under ⚙️</div>
     </div>
-  </div>`;
+  </div>`);
 }
 
 function lukIntro(){
@@ -895,11 +934,11 @@ function showSettings(){
     '<input type="number" id="dt'+i+'" value="'+esc(settingsDraft.dt[i])+'" min="0" max="24" step="0.25" style="'+S_INP+';width:78px">'+
     '<div style="font-size:11px;color:var(--slate)">timer</div></div>'
   ).join('');
-  document.getElementById('modalRoot').innerHTML+=`
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
   <div id="settingsModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Indstillinger">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:4px">⚙️ Indstillinger</div>
-      <div style="font-size:11px;color:var(--slate);margin-bottom:18px">Gælder kun denne enhed. Dine timer røres ikke.</div>
+      <div style="font-size:11px;color:var(--slate);margin-bottom:18px">${syncEnabled()?'Synces til dine andre enheder via din Gist.':'Gælder kun denne enhed.'} Dine timer røres ikke.</div>
 
       <div class="section-label" style="margin-bottom:8px">Arbejdstid pr. ugedag</div>
       ${dayRows}
@@ -936,7 +975,7 @@ function showSettings(){
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="showSyncSetup()">⚙️ Sync-opsætning →</button>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:12px;color:var(--red)" onclick="resetSettings()">Nulstil til standard</button>
     </div>
-  </div>`;
+  </div>`);
   fokuserModal('settingsModal');
 }
 
@@ -959,11 +998,6 @@ function catRowsHTML(){
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 // Renser fritekst der bliver til ON-numre og kategorinavne. Bruges ved
 // kilden (stregkodescanning, import), saa skadelige vaerdier aldrig naar db.
-// Gyldige formater til validering af data udefra (import og gist).
-const HHMM=/^([01]\d|2[0-3]):[0-5]\d$/;
-const DATOKEY=/^\d{4}-\d{2}-\d{2}$/;
-const DAGTYPER=new Set(['kontor','hjemme','syg','barnsyg','p56','ferie','fri']);
-const SPECTYPER=new Set(['syg','barnsyg','p56']);
 // Renser een registrering fra en importfil eller en gist. Returnerer null
 // hvis posten ikke kan bruges, saa kaldere kan filtrere den fra.
 function rensEntry(e,dk){
@@ -1036,8 +1070,10 @@ function saveSettings(){
 
   cfg.dayTarget=dt; cfg.quickOn=ons; cfg.cats=cats;
   cfg.frokostStart=fs; cfg.frokostStop=fe;
+  cfg.updatedAt=nytCfgTs();
   localStorage.setItem('vct_cfg',JSON.stringify(cfg));
   applyCfg();
+  if(syncEnabled()) scheduleSave(); // send indstillingerne til de andre enheder
   settingsDraft=null; // gemt — kladden er ikke længere aktuel
   const m=document.getElementById('settingsModal'); if(m) m.remove();
   toast('Indstillinger gemt','ok');
@@ -1045,10 +1081,14 @@ function saveSettings(){
 }
 
 function resetSettings(){
-  if(!confirm('Nulstil arbejdstid, ON-numre, kategorier og frokost til standard? Dine registrerede timer røres ikke.')) return;
-  localStorage.removeItem('vct_cfg');
+  if(!confirm('Nulstil arbejdstid, ON-numre, kategorier og frokost til standard?'+(syncEnabled()?' Det gælder også dine andre enheder.':'')+' Dine registrerede timer røres ikke.')) return;
+  // Gem standarden i stedet for at slette vct_cfg — ellers kører
+  // engangs-migreringen i loadCfg() igen ved næste opstart.
   cfg=defaultCfg();
+  cfg.updatedAt=nytCfgTs();
+  localStorage.setItem('vct_cfg',JSON.stringify(cfg));
   applyCfg();
+  if(syncEnabled()) scheduleSave();
   settingsDraft=null;
   const m=document.getElementById('settingsModal'); if(m) m.remove();
   toast('Indstillinger nulstillet','ok');
@@ -1278,7 +1318,7 @@ async function migrateToNewGist(){
 }
 
 function showGistMigrated(nyId, gammelId, dage){
-  document.getElementById('modalRoot').innerHTML+=`
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
   <div id="migModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Ny Gist oprettet" style="z-index:251">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px;color:var(--green)">✓ Ny Gist oprettet</div>
@@ -1298,7 +1338,7 @@ function showGistMigrated(nyId, gammelId, dage){
       <a href="https://gist.github.com/${esc(gammelId)}" target="_blank" rel="noopener" style="display:block;background:var(--ink3);border:1px solid rgba(255,92,92,.25);border-radius:10px;padding:11px;font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--red);text-decoration:none;margin-bottom:18px">${esc(gammelId)} ↗</a>`:''}
       <button class="btn btn-gold" style="width:100%" onclick="document.getElementById('migModal').remove();render()">Forstået ✓</button>
     </div>
-  </div>`;
+  </div>`);
 }
 
 function kopierNytId(){
@@ -1312,7 +1352,7 @@ function kopierNytId(){
 function showSyncSetup(){
   const inp='width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font)';
   const on=syncEnabled();
-  document.getElementById('modalRoot').innerHTML+=`
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
   <div id="syncModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Sync-opsætning">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:12px">⚙️ Sync-opsætning</div>
@@ -1348,7 +1388,7 @@ function showSyncSetup(){
       ${getToken()?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;color:var(--blue)" onclick="migrateToNewGist()">${getGistId()?'🔒 Opret ny Gist og flyt data':'➕ Opret min egen Gist'}</button>`:''}
       ${on?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;color:var(--red)" onclick="clearSyncConfig()">Slå sync fra — kør kun lokalt</button>`:''}
     </div>
-  </div>`;
+  </div>`);
 }
 
 async function saveSyncConfig(){
@@ -3170,7 +3210,7 @@ function downloadBackup(){
 
 function showFerieModal(){
   const today=dateKey(new Date());
-  document.getElementById('modalRoot').innerHTML+=`
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
   <div id="ferieModal" class="modal-wrap" role="dialog" aria-modal="true" aria-label="Sæt ferieperiode">
     <div class="modal-panel">
       <div class="section-label" style="margin-bottom:14px">🌴 Sæt ferieperiode</div>
@@ -3184,7 +3224,7 @@ function showFerieModal(){
         <button class="btn" style="flex:1;background:var(--green);color:var(--ink)" onclick="saveFerie()">Gem ferie ✓</button>
       </div>
     </div>
-  </div>`;
+  </div>`);
 }
 
 function saveFerie(){
