@@ -433,7 +433,7 @@ select option{background:#081828}
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
 // Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
-const APP_VERSION = '5.7.0';
+const APP_VERSION = '5.7.1';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
@@ -574,6 +574,57 @@ let selCat='', selOn='', customOn='', selSpecial='';
 let tilfoejStart='', tilfoejStop='';
 let editingIdx=-1;
 let syncTimer=null, isDirty=false;
+let dirtyGen=0; // Taeller op ved hver lokal aendring — afsloerer aendringer mens et sync-kald er undervejs
+let gemmer=false; // Et PATCH er undervejs — gem koeres et ad gangen, ellers kan et aeldre lande sidst
+let gistHentet=false; // Ingen PATCH foer gist'en er hentet i denne session — ellers kan en gammel lokal kopi overskrive den
+let henter=false; // GET er undervejs — intet PATCH imens, ellers flettes mod en base der allerede er sendt
+// Sidst kendte gist-stand (JSON pr. noegle). Har enheden ikke-sendte aendringer,
+// naar gist'en hentes, flettes der: gist'en er basis, og kun det, der er aendret
+// LOKALT siden basen, laegges ovenpaa. Saa kan hverken en dage gammel telefon
+// overskrive PC'ens dage, eller en hentning smide en ny registrering vaek.
+let synkBase=huskSynkBase(null);
+let gistEpoke=0; // Taeller op ved skift af gist-ID — svar fra et kald mod den gamle gist kasseres
+// Efter skift af gist / sync slaaet til: tilfoej lokale dage gist'en mangler,
+// overskriv intet. 'nyt' = nyt gist-ID, 'samme' = samme ID uden kendt base
+// (fx opgradering fra v5.7.0). Gemt i vct_kunnye.
+let kunNyeDage=false;
+let staleRetry=null;
+let pollIv=null;
+let sidstGemtBase='';
+// Basen gemmes i localStorage (vct_synkbase), saa ikke-sendte aendringer ogsaa
+// flettes efter en genindlaesning — sammen med vct_dirty.
+function gemSynkBase(b){
+  synkBase=b;
+  try{ const t=JSON.stringify(b); if(t!==sidstGemtBase){ localStorage.setItem('vct_synkbase',t); sidstGemtBase=t; } }catch{}
+}
+function tidsfrist(ms){ return (typeof AbortSignal!=='undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined; }
+// Renses som gist-data, saa en lokal timer og dens rensede gist-kopi sammenlignes ens.
+function atNorm(a){ return a ? JSON.stringify({on:renTekst(a.on,40),cat:renTekst(a.cat,40),label:renTekst(a.label,60),startHM:a.startHM,special:a.special||null,date:a.date||''}) : 'null'; }
+function staleNoegle(t){ return t.date+'|'+t.startHM; }
+function huskSynkBase(d){
+  const kort=o=>{ const b={}; for(const k of Object.keys(o||{})) b[k]=JSON.stringify(o[k]); return b; };
+  return { days:kort(d&&d.days), frokostSkip:kort(d&&d.frokostSkip), frokostCustom:kort(d&&d.frokostCustom),
+           stale:((d&&d.staleTimers)||[]).map(staleNoegle), at:atNorm(d&&d.activeTimer) };
+}
+// tilladSletning=false for dage: en tom eller tabt lokal kopi maa aldrig kunne
+// toemme gist'en (UI'et sletter alligevel ikke hele dage).
+function fletObj(fjern, lokal, base, tilladSletning=true){
+  const ud={};
+  for(const k of Object.keys(fjern||{})) if(k!=='__proto__') ud[k]=fjern[k];
+  lokal=lokal||{}; base=base||{};
+  for(const k of new Set([...Object.keys(lokal), ...Object.keys(base)])){
+    const l=Object.prototype.hasOwnProperty.call(lokal,k) ? JSON.stringify(lokal[k]) : undefined;
+    if(k==='__proto__' || l===base[k]) continue; // Uaendret lokalt — gist'en bestemmer
+    if(l===undefined){ if(tilladSletning) delete ud[k]; } else ud[k]=lokal[k];
+  }
+  return ud;
+}
+function fletStale(fjern, lokal, baseN){
+  const lok=new Set((lokal||[]).map(staleNoegle)), bas=new Set(baseN||[]);
+  const ud=(fjern||[]).filter(t=>!(bas.has(staleNoegle(t)) && !lok.has(staleNoegle(t)))); // Besvaret her
+  for(const t of lokal||[]) if(!bas.has(staleNoegle(t)) && !ud.some(x=>sammeStale(x,t))) ud.push(t); // Fundet her
+  return rensStaleTimers(ud);
+}
 
 // ═══════════════════════════════════════════════════════
 //  GITHUB SYNC
@@ -598,11 +649,16 @@ async function ghLoad(){
     if(local) try{ db=JSON.parse(local); }catch{}
     return;
   }
+  if(henter || gemmer) return; // Et sync-kald er allerede i gang — naeste poll tager den
+  henter=true;
   setSyncStatus('syncing');
+  const gen=dirtyGen, ep=gistEpoke;
   try {
-    const r=await fetch(gistApi(),{headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'}});
+    // no-store: GitHub sender max-age=60, og en cachet GET lige efter eget PATCH ville rulle det tilbage
+    const r=await fetch(gistApi(),{cache:'no-store',headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'},signal:tidsfrist(20000)});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
+    if(ep!==gistEpoke) return; // Gist-ID skiftet undervejs — svaret er fra den gamle
     const fileContent=j.files[GIST_FILE]?.content;
     if(!fileContent) throw new Error('Ingen data i Gist');
     const decoded=JSON.parse(fileContent);
@@ -627,6 +683,9 @@ async function ghLoad(){
         if(DATOKEY.test(d) && v && HHMM.test(v.start) && HHMM.test(v.stop)) fc[d]={start:v.start,stop:v.stop};
       }
       decoded.frokostCustom=fc;
+      const fsk={};
+      for(const d of Object.keys(decoded.frokostSkip||{})) if(DATOKEY.test(d) && decoded.frokostSkip[d]===true) fsk[d]=true;
+      decoded.frokostSkip=fsk;
       const at=decoded.activeTimer;
       if(at && typeof at==='object' && HHMM.test(at.startHM)){
         decoded.activeTimer={
@@ -636,6 +695,7 @@ async function ghLoad(){
           date:DATOKEY.test(at.date)?at.date:dateKey(new Date())
         };
       } else if(at!==undefined){ decoded.activeTimer=null; }
+      decoded.staleTimers=rensStaleTimers(decoded.staleTimers);
       if(decoded.cfg!==undefined) decoded.cfg = decoded.cfg ? rensCfg(decoded.cfg) : undefined;
     }
     // ── Beskyttelse mod datatab ──
@@ -647,13 +707,60 @@ async function ghLoad(){
     const localDays=Object.keys((db&&db.days)||{}).length;
     if(remoteDays===0 && localDays>0){
       console.warn('ghLoad: Gist er tom, men enheden har '+localDays+' dage — uploader lokale data i stedet');
-      isDirty=true;
-      await ghSave();
-      toast('Gist var tom — dine '+localDays+' dage er uploadet','ok');
+      isDirty=true; gistHentet=true; kunNyeDage=false; localStorage.removeItem('vct_kunnye');
+      clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,0); // Koerer naar hentningen er afsluttet
+      toast('Gist var tom — dine '+localDays+' dage uploades','ok');
       return;
     }
+    gistHentet=true;
+    const nyBase=huskSynkBase(decoded); // Af de RENSEDE gist-data, ligesom db
+    // Ikke-sendte lokale aendringer (ogsaa dem lavet mens vi hentede): flet.
+    const flet = isDirty || dirtyGen!==gen;
+    let lokalTimerVinder=false;
+    if(flet){
+      decoded.days=fletObj(decoded.days, db.days, synkBase.days, false);
+      decoded.frokostSkip=fletObj(decoded.frokostSkip, db.frokostSkip, synkBase.frokostSkip);
+      decoded.frokostCustom=fletObj(decoded.frokostCustom, db.frokostCustom, synkBase.frokostCustom);
+      decoded.staleTimers=fletStale(decoded.staleTimers, db.staleTimers, synkBase.stale);
+      // Kun hvis timeren er aendret her OG gist'ens er uaendret — eller der er
+      // startet en ny her, mens gist'ens er stoppet. Ellers vinder gist'en, saa
+      // et lokalt stop ikke draeber en timer, den anden enhed har startet.
+      const fjernAt=atNorm(decoded.activeTimer);
+      lokalTimerVinder = atNorm(activeTimer)!==synkBase.at &&
+        (fjernAt===synkBase.at || (!!activeTimer && !decoded.activeTimer));
+    }
+    let tilfoejet=0;
+    const varKunNye=kunNyeDage;
+    if(kunNyeDage){
+      for(const k of Object.keys(db.days||{}))
+        if(DATOKEY.test(k) && !Object.prototype.hasOwnProperty.call(decoded.days,k)){
+          decoded.days[k]=db.days[k]; tilfoejet++;
+          // Dagens frokost-valg foelger med, ellers aendres "Arbejdet" tavst
+          if((db.frokostSkip||{})[k]===true) decoded.frokostSkip[k]=true;
+          const fc=(db.frokostCustom||{})[k];
+          if(fc && HHMM.test(fc.start) && HHMM.test(fc.stop)) decoded.frokostCustom[k]={start:fc.start,stop:fc.stop};
+        }
+      // Ubesvarede glemte timere og en timer startet her (regel 27)
+      const st=rensStaleTimers([...(decoded.staleTimers||[]), ...(db.staleTimers||[]).filter(t=>!(decoded.staleTimers||[]).some(x=>sammeStale(x,t)))]);
+      if(st.length!==(decoded.staleTimers||[]).length){ decoded.staleTimers=st; tilfoejet++; }
+      const rt=decoded.activeTimer;
+      if(activeTimer && !(rt && sammeStale(rt,activeTimer))){
+        const iDag=dateKey(new Date());
+        if(!Object.prototype.hasOwnProperty.call(decoded,'activeTimer') || (!rt && kunNyeDage==='nyt') || (rt && rt.date && rt.date!==iDag)){
+          lokalTimerVinder=true; tilfoejet++; // Gist'ens gamle timer flyttes til glemte af vaernet i ghSave
+        } else if(rt){
+          // Gist'en har en anden timer i dag: den lokale maa ikke forsvinde — spoerg
+          decoded.staleTimers=rensStaleTimers([...(decoded.staleTimers||[]), {...activeTimer, date:activeTimer.date||iDag}]);
+          tilfoejet++;
+        } // !rt og samme ID: gist'en siger stoppet — den lokale er en gammel kopi
+      }
+    }
     db=decoded;
-    localStorage.setItem('vct_db', JSON.stringify(db));
+    localStorage.setItem('vct_db', JSON.stringify(db)); // Foer basen — ellers kan de komme ud af trit
+    gemSynkBase(nyBase);
+    if(varKunNye){ kunNyeDage=false; localStorage.removeItem('vct_kunnye'); }
+    if(flet){ clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,800); } // Send det flettede op
+    if(tilfoejet){ scheduleSave(); toast('Dine lokale registreringer er lagt i gist\'en','ok'); }
     // Indstillinger: nyeste vinder. Er gist'ens nyere, overtages de; er de
     // lokale nyere (fx gemt mens enheden var offline), sendes de op.
     const fjernTs=(db.cfg&&db.cfg.updatedAt)||0, lokalTs=cfg.updatedAt||0;
@@ -666,16 +773,19 @@ async function ghLoad(){
       clearTimeout(syncTimer); isDirty=true; ghSave();
     }
     // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
-    if(db.activeTimer){
+    if(lokalTimerVinder){ /* Lokal start/stop er ikke sendt endnu — ghSave skriver den */ }
+    else if(db.activeTimer){
       const remote=db.activeTimer;
       const today=dateKey(new Date());
       if(remote.date && remote.date!==today){
         // Timer er en rest fra en tidligere dag (blev aldrig stoppet) — genopliv den IKKE på dagens dato
-        activeTimer=null;
-        localStorage.removeItem('vct_activeTimer');
-        db.activeTimer=null;
-        isDirty=true; ghSave();
-        flagStaleTimer(remote); // Spørg brugeren hvornår dagen faktisk blev afsluttet
+        // Slip kun timeren, naar den ligger i staleTimers (ikke ved fuld liste).
+        if(addStaleTimer(remote) || db.staleTimers.some(t=>sammeStale(t,remote))){
+          activeTimer=null;
+          localStorage.removeItem('vct_activeTimer');
+          db.activeTimer=null;
+          scheduleSave(); // Skriver vct_db med det samme — overlever reload, ogsaa hvis PATCH fejler
+        }
       } else {
         // Genberegn t0 fra startHM så live-timer er korrekt
         const [sh,sm]=remote.startHM.split(':').map(Number);
@@ -690,25 +800,34 @@ async function ghLoad(){
       activeTimer=null;
       localStorage.removeItem('vct_activeTimer');
     }
+    visStaleTimer(); // Spoerg om glemte timere — ogsaa dem en anden enhed har fundet
     setSyncStatus('ok');
   } catch(e){
     console.error('ghLoad',e);
     setSyncStatus('err');
     const local=localStorage.getItem('vct_db');
     if(local) try{ db=JSON.parse(local); }catch{}
-  }
+  } finally { henter=false; }
 }
 
 async function ghSave(){
   if(!isDirty) return;
   if(!syncEnabled()){ // Lokal tilstand — gem kun i denne browser, ingen fejlstatus
     localStorage.setItem('vct_db', JSON.stringify(db));
-    isDirty=false;
+    isDirty=false; localStorage.removeItem('vct_dirty');
     writeBackupFolder(); // Mappe-backup er kollegaernes eneste net — fejler stille
     return;
   }
+  if(gemmer || henter){ clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,800); return false; } // Proev igen bagefter
+  if(!gistHentet) return false; // Forbliver dirty — foerste vellykkede ghLoad fletter og sender
+  gemmer=true;
   setSyncStatus('syncing');
+  const gen=dirtyGen, ep=gistEpoke;
   try {
+    // Vaern: en timer fra en tidligere dag maa aldrig overskrives i gist'en,
+    // uden at den er gemt som glemt (fx naar foerste hentning fejlede).
+    const gl=db.activeTimer;
+    if(gl && gl.date && gl.date!==dateKey(new Date()) && !(activeTimer && sammeStale(gl,activeTimer))) addStaleTimer(gl);
     // Inkluder activeTimer i Gist-data så andre enheder ser den
     db.activeTimer = activeTimer ? {
       on: activeTimer.on,
@@ -722,25 +841,36 @@ async function ghSave(){
     // vct_cfg er stadig kilden lokalt (haard regel 8) — db.cfg er kun transport.
     if(cfg.updatedAt && cfg.updatedAt>=((db.cfg&&db.cfg.updatedAt)||0)) db.cfg=rensCfg(cfg);
     const body={files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}};
+    const sendtBase=huskSynkBase(db);
     const r=await fetch(gistApi(),{
       method:'PATCH',
       headers:{'Authorization':`token ${getToken()}`,'Content-Type':'application/json'},
-      body:JSON.stringify(body)
+      body:JSON.stringify(body),
+      signal:tidsfrist(20000) // Et haengende kald maa ikke holde gemmer-laasen for evigt
     });
     if(!r.ok){ const t=await r.text(); throw new Error(t); }
+    if(ep!==gistEpoke) return false; // Gist-ID skiftet undervejs — forbliv dirty, naeste gem rammer den nye
     localStorage.setItem('vct_db', JSON.stringify(db));
-    isDirty=false;
+    // Er der aendret noget, mens PATCH var undervejs, er det ikke med i det
+    // sendte — saa er vi stadig "dirty", og det planlagte gem sender det op.
+    if(gen===dirtyGen){ isDirty=false; localStorage.removeItem('vct_dirty'); }
+    gemSynkBase(sendtBase);
     setSyncStatus('ok');
+    return true;
   } catch(e){
     console.error('ghSave',e);
     setSyncStatus('err');
     toast('Sync fejl — data gemt lokalt','err');
-  }
+    return false;
+  } finally { gemmer=false; }
 }
 
 function scheduleSave(){
-  isDirty=true;
-  localStorage.setItem('vct_db', JSON.stringify(db));
+  isDirty=true; dirtyGen++;
+  try{
+    localStorage.setItem('vct_dirty','1'); // Overlever reload — saa flettes det ved naeste hentning
+    localStorage.setItem('vct_db', JSON.stringify(db));
+  }catch(e){ console.error('scheduleSave',e); toast('Kunne ikke gemme i browseren — lageret er fuldt','err'); }
   clearTimeout(syncTimer);
   syncTimer=setTimeout(ghSave, 800); // Hurtigere gem — mindre ventetid før ændringer når Gist
 }
@@ -796,11 +926,24 @@ const hmToH=hm=>{if(!hm)return 0;const[h,m]=hm.split(':').map(Number);return h+m
 // ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
+// Poll hvert 10. sek — 5000 kald/time-graensen har rigelig plads. Startes ogsaa,
+// naar sync slaas til uden genindlaesning (saveSyncConfig, migrateToNewGist).
+function startPoll(){
+  if(!pollIv) pollIv=setInterval(async()=>{ if(!syncEnabled()) return; await ghLoad(); safeRender(); }, 10000);
+}
 async function init(){
   updateHeader();
   // Brug lokalt cache straks mens vi loader fra GitHub
   const local=localStorage.getItem('vct_db');
   if(local) { try{ db=JSON.parse(local); }catch{} }
+  // Basen og dirty-flaget overlever reload, ellers ville ikke-sendte aendringer
+  // fra sidste session blive overskrevet af gist'en ved opstart.
+  const strObj=o=>!!o && typeof o==='object' && !Array.isArray(o) && Object.values(o).every(v=>typeof v==='string');
+  try{ const b=JSON.parse(localStorage.getItem('vct_synkbase'));
+       synkBase=(b && strObj(b.days) && strObj(b.frokostSkip) && strObj(b.frokostCustom) && Array.isArray(b.stale) && typeof b.at==='string') ? b : huskSynkBase(db); }
+  catch{ synkBase=huskSynkBase(db); }
+  if(localStorage.getItem('vct_dirty')==='1') isDirty=true;
+  { const kn=localStorage.getItem('vct_kunnye'); if(kn==='nyt'||kn==='samme') kunNyeDage=kn; }
   // Optimistisk visning: vis KUN den lokale timer med det samme hvis den er fra i dag.
   // Er den fra en tidligere dag, venter vi med at afgøre om den er "glemt" til EFTER
   // sync — den anden enhed kan allerede have stoppet/registreret den i mellemtiden.
@@ -824,6 +967,7 @@ async function init(){
       localStorage.removeItem('vct_activeTimer');
       flagStaleTimer(localStaleCandidate); // Spørg hvornår dagen faktisk blev afsluttet
     }
+    visStaleTimer(); // Ubesvaret fra en tidligere session
     render();
     checkDailyBackup();
     // Første gang: vis en kort vejledning. Kun i lokal tilstand — Jimmys
@@ -836,18 +980,21 @@ async function init(){
   // Nu hvor sync er færdig: håndter en evt. lokal "glemt timer"-kandidat.
   // Kun relevant hvis Gist slet ikke havde activeTimer-info (fx meget gammel/uden sync
   // endnu) — ellers har ghLoad() allerede afgjort sagen ud fra den friske Gist-data.
-  if(activeTimer===null && !db.hasOwnProperty('activeTimer') && localStaleCandidate){
+  // Ligger kandidaten stadig som db.activeTimer, fejlede hentningen — spoerg alligevel.
+  if(activeTimer===null && localStaleCandidate && (!gistHentet ||
+     !db.hasOwnProperty('activeTimer') || (db.activeTimer && sammeStale(db.activeTimer,localStaleCandidate)))){
     localStorage.removeItem('vct_activeTimer');
     flagStaleTimer(localStaleCandidate); // Spørg brugeren hvornår dagen faktisk blev afsluttet
-  } else if(localStaleCandidate && (activeTimer!==null || db.activeTimer===null)){
+  } else if(gistHentet && localStaleCandidate && (activeTimer!==null || db.activeTimer===null)){
     // Gist har allerede afklaret det (enten en gyldig timer, eller bekræftet stoppet
     // af den anden enhed) — ryd bare den forældede lokale kopi uden at spørge
     localStorage.removeItem('vct_activeTimer');
   }
+  visStaleTimer(); // Ogsaa hvis ghLoad fejlede — db er saa den lokale kopi
   render(); // Genrender med GitHub data
   checkDailyBackup(); // Auto-backup én gang om dagen
   // Auto-sync hvert 30 sek (henter andres ændringer)
-  setInterval(async()=>{ if(!isDirty){ await ghLoad(); safeRender(); }}, 10000); // Poll hvert 10. sek — 5000 kald/time-grænsen har rigelig plads
+  startPoll();
 }
 
 // ═════════════════════════════════════════════════════
@@ -1267,12 +1414,15 @@ function backupFolderStatusHTML(){
 async function migrateToNewGist(){
   const tok=getToken();
   if(!tok){ toast('Indtast og gem token først','err'); return; }
-  const dage=Object.keys((db&&db.days)||{}).length;
+  let dage=Object.keys((db&&db.days)||{}).length;
   const gammelId=getGistId();
   const sp=gammelId
     ? 'Opret en ny secret Gist og flyt dine '+dage+' registrerede dage derover?\n\nDen gamle Gist slettes IKKE — den skal du selv slette bagefter, når du har bekræftet at alt ser rigtigt ud på både PC og telefon.'
     : 'Opret en ny secret Gist til dine '+dage+' registrerede dage? Derefter synkroniserer denne enhed med GitHub.';
   if(!confirm(sp)) return;
+  for(let i=0;(henter||gemmer)&&i<250;i++) await new Promise(r=>setTimeout(r,100));
+  gemmer=true; // Ingen poll eller gem mod den gamle gist under flytningen
+  dage=Object.keys((db&&db.days)||{}).length; // En hentning kan have flettet dage ind imens
   setSyncStatus('syncing');
   try{
     // Samme activeTimer-håndtering som ghSave(), så den nye Gist er komplet
@@ -1284,14 +1434,16 @@ async function migrateToNewGist(){
       special: activeTimer.special||null,
       date: activeTimer.date||dateKey(new Date()),
     } : null;
+    const gen=dirtyGen, sendt=JSON.stringify(db,null,2), sendtBase=huskSynkBase(db);
     const r=await fetch('https://api.github.com/gists',{
       method:'POST',
       headers:{'Authorization':'token '+tok,'Content-Type':'application/json'},
       body:JSON.stringify({
         description:'Vestergaard Timer — timeregistrering',
         public:false,
-        files:{[GIST_FILE]:{content:JSON.stringify(db,null,2)}}
-      })
+        files:{[GIST_FILE]:{content:sendt}}
+      }),
+      signal:tidsfrist(30000)
     });
     if(!r.ok){ throw new Error('HTTP '+r.status+': '+(await r.text())); }
     const j=await r.json();
@@ -1303,9 +1455,14 @@ async function migrateToNewGist(){
     if(kontrolDage!==dage){
       throw new Error('Den nye Gist indeholder '+kontrolDage+' dage, forventede '+dage+' — skifter ikke over');
     }
-    localStorage.setItem('vct_gistid', j.id);
+    localStorage.setItem('vct_gistid', j.id); gistEpoke++;
+    gistHentet=true; // Den nye gist ER det sendte — der maa gemmes med det samme
+    kunNyeDage=false; localStorage.removeItem('vct_kunnye');
     localStorage.setItem('vct_db', JSON.stringify(db));
-    isDirty=false;
+    gemSynkBase(sendtBase);
+    if(gen===dirtyGen){ isDirty=false; localStorage.removeItem('vct_dirty'); }
+    else { clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,800); } // Aendret under POST — send det
+    startPoll();
     setSyncStatus('ok');
     const m=document.getElementById('syncModal'); if(m) m.remove();
     showGistMigrated(j.id, gammelId, dage);
@@ -1314,7 +1471,7 @@ async function migrateToNewGist(){
     setSyncStatus('err');
     toast('Kunne ikke oprette ny Gist — intet er ændret','err');
     alert('Oprettelsen fejlede. Dine data og din nuværende oplætning er urørte.\n\n'+e.message);
-  }
+  } finally { gemmer=false; }
 }
 
 function showGistMigrated(nyId, gammelId, dage){
@@ -1398,20 +1555,34 @@ async function saveSyncConfig(){
   // Accepter baade klassiske og fine-grained tokens — de sidste har
   // snaevrere rettigheder og er at foretraekke.
   if(!/^(ghp_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{20,})$/.test(t||'')){ toast('Ugyldigt token','err'); return; }
-  localStorage.setItem('vct_gistid',g);
-  localStorage.setItem('vct_ghtoken',t);
   // ICS-adressen er valgfri. Kun https mod Outlook accepteres — den ender
-  // i et fetch, og en fri URL ville kunne pege andre steder hen.
+  // i et fetch, og en fri URL ville kunne pege andre steder hen. Valideres
+  // FOER noget gemmes, saa en fejl her ikke efterlader en halv opsaetning.
   const icsEl=document.getElementById('icsInput');
-  if(icsEl){
-    const u=icsEl.value.trim();
-    if(!u) localStorage.removeItem('vct_icsurl');
-    else if(ICS_URL_RE.test(u)) localStorage.setItem('vct_icsurl',u);
-    else { toast('Kalender-adressen skal starte med https://outlook.office365.com/','err'); return; }
+  const u=icsEl?icsEl.value.trim():null;
+  if(u && !ICS_URL_RE.test(u)){ toast('Kalender-adressen skal starte med https://outlook.office365.com/','err'); return; }
+  // Nyt ID, sync slaaet til fra lokal tilstand, eller aldrig hentet med succes
+  const nytId = g!==getGistId();
+  const skift = nytId || !localStorage.getItem('vct_synkbase');
+  localStorage.setItem('vct_gistid',g);
+  if(skift){
+    gistHentet=false; gistEpoke++; clearTimeout(syncTimer);
+    // Ved nyt ID hoerer usendte aendringer til den gamle gist. Ved samme ID
+    // beholdes de (fx rettet mens tokenet var udloebet). Basen saettes til den
+    // lokale kopi og gemmes straks: kun det, der rettes herefter, vinder over
+    // gist'en. Lokale dage, gist'en mangler, tilfoejes ved foerste hentning —
+    // ogsaa efter en genindlaesning (vct_kunnye).
+    if(nytId){ isDirty=false; localStorage.removeItem('vct_dirty'); }
+    sidstGemtBase=''; gemSynkBase(huskSynkBase(db));
+    kunNyeDage = nytId ? 'nyt' : 'samme'; localStorage.setItem('vct_kunnye',kunNyeDage);
   }
+  localStorage.setItem('vct_ghtoken',t);
+  if(icsEl){ if(!u) localStorage.removeItem('vct_icsurl'); else localStorage.setItem('vct_icsurl',u); }
   const m=document.getElementById('syncModal'); if(m) m.remove();
   toast('Sync-opsætning gemt','ok');
+  for(let i=0;(henter||gemmer)&&i<250;i++) await new Promise(r=>setTimeout(r,100)); // Et kald mod den gamle gist skal blive faerdigt foerst
   await ghLoad();
+  startPoll();
   render();
 }
 
@@ -1420,6 +1591,8 @@ function clearSyncConfig(){
   localStorage.removeItem('vct_gistid');
   localStorage.removeItem('vct_ghtoken');
   localStorage.removeItem('vct_icsurl');
+  localStorage.removeItem('vct_synkbase'); localStorage.removeItem('vct_dirty'); localStorage.removeItem('vct_kunnye'); // Hoerer til den gamle gist
+  sidstGemtBase=''; synkBase=huskSynkBase(db); kunNyeDage=false;
   const m=document.getElementById('syncModal'); if(m) m.remove();
   setSyncStatus('');
   toast('Sync slået fra — kører lokalt','ok');
@@ -1429,11 +1602,57 @@ function clearSyncConfig(){
 // ═══════════════════════════════════════════════════════
 //  GLEMT AT AFSLUTTE — bruger fik ikke stoppet en timer
 // ═══════════════════════════════════════════════════════
+// Glemte timere gemmes i db.staleTimers — og dermed i gist'en — indtil de er
+// besvaret (v5.7.1). Foer laa spoergsmaalet kun i hukommelsen paa den enhed,
+// der opdagede timeren, mens gist'en straks fik at vide, at timeren var
+// stoppet: blev fanen genindlaest, var hele dagens tid vaek.
+function rensStaleTimers(liste){
+  if(!Array.isArray(liste)) return [];
+  // Datoen skal ogsaa findes (2026-99-99 passer DATOKEY)
+  return liste.filter(t=>t && typeof t==='object' && HHMM.test(t.startHM) && DATOKEY.test(t.date) && dateKey(new Date(t.date+'T00:00:00'))===t.date)
+    .slice(0,31).map(t=>({
+      on:renTekst(t.on,40), cat:renTekst(t.cat,40), label:renTekst(t.label,60),
+      startHM:t.startHM, special:SPECTYPER.has(t.special)?t.special:null, date:t.date
+    }));
+}
+function sammeStale(a,b){ return a.date===b.date && a.startHM===b.startHM; }
+function addStaleTimer(stale){ // true hvis den er ny
+  const [ren]=rensStaleTimers([stale]);
+  if(!ren) return false;
+  if(!Array.isArray(db.staleTimers)) db.staleTimers=[];
+  if(db.staleTimers.some(t=>sammeStale(t,ren))) return false;
+  if(db.staleTimers.length>=31){ toast('For mange ubesvarede glemte timere — besvar de ældste først','err'); return false; }
+  db.staleTimers.push(ren);
+  return true;
+}
+function fjernStaleTimer(stale){
+  if(Array.isArray(db.staleTimers)) db.staleTimers=db.staleTimers.filter(t=>!sammeStale(t,stale));
+}
 function flagStaleTimer(stale){
-  if(staleTimerPending) return; // Der er allerede en ventende — undgå dubletter
-  if(!stale || !stale.startHM || !stale.date) return;
-  staleTimerPending=stale;
-  showStaleTimerModal(stale);
+  if(addStaleTimer(stale)) scheduleSave();
+  visStaleTimer();
+}
+// Viser den aeldste ubesvarede. Er den besvaret paa en anden enhed, lukkes boksen her.
+function visStaleTimer(){
+  // Allerede registreret (fx besvaret paa en enhed med v5.7.0, der ikke rydder
+  // listen) — ryd den i stedet for at spoerge igen.
+  const harPost=t=>getEntries(t.date).some(e=>e.start===t.startHM && e.on===t.on && (e.cat||'')===(t.cat||'') && !e.auto_special);
+  if(Array.isArray(db.staleTimers) && db.staleTimers.some(harPost)){
+    db.staleTimers=db.staleTimers.filter(t=>!harPost(t));
+    scheduleSave();
+  }
+  const liste=Array.isArray(db.staleTimers)?db.staleTimers:[];
+  if(staleTimerPending && !liste.some(t=>sammeStale(t,staleTimerPending))){
+    staleTimerPending=null;
+    closeStaleTimerModal();
+  }
+  if(staleTimerPending || !liste.length) return;
+  // Laeg ikke boksen oven paa en aaben modal (indstillinger, sync) — naeste poll viser den
+  if(document.querySelector('.modal-wrap:not(#staleTimerModal),#scanPopup:not(.hidden)')){
+    clearTimeout(staleRetry); staleRetry=setTimeout(visStaleTimer,3000); return; // Lokal tilstand har ingen poll
+  }
+  staleTimerPending=[...liste].sort((a,b)=>(a.date+a.startHM).localeCompare(b.date+b.startHM))[0]; // Aeldste foerst
+  showStaleTimerModal(staleTimerPending);
 }
 
 function showStaleTimerModal(stale){
@@ -1446,14 +1665,14 @@ function showStaleTimerModal(stale){
   if(endMin>23*60+59) endMin=23*60+59;
   const suggestStop=`${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
   const dateFmt=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-  document.body.insertAdjacentHTML('beforeend',`
-  <div id="staleTimerModal" style="position:fixed;inset:0;background:rgba(4,15,26,.9);z-index:400;display:flex;align-items:flex-end">
-    <div style="background:var(--ink2);border-radius:20px 20px 0 0;padding:24px 18px 36px;width:100%">
-      <div class="section-label" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
+  document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
+  <div id="staleTimerModal" class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="staleTitel" style="z-index:400">
+    <div class="modal-panel">
+      <div class="section-label" id="staleTitel" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">
         <b style="color:var(--snow)">${esc(visLabel(stale.label))}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
       </div>
-      <label class="field-label">Sluttede kl.</label>
+      <label class="field-label" for="staleStopInput">Sluttede kl.</label>
       <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);margin-bottom:14px">
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost" style="flex:1" onclick="discardStaleTimer()">Kassér</button>
@@ -1461,6 +1680,8 @@ function showStaleTimerModal(stale){
       </div>
     </div>
   </div>`);
+  // Dukker op af sig selv ved poll — fokus skal med, men ikke fra et felt man skriver i
+  if(!document.activeElement || !document.activeElement.matches('input,select,textarea')) fokuserModal('staleTimerModal');
 }
 
 function saveStaleTimer(){
@@ -1476,19 +1697,24 @@ function saveStaleTimer(){
   if(overlap){ toast('⚠️ '+overlap,'err'); return; }
   const entry={on:stale.on, cat:stale.cat||'', start:stale.startHM, stop, hours:eh-sh, date:dk};
   if(stale.special) entry.special=stale.special;
+  fjernStaleTimer(stale); // Foer addEntry, saa begge dele naar gist'en i samme gem
   addEntry(dk,entry);
   recalcSpecial(dk);
   staleTimerPending=null;
   closeStaleTimerModal();
   toast(`✓ ${visLabel(stale.label)} afsluttet kl. ${stop} den ${dk}`,'ok');
   render();
+  visStaleTimer(); // Naeste ubesvarede, hvis der er flere
 }
 
 function discardStaleTimer(){
   const stale=staleTimerPending;
+  if(stale && !confirm('Kassér '+visLabel(stale.label)+' fra '+stale.date.split('-').reverse().join('.')+'?\n\nTiden fra kl. '+stale.startHM+' bliver ikke registreret.')) return;
+  if(stale){ fjernStaleTimer(stale); scheduleSave(); }
   staleTimerPending=null;
   closeStaleTimerModal();
   toast(`Kasseret — ingen registrering gemt${stale?' for '+visLabel(stale.label):''}`,'err');
+  visStaleTimer();
 }
 
 function closeStaleTimerModal(){
@@ -2429,6 +2655,13 @@ function startTimer(){
 }
 function stopTimer(){
   if(!activeTimer)return;
+  // Fra en tidligere dag (fanen stod aaben natten over): Date.now()-t0 ville
+  // give en post paa 24+ timer paa dags dato. Spoerg i stedet.
+  if(activeTimer.date && activeTimer.date!==dateKey(new Date())){
+    clearInterval(timerIv);
+    const x=activeTimer; activeTimer=null; localStorage.removeItem('vct_activeTimer');
+    flagStaleTimer(x); render(); return;
+  }
   clearInterval(timerIv);
   const stop=nowHM();
   const dk=dateKey(new Date());
