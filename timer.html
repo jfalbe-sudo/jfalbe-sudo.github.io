@@ -86,7 +86,10 @@ nav{display:flex;background:var(--ink);border-bottom:1px solid rgba(255,255,255,
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;background:none;border:none;border-bottom:2.5px solid transparent;color:var(--slate);font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s}
 .nav-btn svg{width:17px;height:17px}
 .nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
-main{flex:1;overflow-y:auto;padding:12px 12px 140px;display:flex;flex-direction:column;gap:10px}
+/* scroll-padding-bottom: naar Tab eller scrollIntoView ruller et felt frem,
+   lander det over de runde knapper (fab-group: 14 + 54 + 10 + 54 = 132 px
+   fra bunden), ikke under dem. */
+main{flex:1;overflow-y:auto;padding:12px 12px 140px;scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
 /* ── SCROLLBAR ────────────────────────────────────────────
    Tynd og diskret, men ikke skjult: paa PC skal den kunne ses og traekkes i.
    Gaelder alle scroll-containere (main og .modal-panel).
@@ -186,10 +189,17 @@ main::-webkit-scrollbar-button,.modal-panel::-webkit-scrollbar-button{display:no
 .btn-sm{padding:8px 14px;font-size:12px;font-weight:700;border-radius:50px;border:none;cursor:pointer;font-family:var(--font)}
 .btn-now{background:rgba(245,172,0,.12);color:var(--gold);border:1px solid rgba(245,172,0,.25);margin-top:5px;width:100%}
 .form-col{display:flex;flex-direction:column;gap:10px}
+/* Chromes indre felter giver dato 44 px og tid 45,75 px med samme padding.
+   Faelles minimum, saa Dato flugter med Start/Stop i "Tilføj manuelt". */
+.form-col input[type=date],.form-col input[type=time]{min-height:46px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .field-label{font-size:10px;color:var(--slate);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px}
-select,input[type=time],input[type=text]{width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);-webkit-appearance:none;transition:border-color .15s}
+select,input[type=time],input[type=text],input[type=date]{width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:var(--r2);color:var(--snow);padding:11px 13px;font-size:15px;font-family:var(--font);-webkit-appearance:none;transition:border-color .15s}
 select:focus,input:focus{border-color:var(--gold)}
+/* Fejl (efter blur/gem). Staar efter :focus, saa rammen forbliver roed mens
+   feltet rettes — fokus vises stadig af den gule ring. --red mod feltets
+   --ink3: 6,07:1, mod kortets --ink2: 6,59:1 (krav 3:1). */
+input[aria-invalid="true"]{border-color:var(--red)}
 select option{background:#081828}
 .on-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
 .on-chip{background:var(--ink4);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--snow)}
@@ -209,6 +219,9 @@ select option{background:#081828}
 .week-row.barnsyg-day{border-color:rgba(77,166,255,.3);background:rgba(77,166,255,.05)}
 .wr-hdr{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:default}
 .wr-hdr[role="button"]{cursor:pointer}
+/* .week-row og .report-week har overflow:hidden, som klippede fokusringen
+   til en streg under overskriften. Tegn den indvendigt (som .entry-btn). */
+.wr-hdr:focus-visible,.report-week-hdr:focus-visible{outline-offset:-3px}
 .wr-day{width:36px;flex-shrink:0}
 .wr-name{font-size:13px;font-weight:700}
 .wr-date{font-size:10px;color:var(--slate);margin-top:1px}
@@ -249,7 +262,16 @@ select option{background:#081828}
 .daytype-btn.sel-barnsyg{background:rgba(77,166,255,.15);border-color:var(--blue);color:var(--blue)}
 .daytype-btn.sel-p56{background:rgba(176,110,255,.15);border-color:var(--purple);color:var(--purple)}
 .daytype-btn.sel-ferie{background:rgba(61,220,151,.15);border-color:var(--green);color:var(--green)}
-.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:50px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:nowrap;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+/* Lange beskeder brydes inden for skaermen (foer: nowrap, klippet i begge
+   ender ved 375 px). width:max-content holder korte beskeder paa én linje.
+   En linje er ca. 40 px hoej, saa radius 20 px tegner samme pille som foer,
+   og flere linjer faar afrundede hjoerner i stedet for en oval.
+   Skjult: 100% + 80 px = 120 px for én linje som foer; hoejere toasts
+   skubbes tilsvarende laengere ned, saa de ikke titter frem. */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(calc(100% + 80px));background:var(--ink3);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:999;white-space:normal;width:max-content;max-width:calc(100vw - 32px);text-align:center;overflow-wrap:anywhere;box-shadow:0 10px 40px rgba(0,0,0,.5);pointer-events:none}
+/* Er en modal eller Hurtig start aaben, ligger dens knapper i bunden: vis beskeden oeverst */
+.toast.top{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto;transform:translateX(-50%) translateY(calc(-100% - 80px))}
+.toast.top.show{transform:translateX(-50%) translateY(0)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{border-color:rgba(61,220,151,.4);color:var(--green)}
 .toast.err{border-color:rgba(255,92,92,.4);color:var(--red)}
@@ -433,7 +455,7 @@ select option{background:#081828}
 //  GITHUB SYNC CONFIG
 // ═══════════════════════════════════════════════════════
 // Eneste kilde til versionsnummeret. Skrives ind i headeren ved boot.
-const APP_VERSION = '5.7.1';
+const APP_VERSION = '5.8.0';
 const GIST_FILE  = 'timer_data.json';
 // Gist-ID og token ligger KUN i localStorage - ALDRIG i koden.
 // Er begge ikke sat, korer appen i lokal tilstand: data gemmes udelukkende
@@ -568,11 +590,14 @@ const DAY_TYPES=[
 //  STATE
 // ═══════════════════════════════════════════════════════
 let db = { version:3, days:{} }; // master database
+let toastNr=0; // Taeller op ved hver besked (toast) — saa en senere besked ikke overskriver en vigtigere
 let activeTimer=null, timerIv=null, currentTab='dag';
 let staleTimerPending=null; // Ventende “glemt at afslutte”-timer, afventer bruger-input
 let selCat='', selOn='', customOn='', selSpecial='';
 let tilfoejStart='', tilfoejStop='';
+let tilfoejDato=null; // Dato valgt i TILFOEJ. null = urørt: i dag, regnet ved gem. '' = tømt af brugeren (fejl)
 let editingIdx=-1;
+let sidstTegnetDag=''; // Datoen ved seneste render() — minut-tikket tegner om, naar dagen skifter
 let syncTimer=null, isDirty=false;
 let dirtyGen=0; // Taeller op ved hver lokal aendring — afsloerer aendringer mens et sync-kald er undervejs
 let gemmer=false; // Et PATCH er undervejs — gem koeres et ad gangen, ellers kan et aeldre lande sidst
@@ -591,13 +616,60 @@ let kunNyeDage=false;
 let staleRetry=null;
 let pollIv=null;
 let sidstGemtBase='';
+// Friskhed (v5.7.2): hvornaar gist'en sidst blev hentet med held, maalt med
+// vaeguret, saa dvale og frysning opdages. Et PATCH kraever en frisk hentning:
+// en fane, der vaagner efter timer, maa ikke sende sin gamle kopi op over den
+// anden enheds dage og timer. Automatiske aendringer (frokost-split) kraever
+// ogsaa friske data, ellers bliver enhedens gamle dag til en "lokal aendring".
+let sidstHentet=0;
+const gendannetVist=new Set(); // Dage, der er meldt lagt tilbage i denne session
+const FRISK_GEM_MS=3000, FRISK_AUTO_MS=25000;
+function frisk(ms){ const d=Date.now()-sidstHentet; return d>=0 && d<ms; }
+let sidsteSyncFejl='';
+function syncFejlToast(){
+  toast(/^40[13]$/.test(sidsteSyncFejl) ? 'GitHub afviste tokenet — indtast et nyt under RAPPORT → ⚙️ → Sync-opsætning'
+      : sidsteSyncFejl==='404' ? 'Gist\'en findes ikke — tjek Gist-ID under RAPPORT → ⚙️ → Sync-opsætning. Data er gemt lokalt'
+      : 'Sync fejl — data er gemt lokalt og sendes, når forbindelsen er tilbage','err');
+}
+// Timer-handlinger kun paa friske data (v5.8.0). Efter dvale eller ved opstart
+// viser skaermen enhedens gamle tilstand. Er data gamle, hentes de nyeste, og
+// brugeren trykker igen paa den opdaterede skaerm. Handlingen udskydes ALDRIG:
+// en udskudt handling ramte et andet tidspunkt eller en anden timer end den,
+// brugeren saa. Er seneste hentning fejlet, arbejdes der paa de lokale data
+// (offline), saa en timer altid kan stoppes. Fletningen pr. post sikrer, at det
+// ikke koster den anden enheds poster.
+let sidstFejlet=0; // Seneste fejlede hentning
+// Offline-tilladelse (offlineTil): saettes KUN, naar den hentning, et afvist
+// tryk venter paa (vagtVenter), fejler hurtigt — inden for FRISK_AUTO_MS efter
+// trykket. Et svar, der har ventet over en dvale, siger intet om nettet nu. En
+// fejl fra foer trykket taeller ikke. Nulstilles af hver vellykket hentning og
+// ved opvaagning. vagtNr: vagtens egne beskeder skjuler ikke dens opfoelgning.
+let offlineTil=0, vagtVenter=0, vagtNr=0;
+function afvisPaaGamleData(){
+  if(!syncEnabled() || frisk(FRISK_AUTO_MS)) return false;
+  if(!henter && !gemmer && Date.now()<offlineTil) return false;
+  toast('Henter de nyeste data — tryk igen om et øjeblik','');
+  vagtNr=toastNr;
+  vagtVenter=vagtVenter||Date.now(); // Den naeste hentning afgoer det — ogsaa en, der allerede er i gang
+  if(!henter && !gemmer) ghLoad().then(safeRender);
+  return true;
+}
+// Frokost udefra: begge tider, og start foer stop. En omvendt frokost fik
+// splittet til at fordoble dagens poster ved hver tegning.
+function rensFrokost(v){
+  return (v && HHMM.test(v.start) && HHMM.test(v.stop) && v.start<v.stop) ? {start:v.start,stop:v.stop} : null;
+}
 // Basen gemmes i localStorage (vct_synkbase), saa ikke-sendte aendringer ogsaa
 // flettes efter en genindlaesning — sammen med vct_dirty.
 function gemSynkBase(b){
   synkBase=b;
   try{ const t=JSON.stringify(b); if(t!==sidstGemtBase){ localStorage.setItem('vct_synkbase',t); sidstGemtBase=t; } }catch{}
 }
-function tidsfrist(ms){ return (typeof AbortSignal!=='undefined' && AbortSignal.timeout) ? AbortSignal.timeout(ms) : undefined; }
+function tidsfrist(ms){
+  if(typeof AbortSignal!=='undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  if(typeof AbortController==='undefined') return undefined;
+  const c=new AbortController(); setTimeout(()=>c.abort(),ms); return c.signal; // Aeldre browsere: en haengende hentning maa ikke blokere for evigt
+}
 // Renses som gist-data, saa en lokal timer og dens rensede gist-kopi sammenlignes ens.
 function atNorm(a){ return a ? JSON.stringify({on:renTekst(a.on,40),cat:renTekst(a.cat,40),label:renTekst(a.label,60),startHM:a.startHM,special:a.special||null,date:a.date||''}) : 'null'; }
 function staleNoegle(t){ return t.date+'|'+t.startHM; }
@@ -618,6 +690,71 @@ function fletObj(fjern, lokal, base, tilladSletning=true){
     if(l===undefined){ if(tilladSletning) delete ud[k]; } else ud[k]=lokal[k];
   }
   return ud;
+}
+// Fletning pr. post (v5.8.0). Foer vandt enhedens udgave af HELE dagen, saa et
+// Stop eller Slet paa gamle data fjernede den anden enheds poster. Nu laegges
+// kun det, der er tilfoejet eller fjernet lokalt siden basen, oven paa gist'ens
+// udgave. Poster har intet id og kendes paa indholdet (renset som gist-data).
+// Er samme post rettet begge steder, bevares begge udgaver — hellere et synligt
+// overlap end en tabt post. Er samme timer stoppet to gange, beholdes den
+// udgave, der foerst naaede gist'en (se fletDag). Hele dage slettes aldrig (regel 28).
+let fletDroppet=[]; // Lokale poster droppet, fordi samme timer allerede var gemt i gist'en
+function fletDage(fjern, lokal, base){
+  const ud={};
+  for(const k of Object.keys(fjern||{})) if(k!=='__proto__') ud[k]=fjern[k];
+  lokal=lokal||{}; base=base||{};
+  for(const k of Object.keys(lokal)){
+    if(!DATOKEY.test(k)) continue;
+    if(JSON.stringify(lokal[k])===base[k]) continue; // Uaendret lokalt — gist'en bestemmer
+    ud[k]=Object.prototype.hasOwnProperty.call(ud,k) ? fletDag(k, ud[k], lokal[k], base[k]) : lokal[k];
+  }
+  return ud;
+}
+function fletDag(dk, fjern, lokal, baseTekst){
+  let base=null; try{ base=baseTekst?JSON.parse(baseTekst):null; }catch{}
+  const liste=d=>(d && Array.isArray(d.entries)) ? d.entries : [];
+  // Restblokken paa syg-dage flettes ikke — den genberegnes af resultatet
+  // Timer i hele minutter: to stop i samme minut giver ellers forskellige decimaler
+  const noegle=e=>{ const r=(e && !e.auto_special) ? rensEntry(e,dk) : null; if(!r) return null; r.hours=Math.round(r.hours*60); return JSON.stringify(r); };
+  // Samme timer = samme ON, kategori, start og type (som dublet-vaernet i stopTimer)
+  const timerId=e=>[e.on,e.cat||'',e.start,e.special||''].join('|');
+  const tael=l=>{ const m=new Map(); for(const e of l){ const k=noegle(e); if(k) m.set(k,(m.get(k)||0)+1); } return m; };
+  const B=tael(liste(base)), L=tael(liste(lokal)), R=tael(liste(fjern));
+  const ud=[];
+  // Gist'ens poster, minus dem der er fjernet her
+  const behold=new Map();
+  for(const [k,r] of R) behold.set(k, Math.max(0, r-Math.max(0,(B.get(k)||0)-(L.get(k)||0))));
+  for(const e of liste(fjern)){ const k=noegle(e); if(k && behold.get(k)>0){ behold.set(k,behold.get(k)-1); ud.push(e); } }
+  // Plus dem der er tilfoejet her — men ikke igen, hvis gist'en har faaet samme post
+  const tilfoej=new Map();
+  for(const [k,l] of L){ const b=B.get(k)||0; tilfoej.set(k, Math.max(0, (l-b)-Math.max(0,(R.get(k)||0)-b))); }
+  // Har gist'en siden basen faaet en post fra samme timer, og er den lokale
+  // ikke en rettelse af en post i basen, er timeren stoppet to gange: den
+  // udgave, der foerst naaede gist'en, beholdes, ellers taeller tiden dobbelt.
+  // Et stop over frokost giver to stykker; er stykket foer frokost droppet,
+  // droppes stykket efter frokost fra samme timer ogsaa.
+  const nyeIGist=new Set(liste(fjern).filter(e=>{ const k=noegle(e); return k && (R.get(k)||0)>(B.get(k)||0); }).map(timerId));
+  const rettetHer=new Set(liste(base).filter(e=>{ const k=noegle(e); return k && (B.get(k)||0)>(L.get(k)||0); }).map(timerId));
+  const droppet=[], kandidater=[];
+  for(const e of liste(lokal)){
+    const k=noegle(e);
+    if(!k || !(tilfoej.get(k)>0)) continue;
+    tilfoej.set(k,tilfoej.get(k)-1);
+    if(nyeIGist.has(timerId(e)) && !rettetHer.has(timerId(e))) droppet.push(e);
+    else kandidater.push(e);
+  }
+  const fr=getFrokost(dk);
+  const sammeTimer=(a,b)=>a.on===b.on && (a.cat||'')===(b.cat||'') && (a.special||'')===(b.special||'');
+  for(const e of kandidater){
+    if(fr && e.start===fr.stop && !rettetHer.has(timerId(e)) && droppet.some(d=>sammeTimer(d,e) && d.stop===fr.start)) droppet.push(e);
+    else ud.push(e);
+  }
+  for(const e of droppet) fletDroppet.push({dk, e, f:liste(fjern).find(x=>timerId(x)===timerId(e))});
+  // Dagtypen: den lokale, hvis den er aendret her (ny dag: kun en anden end kontor)
+  const lt=lokal&&lokal.type, ft=fjern&&fjern.type;
+  const type = base ? (lt && lt!==base.type ? lt : (ft||lt||'kontor'))
+                    : (lt && lt!=='kontor' ? lt : (ft||lt||'kontor'));
+  return {entries:[...ud, ...autoSpecial(dk,type,ud)], type};
 }
 function fletStale(fjern, lokal, baseN){
   const lok=new Set((lokal||[]).map(staleNoegle)), bas=new Set(baseN||[]);
@@ -643,22 +780,27 @@ function setSyncStatus(s){ // 'syncing' | 'ok' | 'err' | '' (= lokal tilstand)
   d.setAttribute('aria-label','Sync: '+t.txt);
 }
 
+// Returnerer true ved en vellykket hentning, false ved fejl, null hvis et
+// andet sync-kald allerede er i gang.
 async function ghLoad(){
   if(!syncEnabled()){ // Lokal tilstand — læs kun fra denne browser
     const local=localStorage.getItem('vct_db');
     if(local) try{ db=JSON.parse(local); }catch{}
-    return;
+    return true;
   }
-  if(henter || gemmer) return; // Et sync-kald er allerede i gang — naeste poll tager den
+  if(henter || gemmer) return null; // Et sync-kald er allerede i gang — naeste poll tager den
   henter=true;
   setSyncStatus('syncing');
-  const gen=dirtyGen, ep=gistEpoke;
+  const gen=dirtyGen, ep=gistEpoke, sendt=Date.now();
+  let sendNu=false; // Det flettede/tilfoejede sendes, saa snart hentningen er slut (finally)
   try {
     // no-store: GitHub sender max-age=60, og en cachet GET lige efter eget PATCH ville rulle det tilbage
     const r=await fetch(gistApi(),{cache:'no-store',headers:{'Authorization':`token ${getToken()}`,'Accept':'application/vnd.github.v3+json'},signal:tidsfrist(20000)});
     if(!r.ok) throw new Error(r.status);
     const j=await r.json();
-    if(ep!==gistEpoke) return; // Gist-ID skiftet undervejs — svaret er fra den gamle
+    if(ep!==gistEpoke) return null; // Gist-ID skiftet undervejs — svaret er fra den gamle (ingen fejl)
+    // Et svar, der har ventet over en dvale, beskriver gist'en fra foer dvalen
+    if(Date.now()-sendt>20000) throw new Error('Svaret kom for sent — hentes igen');
     const fileContent=j.files[GIST_FILE]?.content;
     if(!fileContent) throw new Error('Ingen data i Gist');
     const decoded=JSON.parse(fileContent);
@@ -679,8 +821,8 @@ async function ghLoad(){
       decoded.days=rene;
       const fc={};
       for(const d of Object.keys(decoded.frokostCustom||{})){
-        const v=decoded.frokostCustom[d];
-        if(DATOKEY.test(d) && v && HHMM.test(v.start) && HHMM.test(v.stop)) fc[d]={start:v.start,stop:v.stop};
+        const v=rensFrokost(decoded.frokostCustom[d]);
+        if(DATOKEY.test(d) && v) fc[d]=v;
       }
       decoded.frokostCustom=fc;
       const fsk={};
@@ -707,27 +849,44 @@ async function ghLoad(){
     const localDays=Object.keys((db&&db.days)||{}).length;
     if(remoteDays===0 && localDays>0){
       console.warn('ghLoad: Gist er tom, men enheden har '+localDays+' dage — uploader lokale data i stedet');
-      isDirty=true; gistHentet=true; kunNyeDage=false; localStorage.removeItem('vct_kunnye');
-      clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,0); // Koerer naar hentningen er afsluttet
+      isDirty=true; gistHentet=true; sidstHentet=Date.now(); sidstFejlet=0; offlineTil=0; vagtVenter=0; kunNyeDage=false; localStorage.removeItem('vct_kunnye');
+      sendNu=true; // Uploades naar hentningen er afsluttet (finally)
       toast('Gist var tom — dine '+localDays+' dage uploades','ok');
-      return;
+      return true;
     }
-    gistHentet=true;
     const nyBase=huskSynkBase(decoded); // Af de RENSEDE gist-data, ligesom db
     // Ikke-sendte lokale aendringer (ogsaa dem lavet mens vi hentede): flet.
     const flet = isDirty || dirtyGen!==gen;
+    fletDroppet=[];
     let lokalTimerVinder=false;
+    const iDag=dateKey(new Date());
     if(flet){
-      decoded.days=fletObj(decoded.days, db.days, synkBase.days, false);
+      decoded.days=fletDage(decoded.days, db.days, synkBase.days);
       decoded.frokostSkip=fletObj(decoded.frokostSkip, db.frokostSkip, synkBase.frokostSkip);
       decoded.frokostCustom=fletObj(decoded.frokostCustom, db.frokostCustom, synkBase.frokostCustom);
       decoded.staleTimers=fletStale(decoded.staleTimers, db.staleTimers, synkBase.stale);
       // Kun hvis timeren er aendret her OG gist'ens er uaendret — eller der er
       // startet en ny her, mens gist'ens er stoppet. Ellers vinder gist'en, saa
       // et lokalt stop ikke draeber en timer, den anden enhed har startet.
+      // Ogsaa naar timeren her er startet i dag, og gist'ens er fra en tidligere
+      // dag: ghSave flytter den gamle til glemte, foer den overskrives (v5.7.2).
       const fjernAt=atNorm(decoded.activeTimer);
       lokalTimerVinder = atNorm(activeTimer)!==synkBase.at &&
-        (fjernAt===synkBase.at || (!!activeTimer && !decoded.activeTimer));
+        (fjernAt===synkBase.at || (!!activeTimer && !decoded.activeTimer) ||
+         (!!activeTimer && activeTimer.date===iDag && !!decoded.activeTimer && decoded.activeTimer.date!==iDag));
+      // Taber en timer, der er startet her og aldrig er naaet op, maa den ikke
+      // forsvinde tavst (regel 27): den gemmes som glemt, og brugeren spoerges.
+      if(!lokalTimerVinder && activeTimer && atNorm(activeTimer)!==synkBase.at &&
+         !(decoded.activeTimer && sammeStale(decoded.activeTimer,activeTimer)) &&
+         !(decoded.staleTimers||[]).some(t=>sammeStale(t,activeTimer)))
+        decoded.staleTimers=rensStaleTimers([...(decoded.staleTimers||[]), {...activeTimer, date:activeTimer.date||iDag}]);
+    }
+    // Dagens timer slaar altid en timer fra en tidligere dag i gist'en — ogsaa
+    // naar den lokale allerede er sendt, og en aeldre enhed har skrevet over den.
+    // ghSave-vaernet gemmer gist'ens gamle timer som glemt, foer den overskrives.
+    if(!lokalTimerVinder && activeTimer && activeTimer.date===iDag &&
+       decoded.activeTimer && decoded.activeTimer.date && decoded.activeTimer.date!==iDag){
+      lokalTimerVinder=true; isDirty=true; sendNu=true;
     }
     let tilfoejet=0;
     const varKunNye=kunNyeDage;
@@ -737,15 +896,14 @@ async function ghLoad(){
           decoded.days[k]=db.days[k]; tilfoejet++;
           // Dagens frokost-valg foelger med, ellers aendres "Arbejdet" tavst
           if((db.frokostSkip||{})[k]===true) decoded.frokostSkip[k]=true;
-          const fc=(db.frokostCustom||{})[k];
-          if(fc && HHMM.test(fc.start) && HHMM.test(fc.stop)) decoded.frokostCustom[k]={start:fc.start,stop:fc.stop};
+          const fc=rensFrokost((db.frokostCustom||{})[k]);
+          if(fc) decoded.frokostCustom[k]=fc;
         }
       // Ubesvarede glemte timere og en timer startet her (regel 27)
       const st=rensStaleTimers([...(decoded.staleTimers||[]), ...(db.staleTimers||[]).filter(t=>!(decoded.staleTimers||[]).some(x=>sammeStale(x,t)))]);
       if(st.length!==(decoded.staleTimers||[]).length){ decoded.staleTimers=st; tilfoejet++; }
       const rt=decoded.activeTimer;
       if(activeTimer && !(rt && sammeStale(rt,activeTimer))){
-        const iDag=dateKey(new Date());
         if(!Object.prototype.hasOwnProperty.call(decoded,'activeTimer') || (!rt && kunNyeDage==='nyt') || (rt && rt.date && rt.date!==iDag)){
           lokalTimerVinder=true; tilfoejet++; // Gist'ens gamle timer flyttes til glemte af vaernet i ghSave
         } else if(rt){
@@ -755,12 +913,46 @@ async function ghLoad(){
         } // !rt og samme ID: gist'en siger stoppet — den lokale er en gammel kopi
       }
     }
+    // Dage kun vokser (v5.7.2): intet i UI'et sletter en hel dag. Mangler gist'en
+    // en dag, som enheden har med poster, har en aeldre eller forsinket enhed
+    // skrevet den vaek — laeg den tilbage i stedet for at tabe den. Efter
+    // tom-gist-vaernet (regel 10). nyBase er uden dagen, saa den sendes op.
+    // Kun dage, der laa i den sidst kendte gist-stand: de er skrevet vaek af en
+    // anden. Dage, gist'en aldrig har haft, klarer fletningen og kunNyeDage.
+    let gendannet=0, nyeGendannet=0;
+    for(const k of Object.keys((db&&db.days)||{})){
+      const dag=db.days[k];
+      if(!DATOKEY.test(k) || !dag || Object.prototype.hasOwnProperty.call(decoded.days,k) ||
+         !Object.prototype.hasOwnProperty.call(synkBase.days||{},k)) continue;
+      const poster=(Array.isArray(dag.entries)?dag.entries:[]).map(x=>rensEntry(x,k)).filter(Boolean);
+      const type=DAGTYPER.has(dag.type)?dag.type:'kontor';
+      if(!poster.length && type==='kontor') continue;
+      decoded.days[k]={entries:poster,type}; gendannet++;
+      if(!gendannetVist.has(k)){ gendannetVist.add(k); nyeGendannet++; }
+      if((db.frokostSkip||{})[k]===true) decoded.frokostSkip[k]=true;
+      const fc=rensFrokost((db.frokostCustom||{})[k]);
+      if(fc) decoded.frokostCustom[k]=fc;
+    }
     db=decoded;
     localStorage.setItem('vct_db', JSON.stringify(db)); // Foer basen — ellers kan de komme ud af trit
     gemSynkBase(nyBase);
+    // Foerst nu: en undtagelse ovenfor (fx fuldt lager) maa ikke efterlade
+    // enheden "hentet og frisk" med en db, der ikke er flettet.
+    gistHentet=true; sidstHentet=Date.now(); sidstFejlet=0; offlineTil=0; // Seneste hentning lykkedes
     if(varKunNye){ kunNyeDage=false; localStorage.removeItem('vct_kunnye'); }
-    if(flet){ clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,800); } // Send det flettede op
-    if(tilfoejet){ scheduleSave(); toast('Dine lokale registreringer er lagt i gist\'en','ok'); }
+    if(flet) sendNu=true; // Send det flettede op
+    if(fletDroppet.length){
+      // Alle droppede poster nævnes — ellers forsvinder et stykke tavst
+      const f=fletDroppet[0].f;
+      const liste=fletDroppet.map(({dk,e})=>`${e.on} ${e.start}–${e.stop} (${kortDato(dk)})`);
+      toast(`Samme timer var allerede gemt${f?' som '+f.start+'–'+f.stop:''} — ikke gemt herfra: ${liste.slice(0,3).join(', ')}${liste.length>3?' m.fl.':''}. Tilføj under TILFØJ, hvis noget mangler`,'err');
+      fletDroppet=[];
+    }
+    if(tilfoejet||gendannet){
+      scheduleSave(); sendNu=true;
+      if(nyeGendannet) toast(nyeGendannet+(nyeGendannet===1?' dag':' dage')+' manglede i gist\'en og er lagt tilbage — genindlæs Timer på dine andre enheder','ok');
+      else if(tilfoejet) toast('Dine lokale registreringer er lagt i gist\'en','ok');
+    }
     // Indstillinger: nyeste vinder. Er gist'ens nyere, overtages de; er de
     // lokale nyere (fx gemt mens enheden var offline), sendes de op.
     const fjernTs=(db.cfg&&db.cfg.updatedAt)||0, lokalTs=cfg.updatedAt||0;
@@ -770,7 +962,7 @@ async function ghLoad(){
       applyCfg();
       if(document.getElementById('settingsModal')) toast('Indstillingerne er ændret på en anden enhed','ok');
     } else if(lokalTs>fjernTs){
-      clearTimeout(syncTimer); isDirty=true; ghSave();
+      isDirty=true; sendNu=true;
     }
     // Synkroniser activeTimer fra Gist — anden enhed kan have startet den
     if(lokalTimerVinder){ /* Lokal start/stop er ikke sendt endnu — ghSave skriver den */ }
@@ -802,12 +994,31 @@ async function ghLoad(){
     }
     visStaleTimer(); // Spoerg om glemte timere — ogsaa dem en anden enhed har fundet
     setSyncStatus('ok');
+    if(vagtVenter){ vagtVenter=0; if(toastNr===vagtNr) toast('Opdateret med de nyeste data — tjek skærmen og tryk igen','ok'); }
+    return true;
   } catch(e){
     console.error('ghLoad',e);
     setSyncStatus('err');
+    sidsteSyncFejl=String((e&&e.message)||e); sidstFejlet=Date.now();
+    if(vagtVenter){
+      // Ogsaa selve hentningen skal vaere ny: en poll-hentning sendt foer en dvale
+      // siger intet om nettet nu (20 s tidsfrist + lidt luft)
+      if(Date.now()-vagtVenter<FRISK_AUTO_MS && Date.now()-sendt<=21000){
+        offlineTil=Date.now()+60000;
+        if(toastNr===vagtNr) toast('Kunne ikke hente de nyeste data — tryk igen for at gemme på denne enhed','err');
+      }
+      vagtVenter=0;
+    }
+    sidstHentet=0; sendNu=false; // Intet PATCH paa en fejlet hentning — ellers en loekke af GET
     const local=localStorage.getItem('vct_db');
     if(local) try{ db=JSON.parse(local); }catch{}
-  } finally { henter=false; }
+    return false;
+  } finally {
+    henter=false;
+    // Direkte, ikke via en timer: en skjult fane kan udskyde timere i et minut,
+    // og saa ville dataene vaere for gamle, naar gemmet endelig koerte.
+    if(sendNu){ clearTimeout(syncTimer); ghSave(); }
+  }
 }
 
 async function ghSave(){
@@ -820,6 +1031,15 @@ async function ghSave(){
   }
   if(gemmer || henter){ clearTimeout(syncTimer); syncTimer=setTimeout(ghSave,800); return false; } // Proev igen bagefter
   if(!gistHentet) return false; // Forbliver dirty — foerste vellykkede ghLoad fletter og sender
+  // Hent og flet foerst, medmindre gist'en lige er hentet (v5.7.2). Et PATCH er
+  // hele db: uden en frisk hentning overskriver det alt, hvad den anden enhed
+  // har lavet siden sidste hentning — efter dvale kan det vaere en hel dag.
+  if(!frisk(FRISK_GEM_MS)){
+    clearTimeout(syncTimer);
+    const nr=toastNr; // En vigtigere besked (fx fra vagten) maa ikke overskrives
+    ghLoad().then(ok=>{ if(ok===false && isDirty && toastNr===nr) syncFejlToast(); safeRender(); }); // Pollen viser ingen toasts — her har brugeren gemt
+    return false;
+  }
   gemmer=true;
   setSyncStatus('syncing');
   const gen=dirtyGen, ep=gistEpoke;
@@ -928,8 +1148,21 @@ const hmToH=hm=>{if(!hm)return 0;const[h,m]=hm.split(':').map(Number);return h+m
 // ═══════════════════════════════════════════════════════
 // Poll hvert 10. sek — 5000 kald/time-graensen har rigelig plads. Startes ogsaa,
 // naar sync slaas til uden genindlaesning (saveSyncConfig, migrateToNewGist).
+let livLyttere=false;
 function startPoll(){
   if(!pollIv) pollIv=setInterval(async()=>{ if(!syncEnabled()) return; await ghLoad(); safeRender(); }, 10000);
+  if(livLyttere) return;
+  livLyttere=true;
+  // Livscyklus (v5.7.2): laaget lukkes, fanen skjules eller fryses. Skjult: send
+  // usendte aendringer med det samme. Synlig igen: data regnes for gamle, til
+  // en ny hentning er lykkedes — og den startes straks.
+  document.addEventListener('visibilitychange',()=>{
+    if(!syncEnabled()) return;
+    if(document.visibilityState==='hidden'){ if(isDirty){ clearTimeout(syncTimer); ghSave(); } }
+    else { sidstHentet=0; offlineTil=0; ghLoad().then(safeRender); }
+  });
+  window.addEventListener('pageshow',e=>{ if(e.persisted && syncEnabled()){ sidstHentet=0; offlineTil=0; ghLoad().then(safeRender); } });
+  window.addEventListener('online',()=>{ if(syncEnabled()) ghLoad().then(safeRender); });
 }
 async function init(){
   updateHeader();
@@ -975,6 +1208,9 @@ async function init(){
     if(!localStorage.getItem('vct_intro_seen')) setTimeout(showIntro,700);
     return; // Ingen ghLoad og ingen poll — der er ingen backend at tale med
   }
+  // Har gist'en aldrig set kandidaten (startet her uden at naa op), maa den ikke
+  // ryddes tavst, selv om gist'en har en anden timer (regel 27).
+  const ukendtForGist=!!localStaleCandidate && atNorm(localStaleCandidate)!==synkBase.at;
   // Load fra GitHub FØRST — Gist-data er altid den mest opdaterede kilde
   await ghLoad();
   // Nu hvor sync er færdig: håndter en evt. lokal "glemt timer"-kandidat.
@@ -987,8 +1223,10 @@ async function init(){
     flagStaleTimer(localStaleCandidate); // Spørg brugeren hvornår dagen faktisk blev afsluttet
   } else if(gistHentet && localStaleCandidate && (activeTimer!==null || db.activeTimer===null)){
     // Gist har allerede afklaret det (enten en gyldig timer, eller bekræftet stoppet
-    // af den anden enhed) — ryd bare den forældede lokale kopi uden at spørge
+    // af den anden enhed) — ryd bare den forældede lokale kopi uden at spørge.
+    // Undtagen hvis gist'en aldrig har kendt den: saa spoerges der.
     localStorage.removeItem('vct_activeTimer');
+    if(ukendtForGist) flagStaleTimer(localStaleCandidate);
   }
   visStaleTimer(); // Ogsaa hvis ghLoad fejlede — db er saa den lokale kopi
   render(); // Genrender med GitHub data
@@ -1456,7 +1694,7 @@ async function migrateToNewGist(){
       throw new Error('Den nye Gist indeholder '+kontrolDage+' dage, forventede '+dage+' — skifter ikke over');
     }
     localStorage.setItem('vct_gistid', j.id); gistEpoke++;
-    gistHentet=true; // Den nye gist ER det sendte — der maa gemmes med det samme
+    gistHentet=true; sidstHentet=Date.now(); // Den nye gist ER det sendte — der maa gemmes med det samme
     kunNyeDage=false; localStorage.removeItem('vct_kunnye');
     localStorage.setItem('vct_db', JSON.stringify(db));
     gemSynkBase(sendtBase);
@@ -1566,7 +1804,7 @@ async function saveSyncConfig(){
   const skift = nytId || !localStorage.getItem('vct_synkbase');
   localStorage.setItem('vct_gistid',g);
   if(skift){
-    gistHentet=false; gistEpoke++; clearTimeout(syncTimer);
+    gistHentet=false; sidstHentet=0; gistEpoke++; clearTimeout(syncTimer);
     // Ved nyt ID hoerer usendte aendringer til den gamle gist. Ved samme ID
     // beholdes de (fx rettet mens tokenet var udloebet). Basen saettes til den
     // lokale kopi og gemmes straks: kun det, der rettes herefter, vinder over
@@ -1643,8 +1881,13 @@ function visStaleTimer(){
   }
   const liste=Array.isArray(db.staleTimers)?db.staleTimers:[];
   if(staleTimerPending && !liste.some(t=>sammeStale(t,staleTimerPending))){
+    const x=staleTimerPending;
     staleTimerPending=null;
     closeStaleTimerModal();
+    // Vis ikke straks den naeste i samme boks: et tryk mere paa "Gem" ville
+    // gemme den med forslaget. Naeste hentning viser den.
+    toast(visLabel(x.label)+' fra '+x.date.split('-').reverse().join('.')+' er besvaret på den anden enhed','ok');
+    return;
   }
   if(staleTimerPending || !liste.length) return;
   // Laeg ikke boksen oven paa en aaben modal (indstillinger, sync) — naeste poll viser den
@@ -1662,7 +1905,17 @@ function showStaleTimerModal(stale){
   const target=DAY_TARGET[di]||7.5;
   const [sh,sm]=stale.startHM.split(':').map(Number);
   let endMin=sh*60+sm+Math.round(target*60);
+  // Frokosten trækkes fra ved gem, saa den laegges til forslaget
+  const fr=getFrokost(stale.date);
+  if(fr && sh*60+sm<hmToH(fr.start)*60 && endMin>hmToH(fr.stop)*60) endMin+=Math.round((hmToH(fr.stop)-hmToH(fr.start))*60);
   if(endMin>23*60+59) endMin=23*60+59;
+  // En glemt timer fra i dag (taber fletningen) maa ikke foreslaa en sluttid i fremtiden
+  if(stale.date===dateKey(new Date())){
+    endMin=Math.min(endMin, Math.round(hmToH(nowHM())*60));
+    // Overtog en anden timer senere, er det dens start, timeren reelt sluttede
+    if(activeTimer && !sammeStale(activeTimer,stale) && activeTimer.startHM>stale.startHM) endMin=Math.min(endMin, Math.round(hmToH(activeTimer.startHM)*60));
+    endMin=Math.max(sh*60+sm+1, endMin);
+  }
   const suggestStop=`${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
   const dateFmt=`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
   document.getElementById('modalRoot').insertAdjacentHTML('beforeend',`
@@ -1670,7 +1923,9 @@ function showStaleTimerModal(stale){
     <div class="modal-panel">
       <div class="section-label" id="staleTitel" style="margin-bottom:6px">⏰ Glemte du at afslutte?</div>
       <div style="font-size:13px;color:var(--mist);margin-bottom:14px;line-height:1.6">
-        <b style="color:var(--snow)">${esc(visLabel(stale.label))}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?
+        ${stale.date===dateKey(new Date())
+          ? `<b style="color:var(--snow)">${esc(visLabel(stale.label))}</b> blev startet kl. ${esc(stale.startHM)} i dag. ${activeTimer&&!sammeStale(activeTimer,stale)?`Kl. ${esc(activeTimer.startHM)} blev <b style="color:var(--snow)">${esc(visLabel(activeTimer.label))}</b> startet`:'En anden timer blev startet'}, og kun én timer kan køre.<br>Hvornår stoppede du ${esc(visLabel(stale.label))}?`
+          : `<b style="color:var(--snow)">${esc(visLabel(stale.label))}</b> blev startet kl. ${esc(stale.startHM)} den ${dateFmt}, men blev aldrig stoppet.<br>Hvornår sluttede du den dag?`}
       </div>
       <label class="field-label" for="staleStopInput">Sluttede kl.</label>
       <input type="time" id="staleStopInput" value="${suggestStop}" style="width:100%;background:var(--ink3);border:1.5px solid var(--line);border-radius:12px;color:var(--snow);padding:12px;font-size:15px;font-family:var(--font);margin-bottom:14px">
@@ -1687,18 +1942,23 @@ function showStaleTimerModal(stale){
 function saveStaleTimer(){
   const stale=staleTimerPending;
   if(!stale){ closeStaleTimerModal(); return; }
+  if(afvisPaaGamleData()) return;
   const stopEl=document.getElementById('staleStopInput');
   const stop=stopEl?stopEl.value:'';
   if(!stop){ toast('Angiv et sluttidspunkt','err'); return; }
   const sh=hmToH(stale.startHM), eh=hmToH(stop);
   if(eh<=sh){ toast('Sluttid skal være efter starttid','err'); return; }
   const dk=stale.date;
-  const overlap=checkOverlap(dk, stale.startHM, stop);
-  if(overlap){ toast('⚠️ '+overlap,'err'); return; }
-  const entry={on:stale.on, cat:stale.cat||'', start:stale.startHM, stop, hours:eh-sh, date:dk};
-  if(stale.special) entry.special=stale.special;
+  if(dk===dateKey(new Date()) && stop>nowHM()){ toast('Sluttiden ligger efter nu — vælg et tidspunkt, der er gået','err'); return; }
+  const ovE=findOverlapDele(dk, stale.startHM, stop);
+  if(ovE){ toast(`⚠️ Overlapper med ${ovE.on} (${ovE.start}–${ovE.stop})`,'err'); return; }
   fjernStaleTimer(stale); // Foer addEntry, saa begge dele naar gist'en i samme gem
-  addEntry(dk,entry);
+  // Split om frokost ligesom stopTimer (v5.8.0): en skjult fane naar ikke altid
+  // det automatiske split, og saa blev frokosten bogfoert som arbejdstid.
+  const fr=getFrokost(dk);
+  const ny=(a,b)=>{ const x={on:stale.on, cat:stale.cat||'', start:a, stop:b, hours:hmToH(b)-hmToH(a), date:dk}; if(stale.special) x.special=stale.special; return x; };
+  if(fr && sh<hmToH(fr.start) && eh>hmToH(fr.stop)){ addEntry(dk,ny(stale.startHM,fr.start)); addEntry(dk,ny(fr.stop,stop)); }
+  else addEntry(dk,ny(stale.startHM,stop));
   recalcSpecial(dk);
   staleTimerPending=null;
   closeStaleTimerModal();
@@ -1734,11 +1994,12 @@ function updateHeader(){
 // ═══════════════════════════════════════════════════════
 function tab(name){
   currentTab=name; editingIdx=-1;
-  if(name==='tilfoej'){ selCat=''; selOn=''; customOn=''; selSpecial=''; tilfoejStart=''; tilfoejStop=''; }
+  if(name==='tilfoej'){ selCat=''; selOn=''; customOn=''; selSpecial=''; tilfoejStart=''; tilfoejStop=''; tilfoejDato=null; }
   ['dag','tilfoej','uge','rapport'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('on',t===name));
   render();
 }
 function render(){
+  sidstTegnetDag=dateKey(new Date());
   // Gem hvilke panels der er åbne inden re-render
   const openIds=new Set([...document.querySelectorAll('.wr-body.open,.report-week-body.open')].map(el=>el.id));
   const m=document.getElementById('main');
@@ -1782,6 +2043,9 @@ function safeRender(){
   // hasFocus: har brugeren skiftet vindue (fx til Promak), beholder feltet
   // fokus, og så ville skærmen aldrig blive opdateret.
   if(document.hasFocus()&&a&&a.matches('input,select,textarea')&&document.getElementById('main').contains(a)) return;
+  // TILFOEJ med uroert dato efter midnat: flyt ikke formularen til den nye dag i
+  // baggrunden — midnatsvagten i saveManual skal se den dag, brugeren saa
+  if(currentTab==='tilfoej' && tilfoejDato===null && sidstTegnetDag && sidstTegnetDag!==dateKey(new Date())) return;
   render();
 }
 
@@ -1857,7 +2121,9 @@ function splitExistingForFrokost(dk){
 
 function dagHTML(){
   const today=new Date(), dk=dateKey(today), di=todayIdx();
-  if(splitExistingForFrokost(dk)) scheduleSave(); // Ret op på gamle entries der dækker frokost
+  // Ret op på gamle entries der dækker frokost — kun på friske data (v5.7.2):
+  // ved opstart tegnes I DAG, før gist'en er hentet.
+  if((!syncEnabled() || (gistHentet && !henter && frisk(FRISK_AUTO_MS))) && splitExistingForFrokost(dk)) scheduleSave();
   const entries=getEntries(dk);
   const dayType=getDayType(dk);
   const target=DAY_TARGET[di];
@@ -2359,7 +2625,7 @@ function getFrokost(dk){
   if(dow===0||dow===6) return null; // Ingen frokost i weekend
   const skipped=(db.frokostSkip||{})[dk];
   if(skipped) return null;
-  const custom=(db.frokostCustom||{})[dk];
+  const custom=rensFrokost((db.frokostCustom||{})[dk]); // Omvendt eller ufuldstaendig: brug standarden
   return custom||{start:FROKOST_DEFAULT_START,stop:FROKOST_DEFAULT_STOP};
 }
 
@@ -2416,6 +2682,11 @@ function commitFrokostDrag(dk,ns,ne){
 // Tjek om en aktiv timer overlapper frokost og split den
 function checkSplitForFrokost(dk){
   if(!activeTimer) return;
+  // Kun dagens timer, og kun paa friske data (v5.7.2). Efter dvale fyrer minut-
+  // tikket, foer den friske hentning er tilbage: et split af enhedens gamle timer
+  // gjorde dens gamle udgave af dagen til en lokal aendring, der vandt fletningen.
+  if(activeTimer.date && activeTimer.date!==dk) return; // Tidligere dag: stopTimer/ghLoad spoerger (regel 27)
+  if(syncEnabled() && (henter || !gistHentet || !frisk(FRISK_AUTO_MS))) return; // Naeste minut-tik tager den
   const fr=getFrokost(dk);
   if(!fr) return;
   const timerStart=hmToH(activeTimer.startHM);
@@ -2432,17 +2703,20 @@ function checkSplitForFrokost(dk){
     };
     if(activeTimer.special) entryBefore.special=activeTimer.special;
     addEntry(dk,entryBefore);
+    recalcSpecial(dk); // Restblokken paa syg-dage (regel 3)
     // Genstart timeren fra frokostslut
     activeTimer={...activeTimer, startHM:fr.stop, t0:Date.now()-(nowH-frStop)*3600000};
     localStorage.setItem('vct_activeTimer',JSON.stringify(activeTimer));
     scheduleSave();
     toast(`🍽️ Frokost trukket fra — ${activeTimer.on} fortsætter fra ${esc(fr.stop)}`,'ok');
-    render();
+    safeRender(); // Baggrundsaendring (regel 6)
   }
 }
 
-// Kør frokost-split-tjek hvert minut
+// Kør frokost-split-tjek hvert minut — og hold headerens dato/uge og I DAG ajour over midnat
 setInterval(()=>{
+  updateHeader();
+  if(sidstTegnetDag && sidstTegnetDag!==dateKey(new Date())) safeRender(); // Proever igen hvert minut, til det lykkes
   if(activeTimer){
     const dk=dateKey(new Date());
     checkSplitForFrokost(dk);
@@ -2451,33 +2725,28 @@ setInterval(()=>{
 
 // ═══════════════════════════════════════════════════════
 function recalcSpecial(dk){
-  const type=getDayType(dk);
-  // Fjern ALTID gamle auto-entries
+  // Fjern ALTID gamle auto-entries (regel 3)
   const normal=getEntries(dk).filter(e=>!e.auto_special);
-  if(!['syg','barnsyg','p56'].includes(type)){
-    saveEntries(dk,normal);
-    return;
-  }
+  saveEntries(dk,[...normal, ...autoSpecial(dk,getDayType(dk),normal)]);
+}
+// Restblokken paa syg/barn syg/§56-dage: [] eller een auto-post, der fylder dagen
+// op til dagsmaalet. Ren funktion — bruges ogsaa af fletningen pr. post.
+function autoSpecial(dk,type,normal){
+  if(!['syg','barnsyg','p56'].includes(type)) return [];
   const d=new Date(dk), di=(d.getDay()+6)%7;
   const target=DAY_TARGET[di]||7.5;
   // Kun normale (ikke-special) entries tæller mod mål
-  const normalOnly=normal.filter(e=>!e.special);
-  const workedH=normalOnly.reduce((s,e)=>s+e.hours,0);
+  const workedH=normal.filter(e=>!e.special).reduce((s,e)=>s+e.hours,0);
   const remaining=Math.max(0,target-workedH);
-  const result=[...normal];
-  if(remaining>0.1){
-    let lastStop='07:00';
-    if(normal.length>0){
-      const stops=normal.map(e=>e.stop).filter(Boolean).sort();
-      if(stops.length>0) lastStop=stops[stops.length-1];
-    }
-    const [sh,sm]=lastStop.split(':').map(Number);
-    const stopMin=sh*60+sm+Math.round(remaining*60);
-    const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
-    const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
-    result.push({on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true});
-  }
-  saveEntries(dk,result);
+  if(remaining<=0.1) return [];
+  let lastStop='07:00';
+  const stops=normal.map(e=>e.stop).filter(Boolean).sort();
+  if(stops.length>0) lastStop=stops[stops.length-1];
+  const [sh,sm]=lastStop.split(':').map(Number);
+  const stopMin=sh*60+sm+Math.round(remaining*60);
+  const stopStr=`${String(Math.floor(stopMin/60)).padStart(2,'0')}:${String(stopMin%60).padStart(2,'0')}`;
+  const label=type==='syg'?'Syg':type==='barnsyg'?'Barn syg':'§56';
+  return [{on:label,cat:'',start:lastStop,stop:stopStr,hours:remaining,date:dk,special:type,auto_special:true}];
 }
 
 function setDT(dk,type){
@@ -2538,16 +2807,91 @@ function startDisp(){
 // ═══════════════════════════════════════════════════════
 //  TILFOEJ
 // ═══════════════════════════════════════════════════════
+// Næste ledige starttid på dagen: sidste stop blandt dagens poster.
+function smartStartFor(dk){
+  const stops=getEntries(dk).map(e=>e.stop).filter(Boolean).sort();
+  return stops.length>0?stops[stops.length-1]:'07:00';
+}
+// Er v en rigtig kalenderdato (ÅÅÅÅ-MM-DD)? Fanger fx 2026-02-30.
+function erRigtigDato(v){
+  if(!DATOKEY.test(v||'')) return false;
+  const [y,m,d]=v.split('-').map(Number), dt=new Date(y,m-1,d);
+  return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;
+}
+// Fejl i datoen i TILFOEJ — siger hvad der er galt og hvad man goer. null = ok.
+function datoFejl(v){
+  if(!v) return 'Datoen mangler — vælg en dag i datofeltet';
+  if(!erRigtigDato(v)) return 'Datoen er ugyldig — vælg en dag i datofeltet';
+  if(v>dateKey(new Date())) return 'Datoen ligger efter i dag — vælg i dag eller en tidligere dag';
+  if(v<tidligsteDato()){
+    const etAar=new Date(); etAar.setFullYear(etAar.getFullYear()-1);
+    return v<=dateKey(etAar) ? 'Årstallet ser forkert ud — ret årstallet i datofeltet'
+                            : 'Datoen ligger mere end 62 dage tilbage — vælg en dato inden for de sidste 2 måneder';
+  }
+  return null;
+}
+// Nedre graense for datofeltet: i dag minus 62 dage. Fanger tastefejl i
+// aarstallet (2025 for 2026, 0202) — RAPPORT viser kun indevaerende aar,
+// saa en saadan post ville ellers forsvinde.
+function tidligsteDato(){
+  const d=new Date(); d.setDate(d.getDate()-62);
+  return dateKey(d);
+}
+// "lør 10.10" til toasts. Aaret kommer kun med, naar det ikke er i aar,
+// saa en tastefejl i aarstallet kan ses.
+function kortDato(dk){
+  const [y,m,d]=dk.split('-').map(Number), dt=new Date(y,m-1,d);
+  return `${DAY_S[(dt.getDay()+6)%7].toLowerCase()} ${String(d).padStart(2,'0')}.${String(m).padStart(2,'0')}${y!==new Date().getFullYear()?'.'+y:''}`;
+}
+// Teksten under datofeltet. Feltet viser ikke ugedagen, saa den staar her —
+// man skal kunne se, at det er den rigtige dag. Guld = ikke i dag.
+function datoInfo(v,fejl){
+  if(fejl) return {t:fejl,c:'var(--red)'};
+  if(!erRigtigDato(v)) return {t:'',c:'var(--slate)'};
+  const [y,m,d]=v.split('-').map(Number), dt=new Date(y,m-1,d), nu=new Date();
+  const t=`${WDAYS[dt.getDay()]} ${d}. ${MONTHS_S[m-1]}${y!==nu.getFullYear()?' '+y:''}`;
+  // UGE ("Arbejdet") og Promak-oversigten taeller kun man–fre. Det er en
+  // forretningsregel, der ikke er afgjort — her siges det kun, saa timerne
+  // ikke ser ud til at forsvinde.
+  const wk=(dt.getDay()===0||dt.getDay()===6)?' — weekend: tæller ikke med i ugens total eller Promak-oversigten':'';
+  return v===dateKey(nu)?{t:t+(wk?', i dag':' — i dag')+wk,c:'var(--slate)'}:{t:t+wk,c:'var(--gold)'};
+}
+// Datofeltet i TILFOEJ. oninput gemmer kun vaerdien: Chrome sender input og
+// change for hvert segment, og en render() ville smide feltet vaek midt i
+// indtastningen (haard regel 22/23). Her tegnes kun tidslinjen og teksten
+// under feltet om — selve feltet roeres ikke, saa markoeren bliver staaende.
+// change: ny dato vises med det samme. blur (visFejl): fejl vises foerst nu.
+function skiftTilfoejDato(visFejl){
+  const f=document.getElementById('mDato'), box=document.getElementById('tlEditor');
+  if(!f||!box) return;
+  // Urørt felt forbliver null (= i dag ved gem): blur alene maa ikke laase
+  // datoen, ellers gemmes der paa i gaar, hvis siden staar aaben over midnat.
+  if(tilfoejDato!==null) tilfoejDato=f.value;
+  const fejl=visFejl?datoFejl(f.value):null;
+  const info=datoInfo(f.value,fejl), el=document.getElementById('mDatoInfo');
+  if(el){ el.textContent=info.t; el.style.color=info.c; el.style.fontSize=fejl?'12px':'11px'; }
+  if(fejl) f.setAttribute('aria-invalid','true'); else f.removeAttribute('aria-invalid');
+  if(!erRigtigDato(f.value)||box.dataset.dk===f.value) return; // Ufaerdig eller uaendret
+  // Ny starttid kun hvis brugeren ikke selv har flyttet den
+  if(!tilfoejStart||tilfoejStart===smartStartFor(box.dataset.dk)) tilfoejStart=smartStartFor(f.value);
+  box.dataset.dk=f.value;
+  box.innerHTML=buildTimelineEditor(f.value);
+  bindSelHandlers();
+  const ms=document.getElementById('mStart'); if(ms) ms.value=tilfoejStart;
+}
+
 function tilfoejHTML(){
   const now=nowHM();
+  const iDag=dateKey(new Date());
+  // Valgt dato — tom eller ufaerdig = i dag
+  const dk=erRigtigDato(tilfoejDato)?tilfoejDato:iDag;
   // Find næste ledige starttid baseret på eksisterende entries
-  const dk=dateKey(new Date());
-  const todayEntries=getEntries(dk);
-  let smartStart='07:00';
-  if(todayEntries.length>0){
-    const stops=todayEntries.map(e=>e.stop).filter(Boolean).sort();
-    if(stops.length>0) smartStart=stops[stops.length-1];
-  }
+  const smartStart=smartStartFor(dk);
+  // render() sker aldrig mens man skriver i feltet (safeRender), saa en fejl
+  // der allerede er vist ved blur, bliver staaende naar fx en kategori vaelges
+  // null = urørt (ingen fejl). '' = tømt: fejlen bliver staaende.
+  const dFejl=tilfoejDato!==null?datoFejl(tilfoejDato):null;
+  const info=datoInfo(dk,dFejl);
   // Bevar valgte tider hvis de allerede er sat
   if(!tilfoejStart) tilfoejStart=smartStart;
   if(!tilfoejStop)  tilfoejStop=now;
@@ -2566,7 +2910,7 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">ON-nummer (valgfrit)</div>
     <div class="on-chips">${chips}</div>
-    <div style="margin-top:9px"><label class="field-label">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${esc(customOn)}" oninput="customOn=renTekst(this.value,40);selOn=''"></div>
+    <div style="margin-top:9px"><label class="field-label" for="onInput">Eller skriv selv</label><input type="text" id="onInput" placeholder="fx 3052" value="${esc(customOn)}" oninput="customOn=renTekst(this.value,40);selOn=''"></div>
   </div>
   <div class="card">
     <div class="section-label">Syg / Barn syg / §56 på timer</div>
@@ -2588,10 +2932,15 @@ function tilfoejHTML(){
   <div class="card">
     <div class="section-label">Tilføj manuelt</div>
     <div class="form-col">
-      ${tlHtml}
+      <div>
+        <label class="field-label" for="mDato">Dato</label>
+        <input type="date" id="mDato" value="${esc(tilfoejDato===null?iDag:tilfoejDato)}" min="${tidligsteDato()}" max="${iDag}" aria-describedby="mDatoInfo"${dFejl?' aria-invalid="true"':''} oninput="tilfoejDato=this.value" onchange="skiftTilfoejDato(false)" onblur="skiftTilfoejDato(true)">
+        <div id="mDatoInfo" style="font-size:${dFejl?12:11}px;color:${info.c};margin-top:4px;min-height:16px">${esc(info.t)}</div>
+      </div>
+      <div id="tlEditor" data-dk="${dk}">${tlHtml}</div>
       <div class="form-row" style="margin-top:8px">
-        <div><label class="field-label">Start</label><input type="time" id="mStart" value="${tilfoejStart}" oninput="tilfoejStart=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
-        <div><label class="field-label">Stop</label><input type="time" id="mStop" value="${tilfoejStop}" oninput="tilfoejStop=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
+        <div><label class="field-label" for="mStart">Start</label><input type="time" id="mStart" value="${tilfoejStart}" oninput="tilfoejStart=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStart')">← Nu</button></div>
+        <div><label class="field-label" for="mStop">Stop</label><input type="time" id="mStop" value="${tilfoejStop}" oninput="tilfoejStop=this.value;updateTlSel()"><button class="btn-sm btn-now" onclick="setNow('mStop')">← Nu</button></div>
       </div>
       <button class="btn btn-gold" onclick="saveManual()">Gem →</button>
     </div>
@@ -2601,20 +2950,20 @@ function tilfoejHTML(){
 
 function pickCat(cat){
   selCat=cat;
-  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
-  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop'),d=document.getElementById('mDato');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value; if(d&&tilfoejDato!==null)tilfoejDato=d.value;
   render();
 }
 function pickOn(on){
   selOn=on;customOn='';
-  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
-  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop'),d=document.getElementById('mDato');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value; if(d&&tilfoejDato!==null)tilfoejDato=d.value;
   render();
 }
 function toggleSpecial(sp){
   selSpecial=selSpecial===sp?'':sp;
-  const s=document.getElementById('mStart'),e=document.getElementById('mStop');
-  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value;
+  const s=document.getElementById('mStart'),e=document.getElementById('mStop'),d=document.getElementById('mDato');
+  if(s)tilfoejStart=s.value; if(e)tilfoejStop=e.value; if(d&&tilfoejDato!==null)tilfoejDato=d.value;
   render();
 }
 function setNow(id){
@@ -2641,6 +2990,7 @@ function visLabel(l){
 }
 
 function startTimer(){
+  if(afvisPaaGamleData()) return;
   // Knappen kan vise "Start" selv om den anden enhed har startet en timer —
   // safeRender() tegner ikke om mens man skriver. Overskriv den ikke.
   if(activeTimer){ toast(`Der kører allerede en timer (${visLabel(activeTimer.label)}) — stop den først`,'err'); render(); return; }
@@ -2655,6 +3005,7 @@ function startTimer(){
 }
 function stopTimer(){
   if(!activeTimer)return;
+  if(afvisPaaGamleData()) return;
   // Fra en tidligere dag (fanen stod aaben natten over): Date.now()-t0 ville
   // give en post paa 24+ timer paa dags dato. Spoerg i stedet.
   if(activeTimer.date && activeTimer.date!==dateKey(new Date())){
@@ -2666,25 +3017,35 @@ function stopTimer(){
   const stop=nowHM();
   const dk=dateKey(new Date());
   const fr=getFrokost(dk);
-  const overlap = checkOverlap(dk, activeTimer.startHM, stop);
-  if(overlap){
-    toast('⚠️ '+overlap,'err');
+  const at=activeTimer;
+  // Allerede registreret (fx stoppet paa den anden enhed): gem den ikke to gange
+  if(getEntries(dk).some(e=>!e.auto_special && e.start===at.startHM && e.on===at.on && (e.cat||'')===(at.cat||'') && hmToH(e.stop)>hmToH(e.start))){
+    toast('Timeren var allerede registreret','ok');
     activeTimer=null; localStorage.removeItem('vct_activeTimer');
     scheduleSave(); render(); return;
+  }
+  // Overlap: spoerg — kassér aldrig den koerende tid (v5.7.2). Foer forsvandt
+  // hele timeren ved ethvert overlap, ogsaa med restblokken paa en syg-dag.
+  // Deles timeren om frokost, tjekkes de to stykker — en post i pausen er ikke et overlap
+  const ov = findOverlapDele(dk, at.startHM, stop);
+  if(ov && !confirm(`Timeren ${visLabel(at.label)} (${at.startHM}–${stop}) overlapper ${ov.on} ${ov.start}–${ov.stop}, som allerede er registreret.\n\nGemmer du alligevel, tæller den tid, der overlapper, med to gange, indtil du retter en af posterne.\n\nOK = gem timeren alligevel\nAnnuller = lad timeren køre videre`)){
+    startDisp(); return;
   }
   // Split rundt om frokost hvis relevant
   if(fr && hmToH(activeTimer.startHM)<hmToH(fr.start) && hmToH(stop)>hmToH(fr.stop)){
     const e1={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop:fr.start,hours:hmToH(fr.start)-hmToH(activeTimer.startHM),date:dk};
     const e2={on:activeTimer.on,cat:activeTimer.cat,start:fr.stop,stop,hours:hmToH(stop)-hmToH(fr.stop),date:dk};
     if(activeTimer.special){e1.special=activeTimer.special;e2.special=activeTimer.special;}
-    addEntry(dk,e1); addEntry(dk,e2);
-    toast(`✓ Gemt — frokost 🍽️ trukket fra`,'ok');
+    addEntry(dk,e1); addEntry(dk,e2); recalcSpecial(dk);
+    if(ov) toast(`Gemt — overlapper ${ov.on} ${ov.start}–${ov.stop}. Ret en af posterne under I DAG (frokost trukket fra)`,'err');
+    else toast(`✓ Gemt — frokost 🍽️ trukket fra`,'ok');
   } else {
     const hours=(Date.now()-activeTimer.t0)/3600000;
     const entry={on:activeTimer.on,cat:activeTimer.cat,start:activeTimer.startHM,stop,hours,date:dk};
     if(activeTimer.special)entry.special=activeTimer.special;
-    addEntry(dk,entry);
-    toast('✓ Gemt','ok');
+    addEntry(dk,entry); recalcSpecial(dk);
+    if(ov) toast(`Gemt — overlapper ${ov.on} ${ov.start}–${ov.stop}. Ret en af posterne under I DAG`,'err');
+    else toast('✓ Gemt','ok');
   }
   activeTimer=null; localStorage.removeItem('vct_activeTimer');
   scheduleSave(); tab('dag');
@@ -2718,7 +3079,8 @@ function buildTimelineEditor(dk){
     return`<div class="timeline-block ${cls}" style="left:${left}%;width:${width}%">${width>8?lbl:''}</div>`;
   }).join('');
 
-  const nowLine=`<div class="timeline-now" style="left:${nowPct}%"></div>`;
+  // Nu-stregen giver kun mening paa dagens tidslinje
+  const nowLine=dk===dateKey(new Date())?`<div class="timeline-now" style="left:${nowPct}%"></div>`:'';
 
   // Timemærker
   const hours=[];
@@ -2900,19 +3262,29 @@ function tlEditorClickBlock(start,stop){
 }
 
 // ─────────────────────────────────────────────────────────────────────
-function checkOverlap(dk, newStart, newStop){
-  const entries = getEntries(dk);
+function findOverlap(dk, newStart, newStop, udenAuto=false){
   const ns = hmToH(newStart), ne = hmToH(newStop);
-  for(const e of entries){
-    const es = hmToH(e.start), ee = hmToH(e.stop);
-    if(ns < ee && ne > es){
-      return `Overlapper med ${e.on} (${esc(e.start)}–${esc(e.stop)})`;
-    }
+  for(const e of getEntries(dk)){
+    if(udenAuto && e.auto_special) continue; // Restblokken genberegnes alligevel
+    if(ns < hmToH(e.stop) && ne > hmToH(e.start)) return e;
   }
   return null;
 }
+// Et tidsrum, der daekker frokosten, gemmes som to stykker. Overlap tjekkes
+// paa stykkerne — en post i frokostpausen er ikke et overlap. Restblokken paa
+// syg-dage tæller ikke (den genberegnes).
+function frokostDele(dk,start,stop){
+  const fr=getFrokost(dk);
+  return (fr && hmToH(start)<hmToH(fr.start) && hmToH(stop)>hmToH(fr.stop)) ? [[start,fr.start],[fr.stop,stop]] : [[start,stop]];
+}
+function findOverlapDele(dk,start,stop){
+  for(const [a,b] of frokostDele(dk,start,stop)){ const e=findOverlap(dk,a,b,true); if(e) return e; }
+  return null;
+}
 
+let midnatVist=0;
 function saveManual(){
+  if(afvisPaaGamleData()) return;
   const start=document.getElementById('mStart').value,stop=document.getElementById('mStop').value;
   if(!start||!stop){toast('Udfyld start og stop','err');return;}
   const sh=hmToH(start),eh=hmToH(stop);
@@ -2921,9 +3293,24 @@ function saveManual(){
   const baseOn=customOn||selOn||selCat;
   const on=baseOn||( selSpecial?(selSpecial==='syg'?'Syg':selSpecial==='barnsyg'?'Barn syg':'§56'):null);
   if(!on){toast('Vælg kategori eller ON-nummer','err');return;}
-  const dk=dateKey(new Date());
-  const overlap = checkOverlap(dk, start, stop);
-  if(overlap){toast('⚠️ '+overlap,'err');return;}
+  // Valgt dato (feltet i "Tilføj manuelt"). Urørt (null) = i dag, regnet nu —
+  // ikke da siden blev tegnet. Et tømt felt er en fejl, ikke i dag.
+  const df=document.getElementById('mDato');
+  // Urørt felt, men klokken har passeret midnat siden siden blev tegnet: feltet
+  // viser gårsdagen som "i dag". Tegn om og lad brugeren bekræfte datoen.
+  if(Date.now()-midnatVist<1500) return; // Et dobbeltklik maa ikke bekraefte advarslen
+  if(tilfoejDato===null && df && df.value && df.value!==dateKey(new Date())){
+    midnatVist=Date.now(); updateHeader(); render();
+    toast('Klokken har passeret midnat — datoen er nu '+kortDato(dateKey(new Date()))+'. Ret datoen, hvis tiden hører til i går, og tryk Gem igen','err');
+    document.getElementById('mDato')?.focus();
+    return;
+  }
+  const dk=(tilfoejDato===null||!df)?dateKey(new Date()):df.value;
+  const dfejl=datoFejl(dk);
+  if(dfejl){toast(dfejl,'err'); skiftTilfoejDato(true); return;}
+  const andenDag=dk!==dateKey(new Date());
+  const ovE=findOverlapDele(dk, start, stop);
+  if(ovE){toast(`⚠️ Overlapper med ${ovE.on} (${ovE.start}–${ovE.stop})`,'err');return;}
   // Split rundt om frokost hvis perioden dækker den
   const fr=getFrokost(dk);
   if(fr && sh<hmToH(fr.start) && eh>hmToH(fr.stop)){
@@ -2932,12 +3319,33 @@ function saveManual(){
     if(selSpecial){e1.special=selSpecial;e2.special=selSpecial;}
     addEntry(dk,e1); addEntry(dk,e2);
     recalcSpecial(dk); savePulse();
-    toast(`✓ ${on} — frokost 🍽️ trukket fra`,'ok'); tab('dag');
+    toast(`✓ ${on}${andenDag?' gemt '+kortDato(dk):''} — frokost 🍽️ trukket fra`,'ok'); visGemtDag(dk);
     return;
   }
   const entry={on,cat:selCat,start,stop,hours:eh-sh,date:dk};
   if(selSpecial)entry.special=selSpecial;
-  addEntry(dk,entry); recalcSpecial(dk); savePulse(); toast(`✓ ${on}  ${start}–${stop}`,'ok'); tab('dag');
+  addEntry(dk,entry); recalcSpecial(dk); savePulse();
+  toast(andenDag?`✓ ${on} ${start}–${stop} gemt ${kortDato(dk)}`:`✓ ${on}  ${start}–${stop}`,'ok'); visGemtDag(dk);
+}
+// Efter gem i TILFOEJ. I dag: I DAG som foer. En anden dag: UGE, saa man ser
+// dagen udfyldt. UGE viser kun indevaerende uge — aeldre uger foldes ud i RAPPORT.
+// Dagen/ugen foldes ud og rulles frem, og fokus lander paa dens overskrift
+// (stabilt onclick, saa render() genfinder den) i stedet for <body>.
+function visGemtDag(dk){
+  if(dk===dateKey(new Date())){ tab('dag'); return; }
+  let id;
+  if(dk>=dateKey(monday(new Date()))){ tab('uge'); id=`wd-${dk}`; }
+  else {
+    tab('rapport');
+    const d=new Date(dk); // Samme noegle som rapportHTML()
+    id=`rwb-${d.getFullYear()}-W${String(weekNum(d)).padStart(2,'0')}`;
+  }
+  const el=document.getElementById(id);
+  if(el&&!el.classList.contains('open')){ if(currentTab==='uge') toggleDay(id); else toggleWeek(id); }
+  const hdr=el&&document.querySelector(`[aria-controls="${id}"]`);
+  // Vises ugen ikke (fx kun weekendtimer i en tidligere uge), faar fanen fokus.
+  (hdr||document.getElementById(`tab-${currentTab}`)).focus({preventScroll:true});
+  if(hdr) hdr.parentElement.scrollIntoView({block:'nearest'});
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3482,7 +3890,10 @@ function saveFerie(){
 
 async function manualSync(){
   toast('Synkroniserer...','');
-  await ghLoad();
+  const nr=toastNr;
+  const ok=await ghLoad();
+  if(ok===null){ toast('Sync er allerede i gang — prøv igen om et øjeblik',''); return; }
+  if(ok===false){ if(toastNr===nr) syncFejlToast(); return; }
   if(editingIdx!==-1){
     toast('✓ Synkroniseret (vises når du lukker rettelsen)','ok');
   } else {
@@ -3545,8 +3956,15 @@ function copyText(txt){
 }
 function toast(msg,type=''){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
-  clearTimeout(t._to);t._to=setTimeout(()=>t.className='toast',3000);
+  toastNr++;
+  const top=modalAaben();
+  if(t.classList.contains('top')!==top && !t.classList.contains('show')){
+    t.style.transition='none'; t.className='toast'+(top?' top':''); void t.offsetHeight; t.style.transition='';
+  }
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'')+(top?' top':'');
+  // Lange beskeder skal kunne naas at laese: 60 ms pr. tegn, 3–8 sek. Kun
+  // .show fjernes, saa en besked oeverst glider ud opad og ikke hen over bunden.
+  clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),Math.min(8000,Math.max(3000,String(msg).length*60)));
 }
 function savePulse(){
   const b=document.getElementById('saveBar');
@@ -3710,6 +4128,7 @@ function scanShowFromBarcode(on){
 // Kategorier der IKKE kræver ON-nummer — defineret sammen med CATS ovenfor
 
 function scanConfirm(){
+  if(afvisPaaGamleData()) return;
   const customVal=renTekst(scanCustomOnVal,40); // som stregkode-vejen — fritekst skal ogsaa renses foer db
   // Admin/Møde bruger kategori som ON. Et ON valgt foer skiftet til en
   // kategori uden ON er skjult og ignoreres — knappen viser "Start Admin/Møde".
@@ -3718,6 +4137,16 @@ function scanConfirm(){
   if(!scanSelCat){ toast('Vælg kategori','err'); return; }
   const now=nowHM();
   const dk=dateKey(new Date());
+  // Fra en tidligere dag (v5.7.2): gem den som glemt, ligesom stopTimer. Foer
+  // forsvandt den, eller blev til en post fra gaarsdagens start til nu i dag.
+  let gammel=false;
+  if(activeTimer && activeTimer.date && activeTimer.date!==dk){
+    const x=activeTimer;
+    // Fuld liste: behold timeren, til de aeldste er besvaret (addStaleTimer viser fejlen)
+    if(!addStaleTimer(x) && !(db.staleTimers||[]).some(t=>sammeStale(t,x))) return;
+    activeTimer=null; localStorage.removeItem('vct_activeTimer');
+    gammel=true; // scheduleSave() nedenfor gemmer den (regel 27)
+  }
   // Stop aktivt job
   if(activeTimer){
     const sh=hmToH(activeTimer.startHM), eh=hmToH(now);
@@ -3745,9 +4174,11 @@ function scanConfirm(){
   history[on]=scanSelCat; history['__last__']=scanSelCat;
   localStorage.setItem('vct_scan_cat_history',JSON.stringify(history));
   scheduleSave(); // Sync til Gist
+  scanDismiss(); // Foer beskeden, saa den ikke placeres oeverst som over en aaben popup
   toast(`▶ ${label}  ${now}`,'ok');
-  scanDismiss();
   if(currentTab!=='dag') tab('dag'); else render();
+  // Med sync spoerger ghLoad efter fletningen (den anden enhed kan have svaret)
+  if(gammel && !syncEnabled()) setTimeout(visStaleTimer,0);
 }
 function scanDismiss(){
   document.getElementById('scanPopup').classList.add('hidden');
